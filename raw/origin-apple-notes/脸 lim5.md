@@ -1,0 +1,10 @@
+脸 lim5
+脚 geg3
+鞋 hai4
+车 ce1
+袋 doi2
+租 zou1
+错 co3
+只 zeg3
+懂 dung2
+牙 ngaa4

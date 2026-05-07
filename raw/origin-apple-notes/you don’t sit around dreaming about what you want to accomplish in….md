@@ -1,0 +1,1 @@
+you don’t sit around dreaming about what you want to accomplish in life, you just do it. You don’t have much time left.

@@ -1,0 +1,6 @@
+#persons 
+
+A colleague once remarked to me, as we were reviewing resumes: "Some people have 10 years of experience, some people have the same year of experience 10 times." The comment stuck with me. <b><u>I try to put myself in roles and opportunities where I'm forced to level up constantly</u></b> in order to do the job, and where I can't learn through first-hand experience, I read. I <b><u>read a lot</u></b>—about a hundred books a year—and I specifically seek out <b><u>fiction that widens my understanding of the human experience and non-fiction that teaches me appreciation of different disciplines</u></b>, from the personal (relationships, health, housecleaning) to the professional (sales, business, management) and everything else no matter how relevant or irrelevant to my life (anthropology, architecture, art).
+
+
+I work out (I'm a Peloton fanatic—cycling, treadmill, strength, yoga, all of it!). I read (every morning and every night). I cook (most days, most dinners). I spend time with friends and family (as much as I can, when I'm not recharging my introvert battery and keeping busy with everything else).

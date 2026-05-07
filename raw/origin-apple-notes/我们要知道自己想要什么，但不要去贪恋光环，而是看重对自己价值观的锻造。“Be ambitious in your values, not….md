@@ -1,0 +1,1 @@
+我们要知道自己想要什么，但不要去贪恋光环，而是看重对自己价值观的锻造。**“Be ambitious in your values, not in your titles. ”**——这是她当时对我说的话。
