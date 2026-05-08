@@ -35,9 +35,9 @@ Used for self-awareness, emotional processing, and personal growth. It serves as
  
 
 ## Wiki Standards
-- One topic per file in wiki/  
-- Every file must include a YAML front matter block containing `last_updated` (ISO 8601 format), `sources` (list of file paths from `raw/`), and `tags`.
-- Every file starts with a 2-3 sentence summary
+- One topic per file in wiki/ 
+- Every file must include a YAML front matter block containing `last_updated` (ISO 8601 format), `title`, `description`, and `tags`
+- Every file starts with a 2-3 sentence summary, and ends with `sources` (list of file paths from `raw/`) 
 - Related topics linked using [[topic-name]] format
 - INDEX.md maintained alphabetically, updated with every change
 - When new raw sources arrive, update all relevant wiki articles
