@@ -16,9 +16,9 @@ Used for self-awareness, emotional processing, and personal growth. It serves as
 
 ## Context
 - Topic: a Socratic Mirror 
-- Goal: Build a comprehensive, interconnected wiki on Stoicism, covering key concepts, figures, texts, and modern applications. Use this wiki to support my personal learning and content creation on the topic.
+- Goal: Build a comprehensive, interconnected wiki  to foster self-discovery, emotional regulation, and deeper cognitive engagement. Used for self-awareness, emotional processing, and personal growth. 
 - Sources: A mix of diary entries, notes from books and articles, and reflections on experiences. This includes both raw, unprocessed thoughts and more polished reflections.
-- Output: A well-organized wiki that captures the depth and breadth of my understanding of Stoicism, with clear connections between concepts and practical applications for my life and work. This wiki will be a living document, continuously updated and refined as I learn and grow in my understanding of Stoicism.
+- Output: A well-organized wiki that captures the depth and breadth of myself-knowledge, with clear connections between topics and a structure that allows for easy navigation and continuous growth. The wiki should be dynamic, evolving as new insights are gained and new sources are added. 
 
 
 ## Structure Rules  
@@ -32,7 +32,12 @@ Used for self-awareness, emotional processing, and personal growth. It serves as
     2. Process the content of these files into individual topic pages in `wiki/` following the [[Wiki Standards]], ensuring all mandatory metadata is generated.
     3. Update `wiki/INDEX.md` alphabetically to reflect all current topics.
     4. Provide an Executive Summary of the updates performed.
- 
+    
+- **Generate Report**: When the prompt "generate report on [topic]" is received, the AI must:
+    1. Retrieve the relevant topic page from `wiki/`.
+    2. Summarize the key insights and findings related to the topic.
+    3. Format the output as specified in the Output Format section of this manual.
+
 
 ## Wiki Standards
 - One topic per file in wiki/ 

@@ -1,5 +1,6 @@
 # Wiki Index
 
+* [[2022-Yearly-Review]]
 * [[Antifragile]]
 * [[Bookshelf]]
 * [[Business]]
@@ -10,9 +11,12 @@
 * [[Health]]
 * [[Learning]]
 * [[Other]]
+* [[Professional-Skills-Improvement]]
 * [[Relationships]]
 * [[Self]]
+* [[Self-Knowledge-and-Personal-Growth]]
 * [[Social-Skills]]
 * [[Stoicism]]
 * [[Technology]]
+* [[The-Log-Of-Your-Life]]
 * [[Work]]

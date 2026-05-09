@@ -1,10 +1,70 @@
 ---
-last_updated: 2026-05-07
+last_updated: 2026-05-09
+title: Learning
+description: Lifelong strategies for mastery, cognitive frameworks, and language acquisition.
+tags:
+  - education
+  - learning
+  - mastery
+  - language
+  - logic
+  - cognitive-frameworks
+---
+
+Learning is a lifelong process of uncovering one's potential, nurturing curiosity, and achieving mastery through both logical rigor and emotional engagement. It is the ability to "really see" and experience the world, transforming information into wisdom and skill, with the ultimate purpose of cultivating independent judgment and a free personality.
+
+### Educational Philosophy and Purpose
+- **Independent Judgment**: The core purpose of education is to cultivate the ability for independent judgment (独立判断力) and a free personality, enabling one to lead a fulfilling and meaningful life.
+- **Knowledge vs. Wealth**: The sole purpose of studying is knowledge (念书的唯一目的就是知识). While knowledge correlates with long-term wealth, there is no necessary direct link between knowledge and immediate commercial rewards (知识与商业报酬之间没有必然联系).
+- **Self-Education**: For those from ordinary backgrounds, "noble" or "elite" education is less practical than "one-skill" mastery (一技傍身). True quality education (素质教育) is the continuous elevation of one's mind and character.
+
+### Cognitive Frameworks and Thinking Skills
+
+#### The Art of Thinking
+- **Learning by Doing (实干中学习)**: Real learning happens in the field, through trial and error, and by solving specific, "messy" problems. 
+- **Analytical Depth**: The height of your thinking and your ability to face unknown challenges determine the limits of your growth. Move beyond "How" to understand "Why."
+- **Five-Face Creativity**: Develop the Seer (visualize), Observer (details), Alchemist (mix knowledge), Fool (perseverance and inversion), and Sage (simplicity).
+- **Fundamentals First**: Truly smart thinkers understand basics at a fundamental level. I would rather understand basics deeply than memorize complicated concepts.
+
+#### Decision-Making and Judgment
+- **Second-Order Thinking**: Always ask "And then what?" to consider the long-term consequences of a decision across time (10 minutes, 10 months, 10 years).
+- **Decision Process over Outcome**: Focus on the *process* of deciding. Incorporate emotions—the "heart has reasons reason does not know."
+- **Bayesian Soul**: Observe patterns, build a framework, and be willing to break and rebuild it as new data arrives (先有碎片而后不断构建框架).
+
+### The Socratic Mirror (AI-Enhanced Learning)
+- **AI as a Mirror**: Move from "Knowledge Queries" to a "Socratic Mirror." Use AI to reflect and expand thoughts, fostering self-discovery and revealing hidden assumptions.
+- **Incremental Integration**: Incrementally build a persistent wiki that integrates new sources into a structured picture of oneself over time.
+
+### Practical Language Acquisition
+
+#### Core Principles
+- **Shadowing**: Engage in daily shadowing—following native speech at the same time to internalize rhythm and intonation.
+- **Stress-Timed English**: English is beat-driven. Focus on stress (longer, louder, higher) and the "overall feeling" of a sentence rather than just individual sounds.
+
+#### Phonetics and Intonation Tips
+- **Schwa /ə/**: Master the unstressed neutral vowel.
+- **Linking**: Practice vowel-to-vowel linking (e.g., th**e /j/ e**nd) and consonant-to-consonant assimilation.
+- **Pitch Control**: Raise pitch for stressed words and drop it at the end of sentences to convey meaning (e.g., falling end for negative/finality).
+- **Dark L**: Master the "dark L" made at the back of the mouth (e.g., in "special" or "apple").
+
+Related Topics:
+- [[Self]]
+- [[Work]]
+- [[Stoicism]]
+- [[Technology]]
+- [[Social-Skills]]
+- [[The-Log-Of-Your-Life]]
+
 sources:
   - raw/origin-apple-notes/education.md
   - raw/origin-apple-notes/english.md
   - raw/origin-apple-notes/cantonese.md
   - raw/origin-apple-notes/edu.md
+  - raw/diary/self/2015-12-14-some-biases.md
+  - raw/diary/self/2016-07-31-notes-on-personal-skills.md
+  - raw/diary/self/2017-11-07-upgrade-my-self.md
+  - raw/diary/self/2018-03-09-self-reflection.md
+  - raw/diary/self/2021-01-04-Improve-my-professional-skills.md
   - raw/diary/2017-12-20-education-and-children.md
   - raw/diary/2014-04-04-math-is-the-basis-of-science.md
   - raw/diary/learning/2020-05-13-about-how-to-learn.md
@@ -24,77 +84,10 @@ sources:
   - raw/diary/language/2021-01-01-tv-shows-1.md
   - raw/diary/language/2021-01-18-notes-tv-shows-2.md
   - raw/diary/language/2022-11-16-english-writing.md
-tags:
-  - education
-  - learning
-  - mastery
-  - language
-  - logic
-  - paper-summary
----
-
-Learning is a lifelong process of uncovering one's potential, nurturing curiosity, and achieving mastery through both logical rigor and emotional engagement. It is the ability to "really see" and experience the world, transforming information into wisdom and skill.
-
-### Philosophy of Education and Mastery
-
-#### The Essence of Learning
-- **Discovery vs. Computation**: True learning is not just computing information; it is uncovering one's own ability to find potential and cope with difficult situations.
-- **Mastery and Flow**: Mastery is an internal process of continuous practice and presence. It thrives in the "plateau," where routine itself becomes a source of nourishment and identity.
-- **The "Skeleton then Detail" Approach**: Tackle complex problems by building a working framework (first principles) first, then exploring areas of high interest to refine the details. Avoid getting bogged down before the structure is sound.
-- **The "Learn by Doing" Cycle**: Acquire foundational knowledge, then immediately engage in practice to discover gaps, research solutions, and iterate. [[Learning-Strategies]]
-
-#### The Purpose of Education
-- **Self-Reliance (自立)**: Education aims at developing an independent soul capable of critical thinking.
-- **Synthesis of Traditions**: Combine the discipline of Eastern education with the creativity and inquiry-based nature of Western education.
-- **Liberal Studies (通识教育)**: Nourishing the freedom of the mind for lifelong learning.
-
-### Logical Foundations: Math as the Basis of Science
-
-#### The Logic of Certainty
-- **Mathematical Rigor**: Mathematics serves as the leader of science due to its consistent logical structure, rooted in principles like the Law of Contradiction and the Law of Excluded Middle.
-- **From Truth to Models**: Scientific progress involves shifting from absolute "truth-finding" to building models that explain observations.
-- **归谬法 (Reductio ad absurdum)**: Proving propositions by showing their negation leads to contradiction.
-
-#### Cultural Context of Logic
-- **Contract and Logic**: The development of formal logic is intertwined with the concept of clear, non-ambiguous "contracts" and abstract notions like "private property."
-
-### Practical Language Acquisition
-
-#### Core Principles
-- **Immersion through Content**: Utilizing TV shows, literature, and media to naturally absorb prosody, vocabulary, and cultural context.
-- **Active Production**: Speaking and writing exercises are essential for bridging the gap between passive understanding and fluent expression.
-- **Systematic Study**: Regular, iterative practice—whether for English, Cantonese, or Japanese—is more effective than sporadic bursts.
-
-#### English Proficiency
-- **Intonation and Prosody**: Pay attention to the rhythm, stress, and musicality of speech, particularly in native dialogues. Prosody is key to natural-sounding English.
-- **Writing**: Develop clear, concise writing through constant practice, focusing on structural integrity and intentionality.
-- **Professional Communication**: Emphasize clarity, professional tone, and audience awareness in business settings.
-
-#### Cantonese and Japanese
-- **Cantonese**: Focus on mastering unique phonetic components and cultural nuances.
-- **Japanese**: Adopt similar immersion strategies as used in English, emphasizing vocabulary and sentence structure acquisition.
-
-#### The Role of Literature
-- Literature acts as a gateway to both language mastery and cultural deep understanding, providing the context necessary to navigate human relationships and complex thought.
-
-### Learning Strategies and Habits
-
-- **Mastery Techniques**:
-    - **Physical & Mental State**: Maintain physical fitness and a positive, intentional attitude. Energy is created through usage.
-    - **Truth-telling**: Revealing one's feelings (honesty) reduces the energy spent hiding and increases productivity.
-    - **Support Systems**: Surround yourself with peers undergoing similar transformations.
-    - **Visualisation & Intent**: Use deep relaxation combined with vivid mental imaging of the target skill to facilitate transformation.
-    - **Plateau Loving**: Practice for the sake of the process itself, finding endless richness in subtle variations.
-- **Strategic Planning**: Prioritize daily/weekly/lifetime goals to avoid the inaction caused by indecision.
-- **Active Engagement**: Learn through osmosis from experts, asking questions, and explaining ideas to others.
-
-### Ongoing Research Projects
-- **The Beginning of Infinity**: An ongoing conceptual project focusing on the nature of explanation, knowledge creation, and the infinite potential of rational thought to transform the world.
-- **Literature Summaries**: Regularly summarizing technical and scientific papers to distill key methodologies, contributions, and critical evaluation of their results.
-
-Related Topics:
-- [[Self]]
-- [[Work]]
-- [[Stoicism]]
-- [[Technology]]
-- [[Social-Skills]]
+  - raw/diary/diary/2024-01-02-the-log-of-your-life.md
+  - raw/diary/diary/2025-07-10-notes-odyssey.md
+  - raw/diary/diary/apple-notes.md
+  - raw/diary/learning/2022-02-17-notes-on-creative-and-practical-thinking-skills.md
+  - raw/diary/learning/2022-03-11-how-to-improve-judgment-skills.md
+  - raw/diary/learning/2026-05-04-self-wiki.md
+  - raw/diary/learning/2016-10-04-english-listening-and-pronunciation.md
