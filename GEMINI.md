@@ -32,6 +32,12 @@ Used for self-awareness, emotional processing, and personal growth. It serves as
     2. Process the content of these files into individual topic pages in `wiki/` following the [[Wiki Standards]], ensuring all mandatory metadata is generated.
     3. Update `wiki/INDEX.md` alphabetically to reflect all current topics.
     4. Provide an Executive Summary of the updates performed.
+
+- **Audit Wiki**: When the prompt "perform a wiki audit" is received, the AI must:
+    1. Execute the automated script via `make audit` (if environment allows) or simulate its logic.
+    2. Read the existing `wiki/audit.md` to identify high-priority "Red Links".
+    3. Identify "Cognitive Shifts": specific instances where new data in `raw/` contradicts existing summaries in `wiki/`.
+    4. Suggest 3 specific actions to resolve the most frequent Red Links.
     
 - **Generate Report**: When the prompt "generate report on [topic]" is received, the AI must:
     1. Retrieve the relevant topic page from `wiki/`.
@@ -43,16 +49,19 @@ Used for self-awareness, emotional processing, and personal growth. It serves as
 - One topic per file in wiki/ 
 - Every file must include a YAML front matter block containing `last_updated` (ISO 8601 format), `title`, `description`, and `tags`
 - Every file starts with a 2-3 sentence summary, and ends with `sources` (list of file paths from `raw/`) 
+- Every file must have an `## Evolution` section tracking changes in perspective over time.
 - Related topics linked using [[topic-name]] format
 - INDEX.md maintained alphabetically, updated with every change
 - When new raw sources arrive, update all relevant wiki articles
 - Never translate the source language. Match the output language to the input language perfectly
-- Flag contradictions between sources immediately
+- Flag contradictions between sources as "Cognitive Shifts" in the audit.
 
 ## Lint
 Review the entire wiki/ directory. Complete this audit:
 - Flag contradictions between articles
 - Find topics mentioned but never fully explained
+- Find "Red Links": topics linked via `[[topic-name]]` that do not have a corresponding file in `wiki/`.
+- Find topics mentioned in `raw/` but never fully explained in `wiki/`.
 - List claims not backed by a source in raw/
 - Identify stale information (>30 days without update)
 - Suggest 3 new articles to fill knowledge gaps

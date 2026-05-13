@@ -12,7 +12,7 @@ sync:
 	@echo "update wiki/ based on raw/ and GEMINI.md"
 
 audit:
-	@echo "Review the entire wiki/ directory. Complete the audit defined in GEMINI.md."
+	python3 scripts/audit_wiki.py
 
 push:
 	git add .
