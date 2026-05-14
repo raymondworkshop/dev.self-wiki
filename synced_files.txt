@@ -1,0 +1,319 @@
+diary/2014-04-04-math-is-the-basis-of-science.md
+diary/2014-04-09-some-learning-about-economics.md
+diary/2014-12-05-country-driving.md
+diary/2014-12-14-river-town.md
+diary/2017-12-20-education-and-children.md
+diary/2018-04-25-mans-search-for-meaning.md
+diary/2018-09-09-wanli-15-years.md
+diary/2020-01-31-the-effective-executive.md
+diary/2020-09-28-think-and-grow-rich.md
+diary/2023-10-06-programming-languages.md
+diary/2024-11-29-notes-on-llm.md
+diary/2025-08-07-the-untethered-soul.md
+diary/2026-02-12-antifragile.md
+diary/2026-04-07-notes-on-stoicism.md
+diary/bookshelf.md
+diary/business/2020-04-13-the-great-ceo-within.md
+diary/business/2020-04-13-the-practical-part-in-business.md
+diary/business/2020-06-20-how-to-influence-people.md
+diary/business/2021-09-05-my-businesses.md
+diary/business/2021-09-24-about-entrepreneur-mindset.md
+diary/business/2022-09-23-startup.md
+diary/diary/2023-09-04-the-log-of-your-life.md
+diary/diary/2024-01-02-the-log-of-your-life.md
+diary/diary/2025-07-10-notes-odyssey.md
+diary/diary/apple-notes.md
+diary/invest/2020-08-24-notes-on-your-assets.md
+diary/invest/2021-02-23-notes-on-insurance.md
+diary/invest/2021-03-13-record-my-cash-flow.md
+diary/language/2017-04-06-intonation-1.md
+diary/language/2017-04-18-oral-english-1.md
+diary/language/2017-08-04-cantonese.md
+diary/language/2017-09-02-literature.md
+diary/language/2017-10-04-prosody.md
+diary/language/2020-01-01-notes-tv-shows-friends.md
+diary/language/2020-01-14-intonation-2.md
+diary/language/2020-01-14-on-writing.md
+diary/language/2020-01-14-oral-english-2.md
+diary/language/2020-04-23-humor.md
+diary/language/2020-06-08-business-english.md
+diary/language/2020-12-19-japanese.md
+diary/language/2021-01-01-tv-shows-1.md
+diary/language/2021-01-18-notes-tv-shows-2.md
+diary/language/2022-11-16-english-writing.md
+diary/learning/2016-10-04-english-listening-and-pronunciation.md
+diary/learning/2017-11-16-notes-self-actualization-and-self-reflections.md
+diary/learning/2017-11-17-improve-your-persuasive-skills.md
+diary/learning/2017-12-20-on-softskills-communication.md
+diary/learning/2020-03-15-how-to-be-a-good-manager.md
+diary/learning/2020-03-16-on-leadership-and-teamwork.md
+diary/learning/2020-05-13-about-how-to-learn.md
+diary/learning/2020-06-16-notes-on-loving.md
+diary/learning/2020-08-28-notes-on-wealth.md
+diary/learning/2021-02-20-update-on-the-good-life.md
+diary/learning/2022-01-24-notes-on-philosophy-and-thinking.md
+diary/learning/2022-02-17-notes-on-creative-and-practical-thinking-skills.md
+diary/learning/2022-03-11-how-to-improve-judgment-skills.md
+diary/learning/2022-06-17-improve-your-charm.md
+diary/learning/2022-07-28-build-my-career.md
+diary/learning/2023-12-08-being-a-business-man.md
+diary/learning/2025-03-15-the-surrender-experiment.md
+diary/learning/2025-03-18-managing-up.md
+diary/learning/2025-07-07-notes-illimitable-men.md
+diary/learning/2025-11-10-about-coaching.md
+diary/learning/2026-02-21-the-log-of-your-life.md
+diary/learning/2026-04-21-product-minded.md
+diary/learning/2026-05-04-self-wiki.md
+diary/notes/2018-05-11-the-pragmatic-programming.md
+diary/notes/2020-04-29-notes-on-software-engineering.md
+diary/notes/2020-06-03-franklin.md
+diary/notes/2021-03-01-how-to-work-on-hard-things.md
+diary/notes/2021-08-11-the-rule-of-life.md
+diary/notes/2021-10-31-about-spiritual-world.md
+diary/notes/2023-06-13-on-managing-yourself.md
+diary/notes/2024-06-12-hbr-a-great-boss.md
+diary/philosophy/2016-03-12-chinese-politics.md
+diary/philosophy/2019-05-28-keep-my-creativity.md
+diary/philosophy/2020-06-10-about-beauty.md
+diary/research/2018-11-18-research-notes.md
+diary/research/2019-07-08-about-ai.md
+diary/research/2019-07-21-TODO-the-beginning-of-infinity.md
+diary/research/2020-04-30-interesting-questions.md
+diary/research/2020-05-13-paper-summary.md
+diary/research/2020-08-29-science.md
+diary/self/2015-07-09-love.md
+diary/self/2015-08-16-work.md
+diary/self/2015-11-18-summary-ra.md
+diary/self/2015-12-14-some-biases.md
+diary/self/2016-01-05-personal-challenge-in-2016.md
+diary/self/2016-07-31-notes-on-personal-skills.md
+diary/self/2017-06-26-mythoughts.md
+diary/self/2017-10-05-commandments.md
+diary/self/2017-11-07-upgrade-my-self.md
+diary/self/2018-01-21-new-year-challenge.md
+diary/self/2018-03-09-self-reflection.md
+diary/self/2018-05-21-hsmc-work.md
+diary/self/2019-02-21-new-year-challenge.md
+diary/self/2019-04-07-interview.md
+diary/self/2020-03-20-update-my-career.md
+diary/self/2020-05-24-record-my-love.md
+diary/self/2020-08-20-build-my-life.md
+diary/self/2020-09-24-notes-on-thrivers.md
+diary/self/2021-01-04-Improve-my-professional-skills.md
+diary/softskills/2014-03-30-some-good-learning.md
+diary/softskills/2015-07-29-productivity.md
+diary/softskills/2016-04-03-improve-your-softskills.md
+diary/softskills/2020-03-22-about-self-care.md
+diary/softskills/2020-03-24-build-good-relationships.md
+diary/softskills/2020-04-19-fun-things.md
+diary/softskills/2022-01-21-fictions-reading.md
+diary/tech/2014-05-29-building-abstractions-with-procedures.md
+diary/tech/2017-07-20-word2vec.md
+diary/tech/2017-07-21-logistic-regression.md
+diary/tech/2018-03-04-REST-architecture.md
+diary/tech/2019-04-30-deep-learning.md
+diary/tech/2019-07-17-machine-learning-systems.md
+diary/tech/2019-12-11-concurrency.md
+diary/tech/2019-12-27-nengli-trap.md
+diary/tech/2020-02-11-notes-on-product-manager.md
+origin-apple-notes/过度政治化：  以国家的宏大叙事 挤压 个人 或 小圈子的 言论.md
+origin-apple-notes/内地  关系 很重要，尤其是熟人之间.md
+origin-apple-notes/发现是个 做决定病 患者.md
+origin-apple-notes/发现我热衷 政治，新闻， 社会，教育.md
+origin-apple-notes/我不知道我是不是 太不努力了， 毕竟自己最缺少的是时间.md
+origin-apple-notes/怎样面对别人的领导 - 观察别人的行为.md
+origin-apple-notes/美国 -.md
+origin-apple-notes/推荐的话 -.md
+origin-apple-notes/不要和 小朋友们打成一片.md
+origin-apple-notes/朋友只看私德， 不看大众评价.md
+origin-apple-notes/突然觉得 自己什么地方做错了什么.md
+origin-apple-notes/得要好好想想自己的未来， 而不是仅仅要自由.md
+origin-apple-notes/五个字“礼多人不怪” 有事说事，不要问人私事当套近乎.md
+origin-apple-notes/许诺一个 公平的，干净的，很整齐的社会，比起无所适从，混乱.md
+origin-apple-notes/知道怎么站在别人的角度思考问题，这是最重要的； 外交的艺术就是把你的愿望变成别人的愿望.md
+origin-apple-notes/一個真正見過世面的人，會講究，能將就，能享受最好的，也能承受最壞的，他們自然會在人群中散發不一樣的氣質，溫和卻有力量， 謙卑卻有內涵….md
+origin-apple-notes/冲凉 cung1 loeng4.md
+origin-apple-notes/但是 daan6 hai6.md
+origin-apple-notes/特点 dak6 dim2.md
+origin-apple-notes/电脑 din6 nou5.md
+origin-apple-notes/鼓励 gu2 lai6.md
+origin-apple-notes/合适 hap6 sik1.md
+origin-apple-notes/蕊 jeoi5.md
+origin-apple-notes/脸 lim5.md
+origin-apple-notes/米线 mai5 sin3.md
+origin-apple-notes/信教 seon3  gaau3.md
+origin-apple-notes/小 siu2.md
+origin-apple-notes/船 syun4.md
+origin-apple-notes/塔尖 taap3 zim1.md
+origin-apple-notes/推荐 teui1  zin3.md
+origin-apple-notes/位 wai6.md
+origin-apple-notes/关系- 不要理所当然.md
+origin-apple-notes/中国人- 自卑感上的面子.md
+origin-apple-notes/- 觉得大多数成功人士，是正确掌握了80-20定律，把80%精力放在20%最重要事情上，且自律，且聪明有效率，且赶上了正确时间和地点….md
+origin-apple-notes/选择的权利, 自己承担选择的结果.md
+origin-apple-notes/不太需要思考的事,尽量减少思考,且绝不没事自寻烦恼,生活要非常简单,把能规律化的事情规律化.md
+origin-apple-notes/我答应自己不会因他们的询问而生气或厌烦，不会在别人主动指点后防备性地回答,只会笑着点头.md
+origin-apple-notes/直接.md
+origin-apple-notes/吉利德.md
+origin-apple-notes/避重就轻.md
+origin-apple-notes/友善又敬业.md
+origin-apple-notes/与国人交往：.md
+origin-apple-notes/爵士樂的酒吧：.md
+origin-apple-notes/格温妮丝·帕特洛.md
+origin-apple-notes/《中國：潰而不崩》.md
+origin-apple-notes/你需要更加努力的工作.md
+origin-apple-notes/正直，诚信，智慧，幽默.md
+origin-apple-notes/尽量把事情，做得高级一点.md
+origin-apple-notes/我并没有做错，没什么好愧疚的.md
+origin-apple-notes/是不是愛上一個人就會方寸大亂了.md
+origin-apple-notes/今天应该起的早点，而不是下午两点.md
+origin-apple-notes/一边厌烦了平淡，一边厌烦了别人的模仿.md
+origin-apple-notes/以后不要躺在床上做白日梦了，找点事情做.md
+origin-apple-notes/就是和自己觉得重要的人一起付出，永无止境.md
+origin-apple-notes/今天见到了一个自由如风，而且美丽的中年妇女.md
+origin-apple-notes/”决不要反驳别人”正是富兰克林的处世信条之一.md
+origin-apple-notes/教育的根本使命是培养具有社会责感与独立判断能力的公民.md
+origin-apple-notes/把人的发展放到第一位去思考问题，把人当作目的而不是工具.md
+origin-apple-notes/我们应该去帮助那些值得帮助的人，而不是不加甄别地帮助所有人。.md
+origin-apple-notes/在这过程中，首重营造和善的气氛，让对方感到友善、愉悦、无损自身利益.md
+origin-apple-notes/从今天起不要欺骗别人自己的经历，比较能骗的都是自己认识的人，自己也不觉得有什么被重视.md
+origin-apple-notes/缺乏对概念的有效界定、缺乏对细节的深入追踪，导致结论要么是想像的而非实证的，要么因太模糊而不能证伪。.md
+origin-apple-notes/我认为不是不喜欢去较真，而是我们的文化里没有对每个人（特别是小孩子）是独立个体的承认和尊重，进而个体缺乏自我意识。.md
+origin-apple-notes/持续增加的社会财富，确实能带给每一个人真切感受到的幸福，但要保障这种幸福的可持续性，必须要建立起一套真正尊重生命、尊重人本身的配套….md
+origin-apple-notes/一旦发现有些自己认为对的道理而对方“怎么说也说不听”的时候，就可以试着放下走脑的逻辑，尝试感受对方的感受，并坦诚地说出自己的感受（注意….md
+origin-apple-notes/信任+诚实.md
+origin-apple-notes/1.  認真生活的人和拒绝无趣的灵魂 - 有梦有趣.md
+origin-apple-notes/1.每天都看书，每天都看新的见识和技能.md
+origin-apple-notes/你应该每天努力工作了，至少10个小时.md
+origin-apple-notes/“无论你要批评谁的观点，你要批评他观点中最棒的那10%，因为无论是谁，其观点的90%都是没有价值的，要批评就批评有价值的那10%；此外….md
+origin-apple-notes/10602， 取消數據上網.md
+origin-apple-notes/你交的朋友必须是：1）正直的；2）比你更有智慧的；3）比你更有钱的。否则就是浪费时间。.md
+origin-apple-notes/1904720459744185.md
+origin-apple-notes/30天服务.md
+origin-apple-notes/我从来不主动找年轻人坏笑，绝对不“试图和他们打成一片”坏笑。（所谓年轻人，指比我小8岁以上的）.md
+origin-apple-notes/早上要早起830.md
+origin-apple-notes/address.md
+origin-apple-notes/Always search for an improved version.md
+origin-apple-notes/app.md
+origin-apple-notes/arts.md
+origin-apple-notes/我们要知道自己想要什么，但不要去贪恋光环，而是看重对自己价值观的锻造。“Be ambitious in your values, not….md
+origin-apple-notes/belif.md
+origin-apple-notes/BLOCK 54A, Taipo Mei Village, NT. HK.md
+origin-apple-notes/Bob Ross.md
+origin-apple-notes/books.md
+origin-apple-notes/business  important  insight  self.md
+origin-apple-notes/business  insight.md
+origin-apple-notes/business  technology  important.md
+origin-apple-notes/business china.md
+origin-apple-notes/business insight.md
+origin-apple-notes/business people.md
+origin-apple-notes/business startup.md
+origin-apple-notes/business.md
+origin-apple-notes/camera.md
+origin-apple-notes/cantonese.md
+origin-apple-notes/chatting.md
+origin-apple-notes/china  business.md
+origin-apple-notes/china  important  self.md
+origin-apple-notes/china  important.md
+origin-apple-notes/china  self.md
+origin-apple-notes/china  skills.md
+origin-apple-notes/china  softskills.md
+origin-apple-notes/china hk politics.md
+origin-apple-notes/china insight.md
+origin-apple-notes/china.md
+origin-apple-notes/coaching.md
+origin-apple-notes/communication.md
+origin-apple-notes/course.md
+origin-apple-notes/creative.md
+origin-apple-notes/culture  china.md
+origin-apple-notes/daily.md
+origin-apple-notes/data.md
+origin-apple-notes/dict.md
+origin-apple-notes/domain-name.md
+origin-apple-notes/driving.md
+origin-apple-notes/dropbox.md
+origin-apple-notes/edu.md
+origin-apple-notes/education.md
+origin-apple-notes/engineering.md
+origin-apple-notes/english.md
+origin-apple-notes/eq.md
+origin-apple-notes/Everything.md
+origin-apple-notes/families.md
+origin-apple-notes/food.md
+origin-apple-notes/friends.md
+origin-apple-notes/git.md
+origin-apple-notes/god.md
+origin-apple-notes/gym.md
+origin-apple-notes/habit.md
+origin-apple-notes/health.md
+origin-apple-notes/hiking.md
+origin-apple-notes/humor.md
+origin-apple-notes/ideas.md
+origin-apple-notes/If you don’t know the culture, follow the instructions and the others….md
+origin-apple-notes/info.md
+origin-apple-notes/insight  business.md
+origin-apple-notes/insight  life.md
+origin-apple-notes/insight china.md
+origin-apple-notes/insight hk.md
+origin-apple-notes/insight skills.md
+origin-apple-notes/insight team.md
+origin-apple-notes/investment.md
+origin-apple-notes/it.md
+origin-apple-notes/joke.md
+origin-apple-notes/joking.md
+origin-apple-notes/life  experience.md
+origin-apple-notes/life  important.md
+origin-apple-notes/life skills.md
+origin-apple-notes/LTvisitor-3Cube4a82.md
+origin-apple-notes/manager.md
+origin-apple-notes/market.md
+origin-apple-notes/mawei.md
+origin-apple-notes/拿不定主意的事情也尽量去征求他的意见，反正每天都有meeting.md
+origin-apple-notes/meetup.md
+origin-apple-notes/money-credit card.md
+origin-apple-notes/money.md
+origin-apple-notes/mpf.md
+origin-apple-notes/New Note.md
+origin-apple-notes/Not-to-do.md
+origin-apple-notes/obversation.md
+origin-apple-notes/我现在看人就是，只要有发光点缺点不让我难受我就OK了.md
+origin-apple-notes/能否有机会加入，是什么形式part-time，.md
+origin-apple-notes/passwd.md
+origin-apple-notes/physical.md
+origin-apple-notes/plan.md
+origin-apple-notes/politics  china.md
+origin-apple-notes/programming.md
+origin-apple-notes/R.md
+origin-apple-notes/sharing.md
+origin-apple-notes/shenzhen.md
+origin-apple-notes/shopping.md
+origin-apple-notes/skills.md
+origin-apple-notes/slef.md
+origin-apple-notes/social-skills.md
+origin-apple-notes/society.md
+origin-apple-notes/softskills.md
+origin-apple-notes/sta.md
+origin-apple-notes/startup  business.md
+origin-apple-notes/stock investment.md
+origin-apple-notes/tech.md
+origin-apple-notes/thoughts.md
+origin-apple-notes/tips.md
+origin-apple-notes/to buy.md
+origin-apple-notes/tobuy.md
+origin-apple-notes/todo  hiking.md
+origin-apple-notes/todo.md
+origin-apple-notes/training.md
+origin-apple-notes/travelling.md
+origin-apple-notes/trip.md
+origin-apple-notes/ts ei t na.md
+origin-apple-notes/unknown.md
+origin-apple-notes/wealth.md
+origin-apple-notes/weath.md
+origin-apple-notes/Why open source.md
+origin-apple-notes/遇到不一样的，先问why这样.md
+origin-apple-notes/抱住人好钱多人脉广老爷爷，winner最佳选择.md
+origin-apple-notes/you don’t sit around dreaming about what you want to accomplish in….md
+qa/请分析我的价值观.md
+qa/價值觀和性格底層報告.md
+qa/分析下适合我的女生特质.md
+qa/分析下我的价值观和底层逻辑.md
