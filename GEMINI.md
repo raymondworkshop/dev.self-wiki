@@ -26,12 +26,32 @@ Used for self-awareness, emotional processing, and personal growth. It serves as
 - wiki/ is the organized knowledge base. AI maintains this entirely.
 - outputs/ stores generated reports and analysis.
 
+## Agent Skills (Tool Definitions)
+
+### `sync-wiki`
+- **Description**: Scans `raw/`, processes new insights into `wiki/`, and updates `INDEX.md`.
+- **Implementation**: `make sync`
+
+### `audit-wiki`
+- **Description**: Checks for red links, stale content, and cognitive shifts.
+- **Implementation**: `make audit`
+
 ## Commands
-- **Sync Wiki**: When the prompt "update wiki/ based on raw/ and GEMINI.md" is received, the AI must:
+- **Sync Wiki**: When the prompt "update wiki" is received, the AI must:
     1. Scan the `raw/` directory for any new or modified files.
     2. Process the content of these files into individual topic pages in `wiki/` following the [[Wiki Standards]], ensuring all mandatory metadata is generated.
     3. Update `wiki/INDEX.md` alphabetically to reflect all current topics.
     4. Provide an Executive Summary of the updates performed.
+
+- **Audit Wiki**: When the prompt "audit wiki" is received, the AI must:
+    1. Execute the automated script via `make audit` (if environment allows) or simulate its logic.
+    2. Read the existing `wiki/audit.md` to identify high-priority "Red Links".
+    3. Suggest 3 specific actions to resolve the most frequent Red Links.
+    4. Identify "Cognitive Shifts": specific instances where new data in `raw/` contradicts existing summaries in `wiki/`.
+    5. List claims not backed by a source in `raw/`
+    7. Flag contradictions between articles
+    8. Identify stale information (>60 days without update)
+
     
 - **Report**: When the prompt "report on [topic]" is received, the AI must:
     1. Retrieve the relevant topic page from `wiki/`.
@@ -45,19 +65,12 @@ Used for self-awareness, emotional processing, and personal growth. It serves as
 - One topic per file in wiki/ 
 - Every file must include a YAML front matter block containing `last_updated` (ISO 8601 format), `title`, `description`, and `tags`
 - Every file starts with a 2-3 sentence summary, and ends with `sources` (list of file paths from `raw/`) 
+- Every file must have an `## Evolution` section tracking changes in perspective over time.
 - Related topics linked using [[topic-name]] format
 - INDEX.md maintained alphabetically, updated with every change
 - When new raw sources arrive, update all relevant wiki articles
 - Never translate the source language. Match the output language to the input language perfectly
-- Flag contradictions between sources immediately
-
-## Lint
-Review the entire wiki/ directory. Complete this audit:
-- Flag contradictions between articles
-- Find topics mentioned but never fully explained
-- List claims not backed by a source in raw/
-- Identify stale information (>30 days without update)
-- Suggest 3 new articles to fill knowledge gaps
+- Flag contradictions between sources as "Cognitive Shifts" in the audit.
 
 
 ## Output Format  

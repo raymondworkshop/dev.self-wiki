@@ -31,7 +31,7 @@ Self-awareness is the foundational practice of observing one's thoughts, emotion
 
 ### Emotional Health and Projection
 - **Self-Awareness Onion**: Peel back layers from emotions -> the "Why" -> underlying values -> fundamental priorities.
-- **Projection Effect (投射效应)**: Other people are mirrors of your internal world. Likes reflect hidden desires; dislikes reflect "shadows" or unintegrated parts of yourself. When triggered, ask: "Is this about them, or about me?"
+- **Projection Effect (投射效应)**: Other people are mirrors of your internal world. **Likes reflect hidden desires**; **dislikes reflect "shadows" or unintegrated parts** of yourself. When triggered, ask: "Is this about them, or about me?"
 - **Emotional Literacy**: Identify the root cause of overwhelming emotions. Distinguish between physical sensations and mental judgments.
 - **Self-Acceptance**: Accept being imperfect while doing your best. Differentiate "I am bad" from "I have a deficiency." Even with deficiencies, you are worthy of respect.
 
