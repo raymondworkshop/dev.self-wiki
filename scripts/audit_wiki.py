@@ -3,13 +3,14 @@ import re
 from pathlib import Path
 from collections import Counter
 from datetime import datetime
+import yaml
 
 def run_audit():
     workspace = Path("/Users/zhaowenlong/workspace/dev.self-wiki")
     wiki_dir = workspace / "wiki"
     audit_file = wiki_dir / "audit.md"
     
-    # 1. Get all existing topics (filenames without .md)
+    # 1. Get all existing topics
     existing_topics = {f.stem for f in wiki_dir.glob("*.md")}
     
     red_links = []
@@ -29,6 +30,21 @@ def run_audit():
             if clean_link not in existing_topics:
                 red_links.append(clean_link)
 
+    # 2b. Check for Stale Info (>60 days)
+    stale_files = []
+    for file_path in wiki_dir.glob("*.md"):
+        try:
+            content = file_path.read_text()
+            if "---" in content:
+                fm = list(yaml.safe_load_all(content))[0]
+                last_updated = datetime.fromisoformat(fm['last_updated'].replace('Z', '+00:00'))
+                days_diff = (datetime.now(last_updated.tzinfo) - last_updated).days
+                if days_diff > 60:
+                    stale_files.append((file_path.name, days_diff))
+        except Exception:
+            # Skip files with malformed frontmatter during audit
+            continue
+
     # 3. Aggregate Red Links
     red_link_counts = Counter(red_links).most_common()
 
@@ -47,6 +63,12 @@ def run_audit():
         report.append("| 0 | No red links found! |")
     for topic, count in red_link_counts:
         report.append(f"| {count} | [[{topic}]] |")
+
+    report.append("\n### ⏳ Stale Information (>60 days)")
+    if not stale_files:
+        report.append("All files are up to date.")
+    for name, days in stale_files:
+        report.append(f"- `{name}`: {days} days since last update.")
 
     report.extend([
         "\n### 🧠 AI Instructions for Next Sync",

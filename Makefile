@@ -3,7 +3,7 @@
 .PHONY: help sync audit push
 
 help:
-	@echo "selfwiki Commands:"
+	@echo "self-wiki Commands:"
 	@echo "  make sync    - Get the prompt to synchronize wiki/ from raw/ sources"
 	@echo "  make audit   - Get the prompt to perform a wiki lint/audit"
 	@echo "  make push    - Commit and push all changes"
@@ -16,5 +16,5 @@ audit:
 
 push:
 	git add .
-	git commit -m "selfwiki update: $$(date +'%Y-%m-%d')"
+	git commit -m "self-wiki update: $$(date +'%Y-%m-%d')"
 	git push

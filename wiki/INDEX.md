@@ -16,7 +16,10 @@
 * [[Self]]
 * [[Self-Knowledge-and-Personal-Growth]]
 * [[Social-Skills]]
+* [[spirituality]]
 * [[Stoicism]]
 * [[Technology]]
+* [[Values-Analysis]]
 * [[The-Log-Of-Your-Life]]
 * [[Work]]
+*Alphabetical list of topics will appear here after sync.*
