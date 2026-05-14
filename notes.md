@@ -1,6 +1,11 @@
 
 #### self-wiki  
 
+##### tasks  
+* add skills like sync-wiki, audit-wiki function
+    >  /sync-wiki, /audit-wiki skills in gemini cli  
+    > "report on [topic]" command in gemini cli
+
 ##### the architecture
 * Push intelligence up into skills, and push execution down into deterministic tooling. keep the harness thin.  
     - Fast skills sit on top
@@ -9,8 +14,6 @@
         + JSON in, text out. Read-only by default.
     - deterministic is where trust lives. 
         + Same input, same output. Every time. SQL queris. Compiled code. ARITHMETIC.
-
-
 
 * a skill file tell the model how
     - works like a method call 

@@ -1,7 +1,7 @@
 ---
-last_updated: 2026-05-09
+last_updated: 2026-05-14T11:05:00Z
 title: Social Skills
-description: Navigating human relationships with empathy, grounded confidence, and strategic intelligence.
+description: Navigating human relationships with empathy, grounded confidence, and strategic intelligence, including networking and communication strategies.
 tags:
   - social-skills
   - communication
@@ -21,6 +21,8 @@ Social Skills encompass the ability to navigate human relationships with empathy
 
 ### Advanced Interpersonal Dynamics
 - **Standing in Others' Shoes (换位思考)**: The most important social skill is the ability to see problems from the other person's perspective. Diplomacy is the art of making your wishes become their wishes by aligning with their needs.
+- **Relationship Selection**: Focus on interacting with **mature and high-potential individuals** (成熟的和有潜质的年轻人). This ensures that your social energy is invested in relationships that offer mutual growth and fewer irrational frictions.
+- **Barbell Strategy in Communication (交流杠铃策略)**: Balancing high-intensity, deep intellectual exchanges with light, polite, and low-stakes social interactions. Avoid the "middle ground" of mediocre, energy-draining small talk.
 - **Handling Provocation and "Shit Tests"**: 
     - Recognize when your boundaries or "frame" are being tested. 
     - Respond with calm, steady tones to provocation. 
@@ -52,6 +54,9 @@ Related Topics:
 - [[Learning]]
 - [[Business]]
 
+## Evolution
+- 2026-05-14: Integrated the "Barbell Strategy" for communication and the principle of "selective networking" with high-potential youth.
+
 sources:
   - raw/origin-apple-notes/social-skills.md
   - raw/origin-apple-notes/softskills.md
@@ -61,6 +66,9 @@ sources:
   - raw/origin-apple-notes/向上管理.md
   - raw/origin-apple-notes/五个字“礼多人不怪” 有事说事，不要问人私事当套近乎.md
   - raw/origin-apple-notes/知道怎么站在别人的角度思考问题，这是最重要的； 外交的艺术就是把你的愿望变成别人的愿望.md
+  - raw/origin-apple-notes/以后打交道 多和 成熟的和 有潜质的年轻人打交道.md
+  - raw/origin-apple-notes/交流 - 杠铃策略.md
+  - raw/origin-apple-notes/礼貌：  please,  thank you.md
   - raw/diary/self/2015-12-14-some-biases.md
   - raw/diary/self/2016-07-31-notes-on-personal-skills.md
   - raw/diary/self/2017-11-07-upgrade-my-self.md

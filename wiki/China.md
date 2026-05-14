@@ -1,31 +1,7 @@
 ---
-last_updated: 2026-05-09
-sources:
-  - raw/origin-apple-notes/creative.md
-  - raw/origin-apple-notes/china insight.md
-  - raw/origin-apple-notes/china  skills.md
-  - raw/origin-apple-notes/china.md
-  - raw/origin-apple-notes/society.md
-  - raw/origin-apple-notes/china hk politics.md
-  - raw/origin-apple-notes/insight hk.md
-  - raw/origin-apple-notes/china  softskills.md
-  - raw/origin-apple-notes/culture  china.md
-  - raw/origin-apple-notes/china  business.md
-  - raw/origin-apple-notes/china  important  self.md
-  - raw/origin-apple-notes/china  important.md
-  - raw/origin-apple-notes/china  self.md
-  - raw/origin-apple-notes/politics  china.md
-  - raw/origin-apple-notes/insight china.md
-  - raw/origin-apple-notes/内地  关系 很重要，尤其是熟人之间.md
-  - raw/origin-apple-notes/中国人- 自卑感上的面子.md
-  - raw/origin-apple-notes/与国人交往：.md
-  - raw/origin-apple-notes/《中國：潰而不崩》.md
-  - raw/diary/self/2015-12-14-some-biases.md
-  - raw/diary/self/2017-11-07-upgrade-my-self.md
-  - raw/diary/2014-12-05-country-driving.md
-  - raw/diary/2014-12-14-river-town.md
-  - raw/diary/2018-09-09-wanli-15-years.md
-  - raw/diary/philosophy/2016-03-12-chinese-politics.md
+last_updated: 2026-05-14T11:00:00Z
+title: China
+description: A synthesis of modernization, cultural tradition, and political-economic models in China, including Guanxi and political culture.
 tags:
   - china
   - sociology
@@ -46,9 +22,11 @@ Unlike many civilizations, China developed centralized state capacity as early a
 
 #### Political Culture and Ideology
 - **Ideology Security**: A constant emphasis on controlling political thought to maintain stability.
+- **Over-politicization (过度政治化)**: The use of grand national narratives to squeeze out individual or small-circle speech. This creates an environment where personal expression is often subordinate to political correctness.
 - **Utopian Risk**: The danger of using total power to pursue moral ideals or "Utopias," which often leads to extreme measures and the suppression of individuals.
 - **Enemy vs. Friend Logic (论敌友不论事实和逻辑)**: A significant cultural trait is evaluating information based on the source's status (friend or foe) rather than the facts or logical consistency. This "partisan" view of reality hinders objective problem-solving.
 - **Structural Fragility**: The reliance on charismatic or centralized leadership often masks deeper structural issues, making the system brittle if the top-down mechanism falters.
+
 
 ### Sociological and Behavioral Observations
 
@@ -62,6 +40,7 @@ Unlike many civilizations, China developed centralized state capacity as early a
     - **Strangers**: Transactional, tool-based logic (工具理性).
     - **Acquaintances (熟人)**: Mixed relationships based on "human sentiment" (人情) and mutual obligation.
     - **Close Friends/Family**: Emotional bonds based on shared needs.
+- **Native Place (籍贯) in Business**: In the Chinese business-political landscape, shared origins (native place) serve as a critical trust proxy and a foundation for "Guanxi" networks.
 - **Exclusivity**: A tendency toward "exclusive recognition" (排他性认可) and a difficulty in cooperating outside of narrow trust circles.
 
 ### Educational Flaws
@@ -78,3 +57,35 @@ Related Topics:
 - [[Self]]
 - [[Work]]
 - [[Business]]
+
+## Evolution
+- 2026-05-14: Added "Over-politicization" and "Native Place in Business" based on recent reflections and data analysis.
+
+sources:
+  - raw/origin-apple-notes/creative.md
+  - raw/origin-apple-notes/china insight.md
+  - raw/origin-apple-notes/china  skills.md
+  - raw/origin-apple-notes/china.md
+  - raw/origin-apple-notes/society.md
+  - raw/origin-apple-notes/china hk politics.md
+  - raw/origin-apple-notes/insight hk.md
+  - raw/origin-apple-notes/china  softskills.md
+  - raw/origin-apple-notes/culture  china.md
+  - raw/origin-apple-notes/china  business.md
+  - raw/origin-apple-notes/china  important  self.md
+  - raw/origin-apple-notes/china  important.md
+  - raw/origin-apple-notes/china  self.md
+  - raw/origin-apple-notes/politics  china.md
+  - raw/origin-apple-notes/insight china.md
+  - raw/origin-apple-notes/内地  关系 很重要，尤其是熟人之间.md
+  - raw/origin-apple-notes/中国人- 自卑感上的面子.md
+  - raw/origin-apple-notes/与国人交往：.md
+  - raw/origin-apple-notes/《中國：潰而不崩》.md
+  - raw/origin-apple-notes/过度政治化：  以国家的宏大叙事 挤压 个人 或 小圈子的 言论.md
+  - raw/origin-apple-notes/中国政商关系：  籍贯.md
+  - raw/diary/self/2015-12-14-some-biases.md
+  - raw/diary/self/2017-11-07-upgrade-my-self.md
+  - raw/diary/2014-12-05-country-driving.md
+  - raw/diary/2014-12-14-river-town.md
+  - raw/diary/2018-09-09-wanli-15-years.md
+  - raw/diary/philosophy/2016-03-12-chinese-politics.md

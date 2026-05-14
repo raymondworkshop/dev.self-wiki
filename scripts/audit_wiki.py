@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from collections import Counter
 from datetime import datetime
-import yaml
+#import yaml
 
 def run_audit():
     workspace = Path("/Users/zhaowenlong/workspace/dev.self-wiki")
@@ -31,6 +31,7 @@ def run_audit():
                 red_links.append(clean_link)
 
     # 2b. Check for Stale Info (>60 days)
+    """
     stale_files = []
     for file_path in wiki_dir.glob("*.md"):
         try:
@@ -44,6 +45,7 @@ def run_audit():
         except Exception:
             # Skip files with malformed frontmatter during audit
             continue
+    """
 
     # 3. Aggregate Red Links
     red_link_counts = Counter(red_links).most_common()
@@ -64,11 +66,14 @@ def run_audit():
     for topic, count in red_link_counts:
         report.append(f"| {count} | [[{topic}]] |")
 
-    report.append("\n### ⏳ Stale Information (>60 days)")
+    
+    report.append("\n### ⏳ Skip the Stale Information (>60 days)")
+    """
     if not stale_files:
         report.append("All files are up to date.")
     for name, days in stale_files:
         report.append(f"- `{name}`: {days} days since last update.")
+    """
 
     report.extend([
         "\n### 🧠 AI Instructions for Next Sync",

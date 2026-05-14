@@ -14,6 +14,8 @@ sync:
 audit:
 	python3 scripts/audit_wiki.py
 
+report:
+
 push:
 	git add .
 	git commit -m "self-wiki update: $$(date +'%Y-%m-%d')"

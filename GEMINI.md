@@ -36,23 +36,7 @@ Used for self-awareness, emotional processing, and personal growth. It serves as
 - **Description**: Checks for red links, stale content, and cognitive shifts.
 - **Implementation**: `make audit`
 
-## Commands
-- **Sync Wiki**: When the prompt "update wiki" is received, the AI must:
-    1. Scan the `raw/` directory for any new or modified files.
-    2. Process the content of these files into individual topic pages in `wiki/` following the [[Wiki Standards]], ensuring all mandatory metadata is generated.
-    3. Update `wiki/INDEX.md` alphabetically to reflect all current topics.
-    4. Provide an Executive Summary of the updates performed.
-
-- **Audit Wiki**: When the prompt "audit wiki" is received, the AI must:
-    1. Execute the automated script via `make audit` (if environment allows) or simulate its logic.
-    2. Read the existing `wiki/audit.md` to identify high-priority "Red Links".
-    3. Suggest 3 specific actions to resolve the most frequent Red Links.
-    4. Identify "Cognitive Shifts": specific instances where new data in `raw/` contradicts existing summaries in `wiki/`.
-    5. List claims not backed by a source in `raw/`
-    7. Flag contradictions between articles
-    8. Identify stale information (>60 days without update)
-
-    
+### report on [topic] 
 - **Report**: When the prompt "report on [topic]" is received, the AI must:
     1. Retrieve the relevant topic page from `wiki/`.
     2. Summarize the key insights and findings related to the topic.

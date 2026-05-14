@@ -1,8 +1,10 @@
 ---
-last_updated: 2026-05-09
+last_updated: 2026-05-14T11:10:00Z
 sources:
   - raw/diary/2026-04-07-notes-on-stoicism.md
   - raw/diary/learning/2022-03-11-how-to-improve-judgment-skills.md
+  - raw/origin-apple-notes/正确的路往往也是最 困难的路， 这一点对个人是真理， 对政权也是真理。.md
+  - raw/origin-apple-notes/幸福的生活 - 爱，学习， 服务以及创造.md
 tags:
   - philosophy
   - stoicism
@@ -19,6 +21,10 @@ Stoicism's most fundamental teaching is distinguishing between things we can con
 - **Can control**: Our opinions, goals, values, and our own actions.
 - **Cannot control**: External events, other people's opinions, the past, and outcomes of our actions.
 *Strategy*: Focus exclusively on what is within our control to avoid frustration and maintain [[Self]]-governance.
+
+#### The Hard Path (The Truth of Difficulty)
+- **The Right Path is often the Difficult Path**: There is a profound truth that the correct route is frequently the most challenging one. This applies both to individuals and to larger systems (regimes). Choosing the hard path is a test of virtue and long-term vision.
+- **幸福的生活 (The Good Life)**: A flourishing life is built on four pillars: Love (爱), Learning (学习), Service (服务), and Creation (创造).
 
 #### Acceptance of Responsibility and Perseverance
 - **Ownership of Action**: A core principle of existence is the acceptance of responsibility for one's own path. 
@@ -57,3 +63,6 @@ Related Topics:
 - [[Antifragile]]
 - [[Relationships]]
 - [[Learning]]
+
+## Evolution
+- 2026-05-14: Added "The Hard Path" and the "Four Pillars of the Good Life" based on recent reflections.

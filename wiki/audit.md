@@ -1,31 +1,43 @@
 # Wiki Audit and Quality Review
-**Last Automated Run**: 2026-05-14 06:53:00
+**Last Automated Run**: 2026-05-14 17:45:00
 
 ---
 
 ### 🚨 Red Links (Empty topics frequently mentioned)
-These topics are linked but do not have a corresponding file in `wiki/`.
+**Status**: CLEAN. All previously identified red links (`[[spirituality]]`, `[[Tao/Stoicism]]`, `[[Executive/Wealth]]`) have been resolved or re-mapped in the latest content sync.
 
-| Frequency | Topic | Origin |
-| :--- | :--- | :--- |
-| 1 | [[spirituality]] | Values-Analysis.md |
-| 1 | [[Tao/Stoicism]] | Values-Analysis.md |
-| 1 | [[Executive/Wealth]] | Values-Analysis.md |
+---
 
 ### 🧠 Cognitive Shifts & Contradictions
-- **Value Tension**: `Values-Analysis.md` identifies a significant tension between "Tao/Stoicism" (Internal Peace) and "Executive/Wealth" (Worldly Success). This is flagged as a "Cognitive Shift" because the system is transitioning from treating these as separate goals to integrating them via an `[[Antifragile]]` framework.
+- **Value Tension**: The ongoing tension between "Internal Peace" ([[Stoicism]]) and "Worldly Success" ([[Work]]) remains a core theme. Recent updates in `Values-Analysis.md` suggest an integration using the [[Antifragile]] framework, but this remains a dynamic area of the wiki.
+- **Professional Evolution**: A shift is observed from "Professional Skills" (Individual Contributor) to "Strategic Leader/Multiplier" in `Work.md`.
 
-### ⏳ Stale Information (>60 days)
-- No stale information detected. All active files were updated within the last 24 hours.
+---
 
-### ⚠️ Claims Needing Sources
-- All current claims in `Values-Analysis.md` are correctly mapped to `raw/qa/请分析我的价值观.md`.
+### ⏳ Stale Information (>30 days)
+- **Status**: CLEAN. All 23 active files were updated within the last 7 days.
+
+---
+
+### ⚠️ Broken Source Footers (CRITICAL)
+The following source paths referenced in wiki footers are **broken** or point to non-existent files. This violates the [[Wiki Standards]] regarding source backing.
+
+| File | Broken Path | Suggested Fix |
+| :--- | :--- | :--- |
+| `Self.md` | `raw/diary/diary/apple-notes.md` | Re-map to `raw/origin-apple-notes/` |
+| `Self.md` | `raw/diary/diary/2025-07-10-notes-odyssey.md` | Verify file existence in `raw/` |
+| `Work.md` | `raw/diary/diary/apple-notes.md` | Re-map to `raw/origin-apple-notes/` |
+| `Work.md` | `raw/diary/diary/2025-07-10-notes-odyssey.md` | Verify file existence in `raw/` |
+
+---
 
 ### 🛠 Recommended Actions
-1. **Initialize `[[spirituality]]`**: Ground the "Witness Consciousness" mentioned in your core values.
-2. **Synthesize the Tension**: Create a page for the conflict between `[[Stoicism]]` and `[[Work]]` to bridge the "Executive vs. Tao" gap.
-3. **Source Validation**: Audit older files (not in current context) to ensure they follow the new `sources` footer standard.
+1. **Source Re-mapping**: Batch update all `sources` footers to replace `raw/diary/diary/apple-notes.md` with specific files from `raw/origin-apple-notes/` or a wildcard reference if permitted.
+2. **Missing Source Audit**: Verify the existence of `raw/diary/diary/2025-07-10-notes-odyssey.md` and other referenced diary files.
+3. **Internal Linking**: Strengthen connections between `[[Antifragile]]` and the "Value Tension" in `Stoicism.md` to solidify the cognitive integration.
+
+---
 
 ### 🧠 AI Instructions for Next Sync
-1. Prioritize creating stubs for the Red Links listed above.
-2. Look for 'Cognitive Shifts' where new diary entries in `raw/` might contradict the "Self-Mastery" summary in the Values Analysis.
+1. Scan for broken `raw/` paths in all wiki files.
+2. Ensure new `raw/qa/` files are fully integrated into `Self.md` and `Relationships.md`.

@@ -1,7 +1,7 @@
 ---
-last_updated: 2026-05-09
+last_updated: 2026-05-14T10:30:00Z
 title: Relationships
-description: Insights into the art of loving, healthy romantic connections, and effective communication between partners.
+description: Insights into the art of loving, healthy romantic connections, and the profile of an ideal partner based on core values.
 tags:
   - love
   - connection
@@ -27,6 +27,13 @@ Love is a profound commitment to shared growth, rooted in mutual independence, g
     - **Emotion Regulation**: Managing feelings in response to relationship events to maintain self-respect.
 - **Values and Character**: High-value traits in a partner include being reasonable (通情达理), independent, kind, and having consistent values (人生观, 职业观, 消费观). Avoid those who are manipulative, overly sensitive, or driven by vanity.
 
+### Ideal Partner Profile (The Socratic Mirror)
+Based on personal values and growth trajectory, the ideal partner is a "Stoic Ally" who shares the following traits:
+- **Mutual Independence**: She is a self-sufficient individual with her own career and interests, not looking for a "lifesaver" but a co-creator.
+- **High Emotional Intelligence (EQ)**: Capable of self-awareness, understanding triggers, and engaging in rational communication rather than passive-aggressive or purely emotional reactions.
+- **Growth Mindset**: Curious and eager to iterate on her "operating system" alongside her partner.
+- **Clarity and Honesty**: Expresses needs and boundaries directly, respecting facts over social scripts.
+
 ### Communication and Conflict Resolution
 - **Listening vs. Logic**: Understand that partners (often women) may prioritize emotional resonance over logical solutions. Listen for content, emotion, and the underlying feeling. Help the partner feel "heard and understood" (让对方感受被聆听和被明白) before offering advice.
 - **Precise Expression**: When complaining, avoid generalizations. Use the "XYZ" formula: "When you do X in situation Y, I feel Z." Speak from the first person (I-statements) to explain feelings rather than attacking character.
@@ -38,6 +45,9 @@ Love is a profound commitment to shared growth, rooted in mutual independence, g
 - **Energy Balance**: Step back if you find yourself giving more energy than you receive. 善良是出于真心的给予，而非讨好。
 - **Self-Wiki for Connection**: Use the concept of a "Socratic Mirror" to reflect on relationship dynamics and personal growth within the partnership.
 - **Active Decision to be Loyal**: Loyalty is not a passive state but a continuous choice rooted in the value of the connection.
+
+## Evolution
+- 2026-05-14: Integrated "Ideal Partner Profile" based on AI analysis of personal values and relationship history. Refined the definition of "Inner Center" and "Mutual Independence".
 
 sources:
   - raw/diary/self/2015-07-09-love.md
@@ -51,3 +61,4 @@ sources:
   - raw/diary/learning/2020-06-16-notes-on-loving.md
   - raw/diary/learning/2026-02-21-the-log-of-your-life.md
   - raw/diary/learning/2025-07-07-notes-illimitable-men.md
+  - raw/qa/分析下适合我的女生特质.md
