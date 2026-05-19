@@ -1,3 +1,0 @@
-#god
-
-God as father

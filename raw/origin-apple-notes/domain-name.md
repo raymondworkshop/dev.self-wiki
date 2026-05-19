@@ -1,5 +1,0 @@
-#domain-name
-
-alphabet
-
-viva

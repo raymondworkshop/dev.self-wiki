@@ -11,14 +11,10 @@
             "id": "72afb2cd0c946e0b",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "raw/origin-apple-notes/个人复杂技能.md",
-                "mode": "preview",
-                "source": true
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "个人复杂技能"
+              "title": "New tab"
             }
           }
         ]
@@ -185,6 +181,12 @@
   },
   "active": "72afb2cd0c946e0b",
   "lastOpenFiles": [
+    "outputs/我看重的原则或道德.md",
+    "outputs/分析我的核心价值观和性格底色-2026-05-19.md",
+    "outputs/我的核心价值观和性格底色.md",
+    "outputs/我的核心价值观和性格底色",
+    "我的核心价值观和性格底色",
+    "raw/origin-apple-notes/个人复杂技能.md",
     "wiki/audit.md",
     "wiki/INDEX.md",
     "audit.md",
@@ -207,10 +209,6 @@
     "wiki/updating/教育与成功之道.md",
     "wiki/updating/批判性思维与研究方法.md",
     "wiki/updating/學習與表達的難度.md",
-    "wiki/updating/成功之道.md",
-    "wiki/updating/恋爱標準.md",
-    "wiki/updating/待办事项与心境观察.md",
-    "wiki/updating/學習與積累 (Learning and Accumulation).md",
     "wiki/updating",
     "wiki/business",
     "wiki/others",
@@ -219,8 +217,6 @@
     "scripts/sync_work_hub.py",
     "Untitled.canvas",
     "scripts/standardize_tags.py",
-    "relationship",
-    "philosophy",
-    "self"
+    "relationship"
   ]
 }

@@ -14,8 +14,8 @@ def load_env(env_path):
                 os.environ[key.strip()] = value.strip().strip('"').strip("'")
 
 
-workspace = Path("/Users/zhaowenlong/workspace/dev.self-wiki")
-load_env(workspace / ".env")
+# Project root is one level up
+load_env(Path(__file__).parent.parent / ".env")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

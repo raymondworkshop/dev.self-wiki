@@ -6,6 +6,23 @@ from datetime import datetime
 from pathlib import Path
 
 
+def load_env(env_path):
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if line.strip() and not line.startswith("#"):
+                key, value = line.split("=", 1)
+                os.environ[key.strip()] = value.strip().strip('"').strip("'")
+
+
+# Load .env
+load_env(Path(__file__).parent.parent / ".env")
+workspace = Path(
+    os.environ.get(
+        "WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki"
+    )
+)
+
+
 def get_yaml_field(content, field):
     match = re.search(rf"^{field}:\s*(.*)", content, re.MULTILINE)
     if match:
@@ -14,13 +31,16 @@ def get_yaml_field(content, field):
 
 
 def run_audit():
-    workspace = Path("/Users/zhaowenlong/workspace/dev.self-wiki")
-    wiki_dir = workspace / "wiki"
-    audit_file = workspace / "wiki/audit.md"
+    wiki_dir = workspace  # root of self-wiki
+    audit_file = workspace / "audit.md"
 
     # 1. Get all existing topics
-    # Scan all .md files in all subdirectories
-    existing_topics = {f.stem for f in wiki_dir.rglob("*.md")}
+    # Scan all .md files in all subdirectories, excluding top-level hubs/index/audit
+    existing_topics = {
+        f.stem
+        for f in wiki_dir.rglob("*.md")
+        if f.name not in ["audit.md", "INDEX.md"] and not f.name.endswith("-Hub.md")
+    }
 
     red_links = []
     stale_files = []

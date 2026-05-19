@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-
 class SelfWikiArchitect:
     """
     Orchestrates the conversion of raw thoughts into a structured

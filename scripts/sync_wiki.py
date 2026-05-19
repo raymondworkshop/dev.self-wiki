@@ -7,11 +7,9 @@ from pathlib import Path
 
 import requests
 
+
 # Configure logging
-workspace = Path("/Users/zhaowenlong/workspace/dev.self-wiki")
-
-
-# Simple .env loader
+# Load .env first from project root to get WORKSPACE_PATH
 def load_env(env_path):
     if env_path.exists():
         for line in env_path.read_text().splitlines():
@@ -20,7 +18,13 @@ def load_env(env_path):
                 os.environ[key.strip()] = value.strip().strip('"').strip("'")
 
 
-load_env(workspace / ".env")
+# Assuming scripts are in /scripts/, so project root is one level up
+load_env(Path(__file__).parent.parent / ".env")
+workspace = Path(
+    os.environ.get(
+        "WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki"
+    )
+)
 
 log_dir = workspace / "log"
 log_dir.mkdir(parents=True, exist_ok=True)
@@ -70,9 +74,9 @@ class SyncTracker:
 
 def sync_wiki():
     raw_dir = workspace / "raw"
-    wiki_dir = workspace / "wiki"
-    config_file = workspace / "GEMINI.md"
-    cache_file = workspace / ".sync_cache.json"
+    wiki_dir = workspace  # root of self-wiki
+    config_file = workspace.parent / "GEMINI.md"
+    cache_file = workspace / "log" / ".sync_cache.json"
 
     with open(config_file, "r") as f:
         instructions = f.read()
@@ -84,7 +88,7 @@ def sync_wiki():
         for file in files:
             if file.endswith(".md"):
                 path = Path(root) / file
-                rel_path = path.relative_to(workspace)
+                rel_path = path.relative_to(workspace.parent)
                 if tracker.is_changed(rel_path, path):
                     changed_files.append((rel_path, path))
 
@@ -108,14 +112,18 @@ def sync_wiki():
 def call_llm_for_batch(raw_content, instructions, workspace, wiki_dir):
     # Context-aware logic
     target_wiki_pages = set()
-    for wiki_file in wiki_dir.glob("*.md"):
+    for wiki_file in wiki_dir.rglob("*.md"):
         if wiki_file.stem.lower() in raw_content.lower():
             target_wiki_pages.add(wiki_file)
 
     existing_context = ""
     for wiki_path in target_wiki_pages:
-        if wiki_path.exists() and wiki_path.name not in ["INDEX.md", "audit.md"]:
-            existing_context += f"\n--- EXISTING WIKI: wiki/{wiki_path.name} ---\n"
+        if (
+            wiki_path.exists()
+            and wiki_path.name not in ["INDEX.md", "audit.md"]
+            and not wiki_path.name.endswith("-Hub.md")
+        ):
+            existing_context += f"\n--- EXISTING WIKI: {wiki_path.name} ---\n"
             existing_context += wiki_path.read_text(encoding="utf-8")
 
     prompt = f"""
@@ -135,7 +143,7 @@ ACTUAL DATA: {raw_content}
         model = os.environ.get("LLM_MODEL", "deepseek-chat")
         headers = {"Authorization": f"Bearer {api_key}"}
     else:
-        url = os.environ.get("LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
+        url = os.environ.get("LLM_URL", "http://100.90.225.26:8080/v1/chat/completions")
         model = os.environ.get("LLM_MODEL", "mlx-community/gemma-4-e4b-it-4bit")
         headers = {}
 
@@ -205,7 +213,12 @@ def process_batch(batch, instructions, workspace, wiki_dir):
 def update_index(wiki_dir):
     index_path = wiki_dir / "INDEX.md"
     topics = sorted(
-        [f.stem for f in wiki_dir.glob("*.md") if f.name != "INDEX.md"], key=str.lower
+        [
+            f.stem
+            for f in wiki_dir.rglob("*.md")
+            if f.name not in ["INDEX.md", "audit.md"] and not f.name.endswith("-Hub.md")
+        ],
+        key=str.lower,
     )
     with open(index_path, "w", encoding="utf-8") as f:
         f.write("# Wiki Index\n\n")

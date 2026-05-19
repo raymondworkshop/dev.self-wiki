@@ -1,5 +1,23 @@
 import os
 import re
+from pathlib import Path
+
+
+def load_env(env_path):
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if line.strip() and not line.startswith("#"):
+                key, value = line.split("=", 1)
+                os.environ[key.strip()] = value.strip().strip('"').strip("'")
+
+
+# Load .env
+load_env(Path(__file__).parent.parent / ".env")
+WORKSPACE_PATH = Path(
+    os.environ.get(
+        "WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki"
+    )
+)
 
 
 def get_file_description(file_path):
@@ -15,7 +33,7 @@ def get_file_description(file_path):
 
 
 def sync_hubs():
-    wiki_dir = "wiki"
+    wiki_dir = WORKSPACE_PATH
     hub_map = {
         "Business-Hub.md": "business",
         "Communication-Hub.md": "communication",
@@ -26,13 +44,13 @@ def sync_hubs():
     }
 
     for hub_file, sub_dir in hub_map.items():
-        hub_path = os.path.join(wiki_dir, hub_file)
-        target_dir = os.path.join(wiki_dir, sub_dir)
+        hub_path = wiki_dir / hub_file
+        target_dir = wiki_dir / sub_dir
 
-        if not os.path.exists(hub_path) or not os.path.exists(target_dir):
+        if not hub_path.exists() or not target_dir.exists():
             continue
 
-        all_files = [f for f in os.listdir(target_dir) if f.endswith(".md")]
+        all_files = [f.name for f in target_dir.glob("*.md")]
         all_files.sort()
 
         with open(hub_path, "r", encoding="utf-8") as f:
@@ -46,7 +64,7 @@ def sync_hubs():
         for file in all_files:
             name = os.path.splitext(file)[0]
             if name not in existing_links:
-                desc = get_file_description(os.path.join(target_dir, file))
+                desc = get_file_description(target_dir / file)
                 summary = f": {desc}" if desc else ""
                 missing_files.append(f"- [[{name}]]{summary}\n")
 

@@ -1,1 +1,0 @@
-People, Ideas, and Things - in that order.

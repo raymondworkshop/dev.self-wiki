@@ -1,5 +1,7 @@
 # Self Wiki Base Automation
 
+PYTHON = .selfwikienv/bin/python3
+
 .PHONY: help sync audit push
 
 help:
@@ -11,20 +13,23 @@ help:
 	@echo "  make push      - Commit and push all changes"
 
 sync:
-	python3 scripts/sync_wiki.py
+	$(PYTHON) scripts/sync_wiki.py
 
 audit:
-	python3 scripts/audit_wiki.py
+	$(PYTHON) scripts/audit_wiki.py
 
 
 backliner:
-	python3 scripts/backliner.py
+	$(PYTHON) scripts/backliner.py
+
+hub: # update all hub pages
+	$(PYTHON) scripts/sync_all_hubs.py
 
 test:
-	python3 scripts/test_wiki_compliance.py
+	$(PYTHON) scripts/test_wiki_compliance.py
 
 query:
-	@read -p "Query your Second Brain: " q; python3 scripts/query_wiki.py "$$q"
+	@read -p "Query your Second Brain: " q; $(PYTHON) scripts/query_wiki.py "$$q"
 
 push:
 	git add .

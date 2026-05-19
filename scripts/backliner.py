@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 from pathlib import Path
 
@@ -6,10 +7,30 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
+def load_env(env_path):
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if line.strip() and not line.startswith("#"):
+                key, value = line.split("=", 1)
+                os.environ[key.strip()] = value.strip().strip('"').strip("'")
+
+
+# Load .env
+load_env(Path(__file__).parent.parent / ".env")
+WORKSPACE_PATH = Path(
+    os.environ.get(
+        "WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki"
+    )
+)
+
+
 def update_backlinks():
-    workspace = Path(__file__).parent.parent.resolve()
-    wiki_dir = workspace / "wiki"
-    wiki_files = list(wiki_dir.rglob("*.md"))
+    wiki_dir = WORKSPACE_PATH  # root of self-wiki
+    wiki_files = [
+        f
+        for f in wiki_dir.rglob("*.md")
+        if f.name not in ["INDEX.md", "audit.md"] and not f.name.endswith("-Hub.md")
+    ]
 
     # Map topics to their file paths
     topic_map = {f.stem: f"[[{f.stem}]]" for f in wiki_files}
@@ -20,9 +41,6 @@ def update_backlinks():
 
     # 1. Scan files to build backlink map
     for f in wiki_files:
-        if f.name in ["INDEX.md", "audit.md"]:
-            continue
-
         content = f.read_text(encoding="utf-8")
 
         # Detect relationships based on section headers or keywords
@@ -45,9 +63,6 @@ def update_backlinks():
 
     # 2. Update files with Backlinks section
     for f in wiki_files:
-        if f.name in ["INDEX.md", "audit.md"]:
-            continue
-
         content = f.read_text(encoding="utf-8")
 
         backlink_section = "\n## Backlinks\n<!-- BEGIN BACKLINKS -->\n"
