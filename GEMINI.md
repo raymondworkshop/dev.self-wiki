@@ -33,24 +33,34 @@ Used for self-awareness, emotional processing, and personal growth. It serves as
 - **Implementation**: `make sync`
 
 ### `audit-wiki`
-- **Description**: Checks for red links, stale content, and cognitive shifts.
+- **Description**: Checks for red links, stale content, contradictions, and cognitive shifts.
 - **Implementation**: `make audit`
 
-### report on [topic] 
-- **Report**: When the prompt "report on [topic]" is received, the AI must:
-    1. Retrieve the relevant topic page from `wiki/`.
-    2. Summarize the key insights and findings related to the topic.
-    3. Format the output as specified in the Output Format section of this manual.
-    4. Include references to the original sources from `raw/` that informed the topic page.
-    5. Save the generated report in `outputs/` with a timestamped filename for future reference.
-
+### `query-wiki`
+- **Description**: Summarize the key insights and findings related to the query based on `wiki/`, including references to the original sources from `raw/`
+- **Implementation**: `make query` 
 
 ## Wiki Standards
 - One topic per file in wiki/ 
 - Every file must include a YAML front matter block containing `last_updated` (ISO 8601 format), `title`, `description`, and `tags`
 - Every file starts with a 2-3 sentence summary, and ends with `sources` (list of file paths from `raw/`) 
 - Every file must have an `## Evolution` section tracking changes in perspective over time.
-- Related topics linked using [[topic-name]] format
+- **Traceability Requirement**: Every abstract idea, principle, or conceptual model must explicitly link back to its specific source raw files. If a wiki page synthesizes multiple raw notes, every major conceptual point must be able to trace its origin to at least one entry in the `sources` list.
+- **Backliner System**: Every file must contain a `## Backlinks` section, maintained by the system, using the format:
+  ```markdown
+  ## Backlinks
+  <!-- BEGIN BACKLINKS -->
+  - **Evolved from**: [[Topic]]
+  - **Mentioned in**: [[Topic]]
+  - **Contradicts**: [[Topic]]
+  <!-- END BACKLINKS -->
+  ```
+- **Provenance Tracking**: When synthesizing a principle, use a blockquote or annotation to link to the specific file: `(Source: [[file-path]])`.
+- **Taxonomy Standards**: Every note must include one primary tag indicating its functional nature:
+  - `#type/source`: Unprocessed raw notes.
+  - `#type/synthesis`: Notes that integrate multiple sources.
+  - `#type/principle`: Core mental models or life philosophies.
+  - `#type/evolution`: Records of cognitive shifts.
 - INDEX.md maintained alphabetically, updated with every change
 - When new raw sources arrive, update all relevant wiki articles
 - Never translate the source language. Match the output language to the input language perfectly

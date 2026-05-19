@@ -13,12 +13,22 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "GEMINI.md",
+                "file": "wiki/self/AI作为镜子.md",
                 "mode": "source",
-                "source": false
+                "source": true,
+                "backlinks": true,
+                "backlinkOpts": {
+                  "collapseAll": false,
+                  "extraContext": false,
+                  "sortOrder": "alphabetical",
+                  "showSearch": false,
+                  "searchQuery": "",
+                  "backlinkCollapsed": false,
+                  "unlinkedCollapsed": true
+                }
               },
               "icon": "lucide-file",
-              "title": "GEMINI"
+              "title": "AI作为镜子"
             }
           }
         ]
@@ -78,7 +88,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 444.5
   },
   "right": {
     "id": "3cf38b4468f56122",
@@ -183,18 +193,37 @@
       "bases:Create new base": false
     }
   },
-  "active": "cda25da34a81759a",
+  "active": "eddb5b6b9031197b",
   "lastOpenFiles": [
-    "notes.md",
-    "GEMINI.md",
-    "raw/qa/請分析下我的價值觀.md",
-    "raw/qa/請分析下我的性格，優勢和劣勢.md",
-    "wiki/Bookshelf.md",
+    "wiki/self/career_and_education.md",
+    "wiki/self/cognitive_frameworks.md",
+    "wiki/self/生活哲学与追求.md",
+    "wiki/self/真诚与文明的张力.md",
+    "wiki/self/痴迷于控制.md",
+    "wiki/self/軟實力與表達 (Soft Skills and Expression).md",
+    "wiki/self/认知模式与文明批判.md",
+    "wiki/self/认知控制与自信.md",
+    "wiki/self/行动力与拖延的克服.md",
+    "wiki/Self-Hub.md",
+    "wiki/Misc-Hub.md",
+    "wiki/Growth-Hub.md",
+    "wiki/work/Self_Cognition_and_Mastery.md",
+    "wiki/self/AI作为镜子.md",
+    "raw/diary/2026-02-12-antifragile.md",
+    "wiki/self/Antifragile.md",
+    "wiki/communication/Small Talk 与社交用语.md",
+    "wiki/work/Bookshelf.md",
     "wiki/INDEX.md",
-    "wiki/Technology.md",
-    "wiki/Social-Skills.md",
-    "wiki/Learning.md",
-    "wiki/Antifragile.md",
-    "wiki/China.md"
+    "wiki/relationship/人际关系哲学.md",
+    "wiki/人际关系-Hub.md",
+    "relationship/人际关系-Hub.md",
+    "relationship",
+    "philosophy/Philosophy-Hub.md",
+    "philosophy",
+    "self/Self-Hub.md",
+    "self",
+    "wiki/audit.md",
+    "GEMINI.md",
+    "Untitled.canvas"
   ]
 }

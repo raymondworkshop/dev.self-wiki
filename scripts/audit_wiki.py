@@ -1,64 +1,82 @@
 import os
 import re
-from pathlib import Path
+import subprocess
 from collections import Counter
 from datetime import datetime
-#import yaml
+from pathlib import Path
+
+import yaml
+
 
 def run_audit():
     workspace = Path("/Users/zhaowenlong/workspace/dev.self-wiki")
     wiki_dir = workspace / "wiki"
-    audit_file = wiki_dir / "audit.md"
-    
+    audit_file = workspace / "outputs/audit_wiki.md"
+
     # 1. Get all existing topics
     existing_topics = {f.stem for f in wiki_dir.glob("*.md")}
-    
+
     red_links = []
+    stale_files = []
     link_pattern = re.compile(r"\[\[(.*?)\]\]")
-    
-    # 2. Scan files for links
+
+    # 2. Scan files for links and staleness
     for file_path in wiki_dir.glob("*.md"):
         if file_path.name in ["audit.md", "INDEX.md"]:
             continue
-            
-        content = file_path.read_text(encoding='utf-8')
+
+        content = file_path.read_text(encoding="utf-8")
+
+        # Check links
         links = link_pattern.findall(content)
-        
         for link in links:
-            # Clean link name (e.g., handle [[topic|alias]])
-            clean_link = link.split('|')[0].strip()
+            clean_link = link.split("|")[0].strip()
             if clean_link not in existing_topics:
                 red_links.append(clean_link)
 
-    # 2b. Check for Stale Info (>60 days)
-    """
-    stale_files = []
-    for file_path in wiki_dir.glob("*.md"):
+        # Check staleness
         try:
-            content = file_path.read_text()
-            if "---" in content:
-                fm = list(yaml.safe_load_all(content))[0]
-                last_updated = datetime.fromisoformat(fm['last_updated'].replace('Z', '+00:00'))
-                days_diff = (datetime.now(last_updated.tzinfo) - last_updated).days
-                if days_diff > 60:
-                    stale_files.append((file_path.name, days_diff))
+            yaml_match = re.search(r"^---\n(.*?)\n---", content, re.DOTALL)
+            if yaml_match:
+                fm = yaml.safe_load(yaml_match.group(1))
+                if fm and "last_updated" in fm:
+                    last_updated = datetime.fromisoformat(
+                        str(fm["last_updated"]).replace("Z", "+00:00")
+                    )
+                    if last_updated.tzinfo is None:
+                        last_updated = last_updated.replace(
+                            tzinfo=datetime.now().astimezone().tzinfo
+                        )
+
+                    days_diff = (datetime.now(last_updated.tzinfo) - last_updated).days
+                    if days_diff > 60:
+                        stale_files.append((file_path.name, days_diff))
         except Exception:
-            # Skip files with malformed frontmatter during audit
             continue
-    """
 
     # 3. Aggregate Red Links
     red_link_counts = Counter(red_links).most_common()
 
-    # 4. Generate Audit Report
+    # 4. Perform Contradiction Audit via script
+    contradictions = ""
+    try:
+        result = subprocess.run(
+            ["python3", str(workspace / "scripts/audit_contradictions.py")],
+            capture_output=True,
+            text=True,
+        )
+        contradictions = result.stdout
+    except Exception as e:
+        contradictions = f"Could not perform contradiction audit: {e}"
+
+    # 5. Generate Audit Report
     report = [
         "# Wiki Audit and Quality Review",
         f"**Last Automated Run**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         "\n---",
         "\n### 🚨 Red Links (Empty topics frequently mentioned)",
-        "These topics are linked but do not have a corresponding file in `wiki/`. High frequency suggests a knowledge gap that needs filling.",
         "\n| Frequency | Topic |",
-        "| :--- | :--- |"
+        "| :--- | :--- |",
     ]
 
     if not red_link_counts:
@@ -66,26 +84,31 @@ def run_audit():
     for topic, count in red_link_counts:
         report.append(f"| {count} | [[{topic}]] |")
 
-    
-    report.append("\n### ⏳ Skip the Stale Information (>60 days)")
-    """
+    report.append("\n### ⏳ Stale Information (>60 days)")
     if not stale_files:
         report.append("All files are up to date.")
-    for name, days in stale_files:
-        report.append(f"- `{name}`: {days} days since last update.")
-    """
+    else:
+        for name, days in stale_files:
+            report.append(f"- `{name}`: {days} days since last update.")
 
-    report.extend([
-        "\n### 🧠 AI Instructions for Next Sync",
-        "1. Prioritize creating stubs for the high-frequency Red Links listed above.",
-        "2. Analyze `raw/` for content matching these topics.",
-        "3. Look for 'Cognitive Shifts' where new data contradicts the current Wiki state."
-    ])
+    report.append("\n### ⚖️ Cognitive Contradictions & Shifts")
+    report.append(
+        contradictions if contradictions.strip() else "No contradictions found."
+    )
 
-    # 5. Write to audit.md
-    with open(audit_file, "w", encoding='utf-8') as f:
+    report.extend(
+        [
+            "\n### 🧠 AI Instructions for Next Sync",
+            "1. Prioritize creating stubs for the high-frequency Red Links listed above.",
+            "2. Analyze `raw/` for content matching these topics.",
+            "3. Review identified 'Cognitive Shifts' and update corresponding notes with `#contradiction` tags.",
+        ]
+    )
+
+    with open(audit_file, "w", encoding="utf-8") as f:
         f.write("\n".join(report))
     print(f"Audit completed. Report updated at {audit_file}")
+
 
 if __name__ == "__main__":
     run_audit()

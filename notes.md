@@ -2,9 +2,18 @@
 #### self-wiki  
 
 ##### tasks  
-* add skills like sync-wiki, audit-wiki function
-    >  /sync-wiki, /audit-wiki skills in gemini cli  
-    > "report on [topic]" command in gemini cli
+- sync-wiki
+  *  /sync-wiki, /audit-wiki skills in gemini cli  
+    - todo  /query-wiki 
+
+  * gemini monitor, gemma4 works in zed
+    -  sync_wiki.py is called and the log is `outputs/sync_execution.log`
+    
+- backliner 
+   - backliner.py
+   - **Evolved from**: Your path of intellectual progress.
+   - **Mentioned in**: Broad associations and context.
+   - **Contradicts**: Points of cognitive friction.
 
 ##### the architecture
 * Push intelligence up into skills, and push execution down into deterministic tooling. keep the harness thin.  

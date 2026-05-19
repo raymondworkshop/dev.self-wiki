@@ -1,11 +1,13 @@
 import os
 from pathlib import Path
 
+
 class SelfWikiArchitect:
     """
-    Orchestrates the conversion of raw thoughts into a structured 
+    Orchestrates the conversion of raw thoughts into a structured
     'Self-Wiki' through incremental synthesis.
     """
+
     def __init__(self, root_dir):
         self.raw_path = Path(root_dir) / "raw"
         self.wiki_path = Path(root_dir) / "wiki"
@@ -29,6 +31,7 @@ class SelfWikiArchitect:
         and generates a report in /outputs/audit.md.
         """
         pass
+
 
 # Example Structure for a Wiki Page ([[Growth-Trajectory.md]])
 # ---

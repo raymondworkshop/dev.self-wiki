@@ -1,106 +1,217 @@
+import json
+import logging
 import os
 import re
-import requests
-import logging
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-# Configure logging for observability
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+import requests
+
+# Configure logging
+workspace = Path("/Users/zhaowenlong/workspace/dev.self-wiki")
+
+
+# Simple .env loader
+def load_env(env_path):
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if line.strip() and not line.startswith("#"):
+                key, value = line.split("=", 1)
+                os.environ[key.strip()] = value.strip().strip('"').strip("'")
+
+
+load_env(workspace / ".env")
+
+log_dir = workspace / "log"
+log_dir.mkdir(parents=True, exist_ok=True)
+execution_log = log_dir / "sync_execution.log"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s: %(message)s",
+    handlers=[logging.FileHandler(execution_log), logging.StreamHandler()],
+)
 logger = logging.getLogger(__name__)
 
+
+class SyncTracker:
+    def __init__(self, cache_path):
+        self.cache_path = Path(cache_path)
+        self.cache = self._load_cache()
+
+    def _load_cache(self):
+        if self.cache_path.exists():
+            try:
+                return json.loads(self.cache_path.read_text())
+            except Exception as e:
+                logger.warning(f"Failed to load cache: {e}")
+        return {}
+
+    def save_cache(self):
+        self.cache_path.write_text(json.dumps(self.cache, indent=2))
+
+    def get_file_hash(self, path):
+        import hashlib
+
+        hasher = hashlib.md5()
+        with open(path, "rb") as f:
+            buf = f.read()
+            hasher.update(buf)
+        return hasher.hexdigest()
+
+    def is_changed(self, relative_path, absolute_path):
+        current_hash = self.get_file_hash(absolute_path)
+        old_hash = self.cache.get(str(relative_path))
+        if current_hash != old_hash or old_hash == "FORCE_RESYNC":
+            self.cache[str(relative_path)] = current_hash
+            return True
+        return False
+
+
 def sync_wiki():
-    # Resolve workspace relative to script location for portability
-    workspace = Path(__file__).parent.parent.resolve()
     raw_dir = workspace / "raw"
     wiki_dir = workspace / "wiki"
     config_file = workspace / "GEMINI.md"
-    
-    if not config_file.exists():
-        logger.error(f"Configuration file {config_file} not found.")
-        return
-    
-    # 1. Prepare the Context
+    cache_file = workspace / ".sync_cache.json"
+
     with open(config_file, "r") as f:
         instructions = f.read()
-    
-    # Gather recent raw files (last week or all)
-    # For a full sync, we provide the directory structure
-    # pathlib.Path.rglob() follows symbolic links by default,
-    # so files within a softlinked directory (e.g., 'raw/_posts' pointing to another directory)
-    # will be included in the processing.
-    raw_content = ""
-    for path in raw_dir.rglob("*.md"):
-        try:
-            raw_content += f"\n--- FILE: {path.relative_to(workspace)} ---\n"
-            raw_content += path.read_text(encoding='utf-8')
-        except Exception as e:
-            logger.warning(f"Could not read {path}: {e}")
 
-    # 2. Construct the Prompt
+    tracker = SyncTracker(cache_file)
+    changed_files = []
+
+    for root, dirs, files in os.walk(raw_dir):
+        for file in files:
+            if file.endswith(".md"):
+                path = Path(root) / file
+                rel_path = path.relative_to(workspace)
+                if tracker.is_changed(rel_path, path):
+                    changed_files.append((rel_path, path))
+
+    if not changed_files:
+        logger.info("No new or modified files to sync.")
+        return
+
+    logger.info(f"Found {len(changed_files)} changed files. Adaptive processing...")
+
+    # Process files
+    for rel, abs_path in changed_files:
+        logger.info(f"Syncing: {rel}")
+        if process_batch([(rel, abs_path)], instructions, workspace, wiki_dir):
+            tracker.save_cache()
+        else:
+            logger.error(f"Failed to sync {rel}. Cache not updated.")
+
+    update_index(wiki_dir)
+
+
+def call_llm_for_batch(raw_content, instructions, workspace, wiki_dir):
+    # Context-aware logic
+    target_wiki_pages = set()
+    for wiki_file in wiki_dir.glob("*.md"):
+        if wiki_file.stem.lower() in raw_content.lower():
+            target_wiki_pages.add(wiki_file)
+
+    existing_context = ""
+    for wiki_path in target_wiki_pages:
+        if wiki_path.exists() and wiki_path.name not in ["INDEX.md", "audit.md"]:
+            existing_context += f"\n--- EXISTING WIKI: wiki/{wiki_path.name} ---\n"
+            existing_context += wiki_path.read_text(encoding="utf-8")
+
     prompt = f"""
-    {instructions}
-    
-    ACTUAL DATA FROM RAW/:
-    {raw_content}
-    
-    COMMAND: update wiki/ based on raw/ and GEMINI.md
-    
-    Please output the content for each wiki page that needs to be created or updated. 
-    Format your response as a series of code blocks, each starting with the relative path of the file.
-    """
+You are the "Second Brain" for a developer/thinker.
+Synthesize notes into the wiki.
+{instructions}
+EXISTING WIKI: {existing_context}
+ACTUAL DATA: {raw_content}
+"""
 
-    # 3. Call the LLM (Using Ollama endpoint from AGENTS.md)
-    # Note: Replace with Gemini API if preferred
-    ollama_url = os.environ.get("OLLAMA_URL", "http://100.90.225.26:11434/api/generate")
+    # Use environment variables for LLM configuration
+    llm_provider = os.environ.get("LLM_PROVIDER", "mlx").lower()
+    api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+
+    if llm_provider == "deepseek":
+        url = "https://api.deepseek.com/v1/chat/completions"
+        model = os.environ.get("LLM_MODEL", "deepseek-chat")
+        headers = {"Authorization": f"Bearer {api_key}"}
+    else:
+        url = os.environ.get("LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
+        model = os.environ.get("LLM_MODEL", "mlx-community/gemma-4-e4b-it-4bit")
+        headers = {}
+
     payload = {
-        "model": os.environ.get("OLLAMA_MODEL", "qwen2.5:7b-instruct-q5_K_M"),
-        "prompt": prompt,
-        "stream": False
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.1,
+        "stream": False,
     }
 
-    logger.info("Requesting wiki update from LLM...")
-    response = requests.post(ollama_url, json=payload)
-    
-    if response.status_code == 200:
-        raw_result = response.json().get("response", "")
-        (workspace / "outputs/sync_log.md").write_text(raw_result)
-        
-        # 4. Parse 'result' and write files
-        # Expected format: 
-        # wiki/topic.md
-        # ```markdown
-        # content
-        # ```
-        file_pattern = re.compile(r"(wiki/[a-zA-Z0-9_\-/]+\.md)\s+```(?:markdown)?\n(.*?)\n```", re.DOTALL)
-        matches = file_pattern.findall(raw_result)
-        
-        for file_path_str, content in matches:
-            target_path = workspace / file_path_str
-            target_path.parent.mkdir(parents=True, exist_ok=True)
-            target_path.write_text(content.strip(), encoding='utf-8')
-            logger.info(f"Updated: {file_path_str}")
+    try:
+        logger.info(f"Using {llm_provider.upper()} for batch processing...")
+        response = requests.post(url, json=payload, headers=headers, timeout=300)
+        if response.status_code == 200:
+            # ... (parsing logic remains the same)
+            raw_result = (
+                response.json()
+                .get("choices", [{}])[0]
+                .get("message", {})
+                .get("content", "")
+            )
+            blocks = re.findall(r"```(?:markdown)?\n(.*?)\n```", raw_result, re.DOTALL)
+            for block in blocks:
+                lines = block.splitlines()
+                if not lines:
+                    continue
+                first_line = lines[0].strip()
+                if first_line.startswith("wiki/") and first_line.endswith(".md"):
+                    target_path = workspace / first_line
+                    content = "\n".join(lines[1:]).strip()
+                    target_path.parent.mkdir(parents=True, exist_ok=True)
+                    target_path.write_text(content, encoding="utf-8")
+            return True
+        else:
+            logger.error(
+                f"LLM request failed: {response.status_code} - {response.text}"
+            )
+            logger.error(f"URL: {url}")
+            logger.error(f"Payload: {payload}")
+            return False
+    except Exception as e:
+        logger.error(f"Sync error: {e}")
+        logger.error(f"URL: {url}")
+        return False
 
-        # 5. Update INDEX.md alphabetically
-        update_index(wiki_dir)
-        logger.info("Sync completed and INDEX.md updated.")
-    else:
-        logger.error(f"LLM request failed: {response.status_code} - {response.text}")
+
+def process_batch(batch, instructions, workspace, wiki_dir):
+    rel_path, abs_path = batch[0]
+    lines = abs_path.read_text(encoding="utf-8").splitlines()
+    if len(lines) > 800:
+        chunk_size = 400
+        for i in range(0, len(lines), chunk_size):
+            chunk_lines = lines[i : i + chunk_size]
+            chunk_content = (
+                f"\n--- FILE: {rel_path} (Chunk {i // chunk_size + 1}) ---\n"
+                + "\n".join(chunk_lines)
+            )
+            if not call_llm_for_batch(chunk_content, instructions, workspace, wiki_dir):
+                return False
+        return True
+
+    return call_llm_for_batch(
+        abs_path.read_text(encoding="utf-8"), instructions, workspace, wiki_dir
+    )
+
 
 def update_index(wiki_dir):
     index_path = wiki_dir / "INDEX.md"
-    # Get all .md files except INDEX and audit
-    topics = []
-    for f in wiki_dir.glob("*.md"):
-        if f.name not in ["INDEX.md", "audit.md"]:
-            topics.append(f.stem)
-    
-    topics.sort(key=str.lower)
-    
-    with open(index_path, "w", encoding='utf-8') as f:
+    topics = sorted(
+        [f.stem for f in wiki_dir.glob("*.md") if f.name != "INDEX.md"], key=str.lower
+    )
+    with open(index_path, "w", encoding="utf-8") as f:
         f.write("# Wiki Index\n\n")
         for topic in topics:
             f.write(f"* [[{topic}]]\n")
+
 
 if __name__ == "__main__":
     sync_wiki()
