@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def update_backlinks():
     workspace = Path(__file__).parent.parent.resolve()
     wiki_dir = workspace / "wiki"
-    wiki_files = list(wiki_dir.glob("*.md"))
+    wiki_files = list(wiki_dir.rglob("*.md"))
 
     # Map topics to their file paths
     topic_map = {f.stem: f"[[{f.stem}]]" for f in wiki_files}
@@ -20,7 +20,7 @@ def update_backlinks():
 
     # 1. Scan files to build backlink map
     for f in wiki_files:
-        if f.name in ["INDEX.md", "audit_wiki.md"]:
+        if f.name in ["INDEX.md", "audit.md"]:
             continue
 
         content = f.read_text(encoding="utf-8")
@@ -45,7 +45,7 @@ def update_backlinks():
 
     # 2. Update files with Backlinks section
     for f in wiki_files:
-        if f.name in ["INDEX.md", "audit_wiki.md"]:
+        if f.name in ["INDEX.md", "audit.md"]:
             continue
 
         content = f.read_text(encoding="utf-8")

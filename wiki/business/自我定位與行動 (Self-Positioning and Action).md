@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: 自我定位與行動
 description: 本頁面探討了個人定位（定位）對於行動的決定性影響，並強調了從「定位」到「執行」的過程，包括產品定位與市場應對。
-tags: [定位, 行動, 商業, 執行]  - type/synthesis
+tags: [#type/synthesis, 定位, 行動, 商業, 執行]
 ---
 這頁面闡述了個人定位（定位）是決定行動的關鍵因素，並強調了在商業情境中，產品只是工具，而正確的定位才能帶來成功。成功的執行需要從「定位」開始，並結合實際的市場應對策略。
 
@@ -40,6 +40,35 @@ tags: [定位, 行動, 商業, 執行]  - type/synthesis
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
+- **Contradicts**: [[Business-Hub]]
 <!-- END BACKLINKS -->

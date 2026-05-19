@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: 思维模式 (Mindset)
 description: 本文件探讨了独立思考的重要性，强调形成自我观点和自主决策的能力。它关注如何摆脱对外界的依赖，建立坚实的个人认知基础。
-tags: [mindset, self-reliance, critical-thinking]  - type/evolution
+tags: [#type/evolution, mindset, self-reliance, critical-thinking]
 ---
 本文件探讨了独立思考的重要性，强调形成自我观点和自主决策的能力。它关注如何摆脱对外界的依赖，建立坚实的个人认知基础。
 
@@ -29,6 +29,35 @@ sources:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
+- **Contradicts**: [[Self-Hub]]
 <!-- END BACKLINKS -->

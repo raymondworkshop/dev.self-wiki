@@ -18,9 +18,38 @@ tags: #type/principle, education, epistemology, cultural-context
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
-- **Mentioned in**: [[relationship_files]]
+- **Mentioned in**: [[人际关系-Hub]]
+- **Contradicts**: [[relationship_files]]
 <!-- END BACKLINKS -->
 
 ## sources

@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: 自我覺察與心態
 description: 本頁面記錄了關於自我認知、情緒調節以及認知行為的哲學性思考，旨在達到更深層次的自我認知與認知參與。
-tags: [自我認知, 情緒調節, 認知, 斯多葛主義]  - type/synthesis
+tags: [#type/synthesis, 自我認知, 情緒調節, 認知, 斯多葛主義]
 ---
 這是一個關於如何透過內在的質疑與觀察來達到個人成長的體系。它強調了認知行為的轉變是達成目標的先決條件，並提供了具體的自我檢測框架。
 
@@ -37,6 +37,35 @@ tags: [自我認知, 情緒調節, 認知, 斯多葛主義]  - type/synthesis
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
+- **Contradicts**: [[Business-Hub]]
 <!-- END BACKLINKS -->

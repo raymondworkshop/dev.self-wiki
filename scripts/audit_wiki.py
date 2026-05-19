@@ -5,23 +5,29 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
-import yaml
+
+def get_yaml_field(content, field):
+    match = re.search(rf"^{field}:\s*(.*)", content, re.MULTILINE)
+    if match:
+        return match.group(1).strip().strip('"').strip("'")
+    return None
 
 
 def run_audit():
     workspace = Path("/Users/zhaowenlong/workspace/dev.self-wiki")
     wiki_dir = workspace / "wiki"
-    audit_file = workspace / "outputs/audit_wiki.md"
+    audit_file = workspace / "wiki/audit.md"
 
     # 1. Get all existing topics
-    existing_topics = {f.stem for f in wiki_dir.glob("*.md")}
+    # Scan all .md files in all subdirectories
+    existing_topics = {f.stem for f in wiki_dir.rglob("*.md")}
 
     red_links = []
     stale_files = []
     link_pattern = re.compile(r"\[\[(.*?)\]\]")
 
     # 2. Scan files for links and staleness
-    for file_path in wiki_dir.glob("*.md"):
+    for file_path in wiki_dir.rglob("*.md"):
         if file_path.name in ["audit.md", "INDEX.md"]:
             continue
 
@@ -35,24 +41,23 @@ def run_audit():
                 red_links.append(clean_link)
 
         # Check staleness
-        try:
-            yaml_match = re.search(r"^---\n(.*?)\n---", content, re.DOTALL)
-            if yaml_match:
-                fm = yaml.safe_load(yaml_match.group(1))
-                if fm and "last_updated" in fm:
-                    last_updated = datetime.fromisoformat(
-                        str(fm["last_updated"]).replace("Z", "+00:00")
+        last_updated_str = get_yaml_field(content, "last_updated")
+        if last_updated_str:
+            try:
+                # Handle ISO format
+                last_updated = datetime.fromisoformat(
+                    last_updated_str.replace("Z", "+00:00")
+                )
+                if last_updated.tzinfo is None:
+                    last_updated = last_updated.replace(
+                        tzinfo=datetime.now().astimezone().tzinfo
                     )
-                    if last_updated.tzinfo is None:
-                        last_updated = last_updated.replace(
-                            tzinfo=datetime.now().astimezone().tzinfo
-                        )
 
-                    days_diff = (datetime.now(last_updated.tzinfo) - last_updated).days
-                    if days_diff > 60:
-                        stale_files.append((file_path.name, days_diff))
-        except Exception:
-            continue
+                days_diff = (datetime.now(last_updated.tzinfo) - last_updated).days
+                if days_diff > 60:
+                    stale_files.append((file_path.name, days_diff))
+            except ValueError:
+                continue
 
     # 3. Aggregate Red Links
     red_link_counts = Counter(red_links).most_common()

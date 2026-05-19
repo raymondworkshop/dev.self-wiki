@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: 认知与思维模式的观察
 description: 本文件记录了关于思维模式、语言表达以及如何看待自我局限性的观察。它涉及了从宏观到微观的思维训练。
-tags: [cognition, self, communication, mindset]  - type/source
+tags: [#type/source, cognition, self, communication, mindset]
 ---
 本文件收集了关于思维的局限性、语言的精确性以及如何将理论应用于实践的观察。它提醒我们，思维的产出必须是可落地的、有生命力的，并且需要警惕思维的惰性。
 

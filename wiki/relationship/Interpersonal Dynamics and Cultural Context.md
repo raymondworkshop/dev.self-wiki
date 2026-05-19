@@ -2,7 +2,7 @@
 last_updated: 2024-05-23T00:00:00Z
 title: Interpersonal Dynamics and Cultural Context
 description: This section analyzes the nuances of human interaction, contrasting universal principles of connection with culturally specific behavioral scripts. It details the necessary flexibility in relating to different groups.
-tags: relationship, culture, softskills, communication  - type/evolution
+tags: [#type/evolution, relationship, culture, softskills, communication]
 ---
 # Interpersonal Dynamics and Cultural Context
 

@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: Principles of Professional Freedom and Connection
 description: This page explores the philosophy behind ownership, successful business relationships, and the integration of life pursuits. It posits that true ownership grants the freedom to curate one's environment and relationships.
-tags: [business, life, philosophy, relationship]  - type/evolution
+tags: [#type/evolution, business, life, philosophy, relationship]
 ---
 The ultimate freedom afforded by owning a business is the sovereignty over one's time and company. Success in any endeavor, whether business or personal, requires the cultivation of strong, high-quality relationships to sustain the endeavor.
 ## Evolution

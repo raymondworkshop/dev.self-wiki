@@ -38,8 +38,37 @@ tags: #type/synthesis, habit, operational-framework, execution
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
+- **Contradicts**: [[Growth-Trajectory]], [[Health]], [[Self-Hub]]
 <!-- END BACKLINKS -->
 
 ## sources

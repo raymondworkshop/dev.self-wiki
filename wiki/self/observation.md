@@ -2,7 +2,7 @@
 last_updated: 2024-05-23T00:00:00Z
 title: observation
 description: This note reflects on the gap between cultural perception and its execution, noting a deficiency in pursuing deeper spiritual or intellectual pursuits. It also touches upon transactional exchanges.
-tags: cultural perception, pursuit, transaction, deficiency  - type/evolution
+tags: [#type/evolution, cultural perception, pursuit, transaction, deficiency]
 ---
 # obver
 

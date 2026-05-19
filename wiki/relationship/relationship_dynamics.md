@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: 亲密关系中的角色与相处之道
 description: 本文件探讨了亲密关系中男性角色的责任、相处模式以及如何提供安全感，强调了支持而非改造的重要性。
-tags: [relationship, love, partnership, maturity]  - type/principle
+tags: [#type/principle, relationship, love, partnership, maturity]
 ---
 在亲密关系中，尤其是在男性扮演支持者的角色时，核心在于提供一个安全、被接纳的环境，而非试图去“修复”或“改造”对方。真正的爱是滋养性的，它需要行动上的承诺和情感上的深度参与。
 

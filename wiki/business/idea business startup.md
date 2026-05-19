@@ -2,7 +2,7 @@
 last_updated: 2024-01-01T00:00:00Z
 title: idea business startup
 description: This page captures reflections on successful business ventures, the mindset required for innovation, and the necessary components for building a viable company. It emphasizes purpose, execution, and market fit.
-tags: business, startup, innovation, execution  - type/evolution
+tags: [#type/evolution, business, startup, innovation, execution]
 ---
 # idea business startup
 

@@ -2,7 +2,7 @@
 last_updated: 2024-05-23T00:00:00Z
 title: Science
 description: This serves as a high-level categorization of knowledge domains, suggesting that the pursuit of knowledge spans from the empirical sciences to the humanities and business applications.
-tags: knowledge domains, epistemology, interdisciplinary  - type/evolution
+tags: [#type/evolution, knowledge domains, epistemology, interdisciplinary]
 ---
 #Science
 

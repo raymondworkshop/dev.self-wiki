@@ -2,7 +2,7 @@
 last_updated: 2024-01-01T00:00:00Z
 title: Professional Execution and Strategic Mindset
 description: This wiki page compiles notes on professional development, strategic execution, and the necessary mindset for high-level performance in technical and intellectual pursuits.
-tags: [work, habit, execution]  - type/evolution
+tags: [#type/evolution, work, habit, execution]
 ---
 This document addresses the mechanics of professional success, ranging from the need for rigorous application of theory to the practical skills required for navigating complex systems and interpersonal dynamics. It emphasizes the primacy of skill and rationality in high-stakes environments.
 
@@ -34,7 +34,36 @@ Early notes focused on the need to work harder and the technical application of 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
-- **Mentioned in**: [[relationship_files]]
+- **Mentioned in**: [[人际关系-Hub]]
+- **Contradicts**: [[relationship_files]]
 <!-- END BACKLINKS -->

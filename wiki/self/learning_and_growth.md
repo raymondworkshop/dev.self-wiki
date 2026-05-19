@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: 学习与成长路径 (Learning and Growth Trajectory)
 description: 本文件系统化了个人成长的各个维度，从技能提升到认知框架的重塑。它强调了批判性思维、换位思考以及将理论应用于实践的闭环过程。
-tags: [growth, habit, self, education]  - type/principle
+tags: [#type/principle, growth, habit, self, education]
 ---
 本文件系统化了个人成长的各个维度，从技能提升到认知框架的重塑。它强调了批判性思维、换位思考以及将理论应用于实践的闭环过程。
 
@@ -27,6 +27,35 @@ raw/origin-apple-notes/softskills_education.md
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
+- **Contradicts**: [[Self-Hub]]
 <!-- END BACKLINKS -->

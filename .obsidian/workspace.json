@@ -4,31 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "4a071dc6b334360e",
+        "id": "6b4c11751b0d8dfd",
         "type": "tabs",
         "children": [
           {
-            "id": "cda25da34a81759a",
+            "id": "72afb2cd0c946e0b",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "wiki/self/AI作为镜子.md",
-                "mode": "source",
-                "source": true,
-                "backlinks": true,
-                "backlinkOpts": {
-                  "collapseAll": false,
-                  "extraContext": false,
-                  "sortOrder": "alphabetical",
-                  "showSearch": false,
-                  "searchQuery": "",
-                  "backlinkCollapsed": false,
-                  "unlinkedCollapsed": true
-                }
+                "file": "raw/origin-apple-notes/个人复杂技能.md",
+                "mode": "preview",
+                "source": true
               },
               "icon": "lucide-file",
-              "title": "AI作为镜子"
+              "title": "个人复杂技能"
             }
           }
         ]
@@ -63,7 +53,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "tag:#type/principle",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -88,7 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 444.5
+    "width": 376.5
   },
   "right": {
     "id": "3cf38b4468f56122",
@@ -193,37 +183,44 @@
       "bases:Create new base": false
     }
   },
-  "active": "eddb5b6b9031197b",
+  "active": "72afb2cd0c946e0b",
   "lastOpenFiles": [
-    "wiki/self/career_and_education.md",
-    "wiki/self/cognitive_frameworks.md",
-    "wiki/self/生活哲学与追求.md",
-    "wiki/self/真诚与文明的张力.md",
-    "wiki/self/痴迷于控制.md",
-    "wiki/self/軟實力與表達 (Soft Skills and Expression).md",
-    "wiki/self/认知模式与文明批判.md",
-    "wiki/self/认知控制与自信.md",
-    "wiki/self/行动力与拖延的克服.md",
-    "wiki/Self-Hub.md",
-    "wiki/Misc-Hub.md",
-    "wiki/Growth-Hub.md",
-    "wiki/work/Self_Cognition_and_Mastery.md",
-    "wiki/self/AI作为镜子.md",
-    "raw/diary/2026-02-12-antifragile.md",
-    "wiki/self/Antifragile.md",
-    "wiki/communication/Small Talk 与社交用语.md",
-    "wiki/work/Bookshelf.md",
-    "wiki/INDEX.md",
-    "wiki/relationship/人际关系哲学.md",
-    "wiki/人际关系-Hub.md",
-    "relationship/人际关系-Hub.md",
-    "relationship",
-    "philosophy/Philosophy-Hub.md",
-    "philosophy",
-    "self/Self-Hub.md",
-    "self",
     "wiki/audit.md",
-    "GEMINI.md",
-    "Untitled.canvas"
+    "wiki/INDEX.md",
+    "audit.md",
+    "wiki/Updating-Hub.md",
+    "audit_wiki.md",
+    "wiki/updating/个人复杂技能.md",
+    "wiki/updating/鼓勵與開放的心態.md",
+    "wiki/updating/關係與價值觀的初步思考.md",
+    "wiki/updating/認知邏輯與系統架構.md",
+    "wiki/updating/認知與興趣的流動性.md",
+    "wiki/updating/行动与过程的价值.md",
+    "wiki/updating/艺术与实践的价值.md",
+    "wiki/updating/科学的本质.md",
+    "wiki/updating/科学方法论.md",
+    "wiki/updating/研究方法论.md",
+    "wiki/updating/时间管理与心流.md",
+    "wiki/updating/旅行与事务记录.md",
+    "wiki/updating/数学与思维模型.md",
+    "wiki/updating/教育的使命.md",
+    "wiki/updating/教育与成功之道.md",
+    "wiki/updating/批判性思维与研究方法.md",
+    "wiki/updating/學習與表達的難度.md",
+    "wiki/updating/成功之道.md",
+    "wiki/updating/恋爱標準.md",
+    "wiki/updating/待办事项与心境观察.md",
+    "wiki/updating/學習與積累 (Learning and Accumulation).md",
+    "wiki/updating",
+    "wiki/business",
+    "wiki/others",
+    "wiki/leadership",
+    "scripts/sync_all_hubs.py",
+    "scripts/sync_work_hub.py",
+    "Untitled.canvas",
+    "scripts/standardize_tags.py",
+    "relationship",
+    "philosophy",
+    "self"
   ]
 }

@@ -19,8 +19,37 @@ tags: [self, mindset, growth]
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
+- **Contradicts**: [[Self-Hub]]
 <!-- END BACKLINKS -->
 
 ## sources

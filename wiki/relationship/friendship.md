@@ -2,7 +2,7 @@
 last_updated: 2024-07-15T10:30:00Z
 title: 友谊与关系 (Friendship and Relationships)
 description: 本文件深入探讨了高质量友谊的构成要素，强调了选择朋友的智慧、健康的边界感以及在关系中保持自尊的重要性。它将友谊视为一种相互滋养、共同成长的伙伴关系，并将其扩展到更广阔的“共同体”概念。
-tags: [relationship, self, boundary, socialskills, synthesis]  - type/evolution
+tags: [#type/evolution, relationship, self, boundary, socialskills, synthesis]
 ---
 本文件深入探讨了高质量友谊的构成要素，强调了选择朋友的智慧、健康的边界感以及在关系中保持自尊的重要性。它将友谊视为一种相互滋养、共同成长的伙伴关系，并将其扩展到更广阔的“共同体”概念。
 
@@ -27,9 +27,38 @@ tags: [relationship, self, boundary, socialskills, synthesis]  - type/evolution
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
-- **Mentioned in**: [[relationship_files]]
+- **Mentioned in**: [[人际关系-Hub]]
+- **Contradicts**: [[relationship_files]]
 <!-- END BACKLINKS -->
 
 ## sources

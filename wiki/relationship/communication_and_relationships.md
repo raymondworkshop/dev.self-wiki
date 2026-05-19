@@ -2,7 +2,7 @@
 last_updated: 2024-05-23T00:00:00Z
 title: 沟通与人际关系原则
 description: 本文件记录了在人际互动中追求有效沟通和情感连接的原则。它涵盖了从工作到亲密关系中如何运用逻辑与情感的策略。
-tags: [relationship, softskills, communication, boundary]  - type/synthesis
+tags: [#type/synthesis, relationship, softskills, communication, boundary]
 ---
 本文件探讨了在人际互动中达成有效沟通和情感连接的原则。它提供了从工作场景到亲密关系中运用逻辑和情感的实践指南。
 

@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: 自我認知與放下
 description: 本頁面探討了在群體中扮演「旁觀者」角色的價值，以及放下過度迎合與追求「平等」的執念，轉向「公平」的認知。
-tags: [自我覺察, 責任感, 人際關係, 認知偏差]  - type/source
+tags: [#type/source, 自我覺察, 責任感, 人際關係, 認知偏差]
 ---
 真正的自我成長在於能否放下過度執著於群體評價的執念，並從「追求表面的平等」轉向「維護實際的公平」，同時堅守自己的核心價值。這需要極高的認知覺察力來區分「想」與「做」。
 
@@ -41,6 +41,35 @@ raw/origin-apple-notes/self  lesson.md
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
+- **Contradicts**: [[Self-Hub]]
 <!-- END BACKLINKS -->

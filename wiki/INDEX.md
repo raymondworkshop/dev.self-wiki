@@ -2,14 +2,13 @@
 
 ## 核心枢纽 (Hubs)
 
-- [[人际关系-Hub|人际关系]]
-- [[Work-Hub|职业与商业]]
 - [[Self-Hub|自我认知]]
-- [[Philosophy-Hub|哲学与文明]]
+- [[Business-Hub|商业与职业]]
+- [[Leadership-Hub|领导力]]
 - [[Communication-Hub|沟通与表达]]
-- [[Cognitive-Hub|认知与思维]]
+- [[人际关系-Hub|人际关系]]
 
 ## 辅助与归档
 - [[INDEX]]
-- [[audit]]
-
+- [[Updating-Hub|其他杂项]]
+- [[wiki/audit|audit]]

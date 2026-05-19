@@ -22,8 +22,37 @@ tags: #type/synthesis, career, education, principle
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
+- **Contradicts**: [[Self-Hub]]
 <!-- END BACKLINKS -->
 
 ## sources

@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: 軟實力與表達
 description: 本頁面收集了關於如何有效表達自我、理解他人以及在人際關係中進行積極互動的觀察與原則。它涵蓋了從語言層面到心態層面的多維度觀察。
-tags: [軟實力, 表達, 人際關係, 溝通]  - type/synthesis
+tags: [#type/synthesis, 軟實力, 表達, 人際關係, 溝通]
 ---
 軟實力不僅是關於「如何說」，更是關於「是否說」以及「說什麼」。有效的溝通需要雙向的投入，包括主動表達自己的感受、觀察，以及傾聽並回應對方的脈絡。
 
@@ -32,6 +32,35 @@ tags: [軟實力, 表達, 人際關係, 溝通]  - type/synthesis
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
+- **Contradicts**: [[Self-Hub]]
 <!-- END BACKLINKS -->

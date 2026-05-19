@@ -2,7 +2,7 @@
 last_updated: 2024-07-17T00:00:00Z
 title: Economics
 description: 本页面深入分析了经济体系的运行原理，探讨了私有产权、市场价值和交易成本在资源配置中的核心作用。它将这些原理应用于个人财富管理和宏观社会观察。
-tags: [principle, economics, market-theory, synthesis]  - type/evolution
+tags: [#type/evolution, principle, economics, market-theory, synthesis]
 ---
 本页面深入分析了经济体系的运行原理，指出在任何经济制度下，决定富贵贫贱的因素都不可避免地与“适者生存，不适者淘汰”的原则相连。只有在私有产权的保障下，以市场价值为衡量的竞争准则才能有效运作，从而实现资源的最优配置。
 
@@ -47,9 +47,37 @@ tags: [principle, economics, market-theory, synthesis]  - type/evolution
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
-- **Mentioned in**: [[China]]
+- **Contradicts**: [[Business-Hub]], [[China]]
 <!-- END BACKLINKS -->
 
 ## sources

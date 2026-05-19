@@ -2,7 +2,7 @@
 last_updated: 2024-05-23T00:00:00Z
 title: Self-Awareness and Cognitive Integration
 description: This section tracks the development of self-understanding, emotional processing, and cognitive frameworks. It is the repository for personal growth insights.
-tags: self, awareness, growth, stoicism  - type/evolution
+tags: [#type/evolution, self, awareness, growth, stoicism]
 ---
 # Self-Awareness and Cognitive Integration
 

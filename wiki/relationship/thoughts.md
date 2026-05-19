@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: 思考片段 (Thought Fragments)
 description: 本文件记录了一些关于人际关系中关注点分配的深刻观察，强调了关注的能动性和界限。
-tags: [thoughts, relationship, boundary]  - type/evolution
+tags: [#type/evolution, thoughts, relationship, boundary]
 ---
 这些思考片段触及了人际交往中关注点分配的现实问题，它们提醒我们不要将关注的责任完全寄托于他人身上。
 

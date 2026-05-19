@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: Cross-Cultural Communication and Work Styles
 description: This page contrasts cultural approaches to work, communication, and relationship building, particularly between Eastern and Western contexts. It highlights how cultural background shapes behavioral patterns.
-tags: [culture, communication, business, comparison]  - type/evolution
+tags: [#type/evolution, culture, communication, business, comparison]
 ---
 Different cultures possess distinct underlying operating systems regarding social interaction and professional conduct. While some prioritize achieving tangible results through goal orientation, others value the process of consensus-building, leading to different approaches to efficiency and relationship building.
 

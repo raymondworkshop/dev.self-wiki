@@ -2,7 +2,7 @@
 last_updated: 2024-01-01T00:00:00Z
 title: Mindset, Habits, and Cognitive Flexibility
 description: This page tracks reflections on overcoming mental inertia, establishing sustainable habits, and maintaining the cognitive flexibility required for long-term personal growth.
-tags: [habit, growth-trajectory, self]  - type/evolution
+tags: [#type/evolution, habit, growth-trajectory, self]
 ---
 This entry focuses on the internal mechanisms required for sustained personal evolution, addressing the tendency toward cognitive rigidity and the importance of establishing disciplined routines. It links personal habits to larger patterns of life trajectory.
 
@@ -30,7 +30,36 @@ Initial notes touched upon the need to rethink ingrained thought patterns. This 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
-- **Mentioned in**: [[relationship_files]]
+- **Mentioned in**: [[人际关系-Hub]]
+- **Contradicts**: [[relationship_files]]
 <!-- END BACKLINKS -->

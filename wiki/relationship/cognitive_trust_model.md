@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T00:00:00Z
 title: The Spectrum of Trust in Relationships
 description: This model differentiates between the immediate, low-stakes trust required for daily interaction and the deeper, earned trust necessary for significant relational investment. It emphasizes controlled risk.
-tags: [relationship, trust, cognitive, security]  - type/evolution
+tags: [#type/evolution, relationship, trust, cognitive, security]
 ---
 Trust is not a binary switch; it exists on a spectrum requiring careful calibration. Sustainable relationships are built upon a foundation of predictable reliability, where trust is granted incrementally and earned through consistent demonstration of competence and respect.
 ## Evolution

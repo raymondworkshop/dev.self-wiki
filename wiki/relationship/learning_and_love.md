@@ -2,7 +2,7 @@
 last_updated: 2024-01-01T00:00:00Z
 title: Love, Learning, and Deep Connection
 description: This document outlines principles for deep relationships, the nature of true learning, and the necessary components for profound human connection.
-tags: [relationship, growth, learning]  - type/evolution
+tags: [#type/evolution, relationship, growth, learning]
 ---
 This page synthesizes views on the pursuit of shared meaning, the dynamics of intimacy, and the prerequisites for genuine connection, applying lessons from both personal relationships and intellectual pursuits. It stresses that true liking requires accepting the totality of the other.
 
@@ -38,7 +38,36 @@ Initial notes touched upon the mechanics of learning and the need to overcome st
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
-- **Mentioned in**: [[relationship_files]]
+- **Mentioned in**: [[人际关系-Hub]]
+- **Contradicts**: [[relationship_files]]
 <!-- END BACKLINKS -->

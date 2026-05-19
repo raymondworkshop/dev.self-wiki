@@ -2,7 +2,7 @@
 last_updated: 2024-05-20T10:00:00Z
 title: Cross-Cultural Communication and Trust Dynamics
 description: This page explores the mechanics of effective interpersonal communication, contrasting transactional relationships with deep emotional bonds, and the role of trust in different cultural contexts.
-tags: [softskills, relationship, culture, communication]  - type/evolution
+tags: [#type/evolution, softskills, relationship, culture, communication]
 ---
 # 跨文化沟通与信任动态
 
@@ -29,9 +29,38 @@ tags: [softskills, relationship, culture, communication]  - type/evolution
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
-- **Mentioned in**: [[relationship_files]]
+- **Mentioned in**: [[人际关系-Hub]]
+- **Contradicts**: [[relationship_files]]
 <!-- END BACKLINKS -->
 
 ## sources

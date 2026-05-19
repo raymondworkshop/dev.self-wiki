@@ -2,7 +2,7 @@
 last_updated: 2024-01-01T00:00:00Z
 title: Self Insight and Civilizational Comparison
 description: This page explores deep reflections on the nature of self, emotion, and contrasts between Eastern and Western civilizations regarding their collective shadows.
-tags: [self, philosophy, culture]  - type/evolution
+tags: [#type/evolution, self, philosophy, culture]
 ---
 This entry synthesizes observations regarding the integration of theory into practice and presents a comparative analysis of the collective unconscious biases found in Chinese and Western civilizations. It emphasizes the importance of emotional openness and the critical role of intellectual humility.
 
@@ -37,6 +37,35 @@ Directly applying theory into action is crucial, rather than basing experience o
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Backlinks
 <!-- BEGIN BACKLINKS -->
+- **Contradicts**: [[Self-Hub]]
 <!-- END BACKLINKS -->

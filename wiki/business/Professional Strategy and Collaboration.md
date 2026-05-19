@@ -2,7 +2,7 @@
 last_updated: 2024-05-23T00:00:00Z
 title: Professional Strategy and Collaboration
 description: This wiki page outlines frameworks for professional execution, strategic thinking, and the dynamics of high-level collaboration. It covers technical ideas and business partnership requirements.
-tags: work, strategy, business, technical  - type/evolution
+tags: [#type/evolution, work, strategy, business, technical]
 ---
 # Professional Strategy and Collaboration
 
