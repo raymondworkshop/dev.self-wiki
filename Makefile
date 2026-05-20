@@ -21,7 +21,7 @@ design:
 	@echo "Design phase is managed by Gemini CLI to maintain the operating manual."
 
 # RUN: Local MLX server executes the work (Production Engine)
-run:
+sync:
 	$(PYTHON) scripts/sync_wiki.py
 
 # AUDIT: Gemini audits the quality of local execution (Quality Control)

@@ -76,15 +76,26 @@ class WikiPage:
         # Update last_updated
         self.front_matter["last_updated"] = datetime.now().isoformat()
 
-        fm_str = yaml.dump(self.front_matter, sort_keys=False).strip()
+        fm_str = yaml.dump(
+            self.front_matter, sort_keys=False, allow_unicode=True
+        ).strip()
 
-        source_str = "\n".join([f"- [[{s}]]" for s in sorted(list(set(self.sources)))])
+        source_str = "\n".join(
+            [
+                f"- {s}" if s.startswith("[[") else f"- [[{s}]]"
+                for s in sorted(list(set(self.sources)))
+            ]
+        )
+
+        # Ensure summary is clean, then force a single '> ' prefix
+        clean_summary = re.sub(r"^(>\s*)+", "", self.summary or "")
+        summary_str = f"> {clean_summary.strip()}"
 
         full_content = f"""---
 {fm_str}
 ---
 
-> {self.summary}
+{summary_str}
 
 {self.body}
 
@@ -102,10 +113,20 @@ class WikiPage:
 
     @classmethod
     def create_new(cls, title: str, level: int = 1):
-        # Sanitize title for filename
-        safe_title = re.sub(r'[\\/*?:"<>|]', "", title)  # Remove invalid chars
-        safe_title = safe_title.replace(" ", "_").replace(":", "-")
-        filename = f"{safe_title}.md"
+        # Check if the title contains Chinese characters
+        is_chinese = bool(re.search(r"[\u4e00-\u9fff]", title))
+
+        # Sanitize title: remove problematic characters
+        safe_title = re.sub(r'[\\/*?:"<>|,]', "", title)
+
+        if is_chinese:
+            # For Chinese, keep characters, only remove spaces if preferred
+            filename = f"{safe_title}.md"
+        else:
+            # For English, enforce snake_case
+            safe_title = re.sub(r"\s+", "_", safe_title)
+            filename = f"{safe_title}.md"
+
         path = WIKI_DIR / filename
 
         # If file exists, load it; otherwise, initialize new

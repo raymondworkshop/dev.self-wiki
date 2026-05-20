@@ -1,7 +1,11 @@
 # My Self-Wiki Operating Manual (LLM-Native Edition)
 
-## Philosophy: The Socratic Mirror
-This wiki is not just a database; it is a **Reasoning Engine** and a **Socratic Mirror**. Inspired by the Karpathy LLM Wiki concept, we treat the LLM as the "OS" and the wiki as the "Context Window" for high-resolution self-reflection.
+## Operating Philosophy: The Socratic Mirror
+This wiki is a **Reasoning Engine** and a **Socratic Mirror**. We treat LLMs as the "OS" and the wiki as the "Context Window" for high-resolution self-reflection.
+
+- **Dual-Model Workflow**:
+  - **Gemini (Strategic)**: Performs high-level architectural design, system auditing, and knowledge synthesis strategy.
+  - **Local MLX (Operational)**: Executes routine data processing, file synchronization (`make sync`), and continuous synthesis based on Gemini’s architectural definitions.
 
 - **Goal**: Foster self-discovery, emotional regulation, and deep cognitive engagement through iterative distillation.
 - **Principle**: High signal-to-noise ratio. Every word must earn its place in the context window.

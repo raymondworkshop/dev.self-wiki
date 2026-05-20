@@ -11,7 +11,7 @@ def load_env(env_path):
                 os.environ[key.strip()] = value.strip().strip('"').strip("'")
 
 
-load_env(Path(__file__).parent.parent / ".env")
+load_env(Path(__file__).parent / ".env")
 
 WORKSPACE_PATH = Path(
     os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")

@@ -37,6 +37,8 @@ class SocraticOrchestrator:
             curr_hash = hashlib.md5(p.read_bytes()).hexdigest()
             if self.cache.get(rel) != curr_hash:
                 changed.append((rel, p, curr_hash))
+            else:
+                logger.info(f"Skipping unchanged file: {rel}")
         return changed
 
     def run(self):
