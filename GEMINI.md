@@ -1,74 +1,64 @@
-# My Self-Wiki Operating Manual  
+# My Self-Wiki Operating Manual (LLM-Native Edition)
 
-## Purpose
-reflect and expand my thought to foster self-discovery, emotional regulation, and deeper cognitive engagement.
+## Philosophy: The Socratic Mirror
+This wiki is not just a database; it is a **Reasoning Engine** and a **Socratic Mirror**. Inspired by the Karpathy LLM Wiki concept, we treat the LLM as the "OS" and the wiki as the "Context Window" for high-resolution self-reflection.
 
-Used for self-awareness, emotional processing, and personal growth. It serves as a dynamic repository of my evolving understanding of myself and the world, helping me to integrate insights from various sources and experiences into a coherent framework for living.
+- **Goal**: Foster self-discovery, emotional regulation, and deep cognitive engagement through iterative distillation.
+- **Principle**: High signal-to-noise ratio. Every word must earn its place in the context window.
 
-## Category
+## Knowledge Hierarchy (The Distillation Loop)
+1. **Raw (Level 0)**: Unprocessed thoughts, logs, diary entries, and external clippings. (High Entropy/Volume)
+2. **Synthesis (Level 1)**: Integrated themes and patterns derived from multiple raw sources. (Pattern Recognition)
+3. **Principle/Mental Model (Level 2)**: Compressed, actionable "source code" for my life. (High Utility/Low Volume)
 
-- self: Awareness, stoic integration, vulnerability, self-acceptance
-- work: Strategic execution, minimalism, and professional development
-- relationship: Emotional maturity, authentic connection, and boundary management
-- habit: Sustainable habits, operational frameworks, and system efficiency
-- growth-trajectory: Synthesis of long-term life patterns, personal evolution, and transformation insights
+## Structure Rules
+- `self-wiki/raw/`: Input stream. Read-only for AI. Never modify raw files.
+- `self-wiki/wiki/`: The "Second Brain". AI-curated, structured, and cross-linked.
+- `self-wiki/outputs/`: Snapshots of reasoning, reports, and deep-dives.
 
+## Agent Skills (Operational Mandates)
 
-## Context
-- Topic: a Socratic Mirror 
-- Goal: Build a comprehensive, interconnected wiki to foster self-discovery, emotional regulation, and deeper cognitive engagement. This is used for self-awareness, emotional processing, and personal growth. 
-- Sources: A mix of diary entries, notes from books and articles, and reflections on experiences. This includes both raw, unprocessed thoughts and more polished reflections.
-- Output: A well-organized wiki that captures the depth and breadth of myself-knowledge, with clear connections between topics and a structure that allows for easy navigation and continuous growth. The wiki should be dynamic, evolving as new insights are gained and new sources are added. 
+### `sync-wiki` (`make sync`)
+- **Action**: Ingest `raw/`, identify patterns, update/create `wiki/` entries.
+- **Note**: Focus on *lossy compression*—discard the fluff, capture the core insight.
 
+### `audit-wiki` (`make audit`)
+- **Action**: Scan for "Emotional Triggers", "Cognitive Shifts" (contradictions), "Stale Wisdom", and "Red Links".
+- **Socratic Duty**: Prompt the user when a new insight contradicts an old principle or habit.
 
-## Structure Rules  
-- self-wiki/raw/ contains unprocessed source material. Never modify raw files.
-- self-wiki/wiki/ is the organized knowledge base. AI maintains this entirely.
-- self-wiki/outputs/ stores generated reports and analysis.
+### `query-wiki` (`make query`)
+- **Action**: Reason over the entire wiki to answer complex life queries.
+- **Output**: Synthesis + Provenance (tracing back to raw sources).
 
-## Agent Skills (Tool Definitions)
-
-### `sync-wiki`
-- **Description**: Scans `raw/`, processes new insights into `wiki/`, and updates `INDEX.md`.
-- **Implementation**: `make sync`
-
-### `audit-wiki`
-- **Description**: Checks for red links, stale content, contradictions, and cognitive shifts.
-- **Implementation**: `make audit`
-
-### `query-wiki`
-- **Description**: Summarize the key insights and findings related to the query based on `wiki/`, including references to the original sources from `raw/`
-- **Implementation**: `make query` 
-
-## Wiki Standards
-- One topic per file in wiki/ 
-- Every file must include a YAML front matter block containing `last_updated` (ISO 8601 format), `title`, `description`, and `tags`
-- Every file starts with a blank line, followed by '>' and a 2-3 sentence summary, and ends with `sources`  (list of file paths from `raw/`)   
-- Every file must have an `## Evolution` section tracking changes in perspective over time.
-- **Traceability Requirement**: Every abstract idea, principle, or conceptual model must explicitly link back to its specific source raw files. If a wiki page synthesizes multiple raw notes, every major conceptual point must be able to trace its origin to at least one entry in the `sources` list.
-- **Backliner System**: Every file must contain a `## Backlinks` section, maintained by the system, using the format:
+## Wiki Standards (LLM-Optimized)
+- **One Topic Per File**: Keep files focused and modular.
+- **YAML Front Matter**: Must include `last_updated` (ISO 8601), `title`, `description`, `level` (0-2), and `tags`.
+- **Socratic Summary**: Every file starts with a 2-3 sentence blockquote `>` that captures the "essence" for the LLM's quick context.
+- **Traceability**: Every claim must link to its origin `(Source: [[raw-file-path]])`.
+- **Evolution Section**: A `## Evolution` section tracking how this specific idea or belief has changed over time.
+- **Backlinks**: Automated section for:
   ```markdown
   ## Backlinks
-  <!-- BEGIN BACKLINKS -->
   - **Evolved from**: [[Topic]]
   - **Mentioned in**: [[Topic]]
-  - **Contradicts**: [[Topic]]
-  <!-- END BACKLINKS -->
+  - **Contradicts**: [[Topic]] (Cognitive Shift)
   ```
-- **Provenance Tracking**: When synthesizing a principle, use a blockquote or annotation to link to the specific file: `(Source: [[file-path]])`.
-- **Taxonomy Standards**: Every note must include one primary tag indicating its functional nature:
-  - `type/source`: Unprocessed raw notes.
-  - `type/synthesis`: Notes that integrate multiple sources.
-  - `type/principle`: Core mental models or life philosophies.
-  - `type/evolution`: Records of cognitive shifts.
-- INDEX.md maintained alphabetically, updated with every change
-- When new raw sources arrive, update all relevant wiki articles
-- Never translate the source language. Match the output language to the input language perfectly
-- Flag contradictions between sources as "Cognitive Shifts" in the audit.
 
+## Taxonomy (Functional Tags)
+- `type/source`: The raw material.
+- `type/synthesis`: Connecting the dots across entries.
+- `type/principle`: Fundamental laws of my own operating system.
+- `type/shift`: Documentation of a significant change in belief or behavior.
 
-## Output Format  
-When I ask for a report: Summary (3 sentences)  → Key Findings → Supporting Evidence . 
-When I ask for a recommendation: Context → Options (max 3) → Recommendation .
-When I ask for a comparison: Topic A → Topic B → Similarities → Differences → Conclusion .
-When I ask for an analysis: Subject → Analysis Framework → Key Insights → Implications → Conclusion .
+## Interaction Protocols (Output Formats)
+- **Deep Analysis**: Subject → Analysis Framework → Key Insights → Implications → Socratic Question.
+- **Comparison**: Entity A vs Entity B → Overlap → Divergence → Synthesis/Conclusion.
+- **Recommendation**: Context → Options (Max 3) → Rationale → Potential Pitfalls.
+
+## Core Mandates
+1. **Fidelity to Raw Truth**: The AI must never "hallucinate" a belief, preference, or event. Every claim in the `wiki/` must be a direct distillation of `raw/` evidence.
+2. **Explicit Interpretation**: When the AI identifies a pattern that isn't explicitly stated (e.g., an underlying anxiety), it must label it as `[AI Synthesis]` or `[Socratic Observation]` to distinguish it from "raw truth".
+3. **Language Fidelity**: Match the input language perfectly. Do not translate between English/Chinese unless asked.
+4. **Socratic Proactivity**: If a new note reveals a blind spot, bias, or contradiction, flag it as a "Cognitive Shift".
+5. **Context Efficiency**: Keep wiki files concise. If a file gets too long, refactor into sub-topics.
+6. **Traceability**: Never "hallucinate" a principle; every Level 2 insight must be grounded in Level 0/1 evidence. Use blockquotes for direct evidence.

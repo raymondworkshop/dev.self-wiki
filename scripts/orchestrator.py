@@ -1,51 +1,58 @@
+import hashlib
+import json
+import logging
 import os
+import re
 from pathlib import Path
 
+from config import GEMINI_CONF, LOG_DIR, RAW_DIR, WIKI_DIR
+from models import WikiPage
 
-def load_env(env_path):
-    if env_path.exists():
-        for line in env_path.read_text().splitlines():
-            if line.strip() and not line.startswith("#"):
-                key, value = line.split("=", 1)
-                os.environ[key.strip()] = value.strip().strip('"').strip("'")
+logger = logging.getLogger(__name__)
 
 
-# Load .env
-load_env(Path(__file__).parent.parent / ".env")
-WORKSPACE_ROOT = Path(
-    os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
-)
+class SocraticOrchestrator:
+    """Orchestrates the Raw -> Synthesis -> Principle flow."""
 
+    def __init__(self):
+        self.cache_path = LOG_DIR / ".sync_cache.json"
+        self.cache = self._load_cache()
+        self.instructions = GEMINI_CONF.read_text()
 
-class SelfWikiOrchestrator:
-    def __init__(self, workspace_root):
-        self.root = Path(workspace_root)
-        self.self_wiki_dir = self.root / "self-wiki"
-        self.wiki_dir = self.self_wiki_dir / "wiki"
-        self.audit_file = self.self_wiki_dir / "outputs/audit.md"
-        self.gemini_config = self.root / "GEMINI.md"
+    def _load_cache(self):
+        if self.cache_path.exists():
+            try:
+                return json.loads(self.cache_path.read_text())
+            except:
+                return {}
+        return {}
 
-    def generate_audit_prompt(self):
-        """Generates the automated prompt for the AI to perform the linting."""
-        with open(self.gemini_config, "r") as f:
-            instructions = f.read()
+    def save_cache(self):
+        self.cache_path.write_text(json.dumps(self.cache, indent=2))
 
-        prompt = f"""
-        Act as the Self-Wiki Architect. Using the following Operating Manual:
-        {instructions}
+    def get_changed_files(self):
+        changed = []
+        for p in RAW_DIR.rglob("*.md"):
+            rel = str(p.relative_to(RAW_DIR))
+            curr_hash = hashlib.md5(p.read_bytes()).hexdigest()
+            if self.cache.get(rel) != curr_hash:
+                changed.append((rel, p, curr_hash))
+        return changed
 
-        Perform a comprehensive audit of the files in {self.wiki_dir}.
-        Focus specifically on finding 'Red Links' and 'Cognitive Shifts' (contradictions that show growth).
-        Output the results directly into the format required for {self.audit_file}.
-        """
-        return prompt
+    def run(self):
+        changed = self.get_changed_files()
+        if not changed:
+            logger.info("Wiki is up to date.")
+            return
 
-    def run_sync(self):
-        # Logic to trigger AI sync via CLI or API
-        print("Triggering Smart Merge for new raw entries...")
+        logger.info(f"Found {len(changed)} changed files.")
+        # In a real run, this would loop and call the distillation skill.
+        # For now, we just log.
+        for rel, abs_p, h in changed:
+            logger.info(f"Ready to distill: {rel}")
 
 
 if __name__ == "__main__":
-    # Example usage
-    orchestrator = SelfWikiOrchestrator(WORKSPACE_ROOT)
-    print(orchestrator.generate_audit_prompt())
+    logging.basicConfig(level=logging.INFO)
+    orchestrator = SocraticOrchestrator()
+    orchestrator.run()

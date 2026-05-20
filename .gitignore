@@ -4,3 +4,4 @@ log/
 .git/
 .selfwikienv/
 _self_wiki
+scripts/__pycache__

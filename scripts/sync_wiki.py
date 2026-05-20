@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import os
@@ -6,260 +7,224 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
-
+import yaml
+from config import GEMINI_CONF, LOG_DIR, RAW_DIR, WIKI_DIR
+from models import WikiPage
 
 # Configure logging
-# Load .env first from project root to get WORKSPACE_PATH
-def load_env(env_path):
-    if env_path.exists():
-        for line in env_path.read_text().splitlines():
-            if line.strip() and not line.startswith("#"):
-                key, value = line.split("=", 1)
-                os.environ[key.strip()] = value.strip().strip('"').strip("'")
-
-
-# Assuming scripts are in /scripts/, so project root is one level up
-load_env(Path(__file__).parent.parent / ".env")
-workspace = Path(
-    os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
-)
-
-
-log_dir = workspace / "self-wiki" / "log"
-log_dir.mkdir(parents=True, exist_ok=True)
-execution_log = log_dir / "sync_execution.log"
-
 logging.basicConfig(
     level=logging.INFO,
-    format="%(levelname)s: %(message)s",
-    handlers=[logging.FileHandler(execution_log), logging.StreamHandler()],
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler(LOG_DIR / "sync_v2.log"), logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
-logger.info(f"Using workspace path: {workspace}")
 
 
-class SyncTracker:
-    def __init__(self, cache_path):
-        self.cache_path = Path(cache_path)
-        self.cache = self._load_cache()
+def call_llm(prompt: str, system_instruction: str = ""):
+    """
+    Calls the LLM based on LLM_PROVIDER in .env.
+    Supports Gemini and OpenAI-compatible (MLX, DeepSeek, etc.)
+    """
+    provider = os.environ.get("LLM_PROVIDER", "gemini").lower()
 
-    def _load_cache(self):
-        if self.cache_path.exists():
-            try:
-                return json.loads(self.cache_path.read_text())
-            except Exception as e:
-                logger.warning(f"Failed to load cache: {e}")
-        return {}
+    if provider == "gemini":
+        api_key = os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            logger.error("GOOGLE_API_KEY not found.")
+            return None
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        payload = {
+            "contents": [
+                {"parts": [{"text": f"{system_instruction}\n\nUser Query: {prompt}"}]}
+            ],
+            "generationConfig": {
+                "temperature": 0.1,
+                "topP": 0.95,
+                "maxOutputTokens": 4096,
+            },
+        }
+        try:
+            response = requests.post(url, json=payload, timeout=60)
+            response.raise_for_status()
+            data = response.json()
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception as e:
+            logger.error(f"Gemini call failed: {e}")
+            return None
 
-    def save_cache(self):
-        self.cache_path.write_text(json.dumps(self.cache, indent=2))
-
-    def get_file_hash(self, path):
-        import hashlib
-
-        hasher = hashlib.md5()
-        with open(path, "rb") as f:
-            buf = f.read()
-            hasher.update(buf)
-        return hasher.hexdigest()
-
-    def is_changed(self, relative_path, absolute_path):
-        current_hash = self.get_file_hash(absolute_path)
-        old_hash = self.cache.get(str(relative_path))
-        return current_hash != old_hash or old_hash == "FORCE_RESYNC"
-
-    def update_hash(self, relative_path, absolute_path):
-        current_hash = self.get_file_hash(absolute_path)
-        self.cache[str(relative_path)] = current_hash
-
-
-def sync_wiki():
-    self_wiki_dir = workspace / "self-wiki"
-    raw_dir = self_wiki_dir / "raw"
-    wiki_dir = self_wiki_dir / "wiki"  # self-wiki
-    config_file = workspace / "GEMINI.md"
-    cache_file = self_wiki_dir / "log" / ".sync_cache.json"
-
-    with open(config_file, "r") as f:
-        instructions = f.read()
-
-    tracker = SyncTracker(cache_file)
-    changed_files = []
-
-    for root, dirs, files in os.walk(raw_dir):
-        for file in files:
-            if file.endswith(".md"):
-                path = Path(root) / file
-                rel_path = path.relative_to(self_wiki_dir.parent)
-                if tracker.is_changed(rel_path, path):
-                    changed_files.append((rel_path, path))
-
-    if not changed_files:
-        logger.info("No new or modified files to sync.")
-        return
-
-    logger.info(f"Found {len(changed_files)} changed files. Adaptive processing...")
-
-    # Process files
-    for rel, abs_path in changed_files:
-        logger.info(f"Syncing: {rel}")
-        if process_batch([(rel, abs_path)], instructions, self_wiki_dir, wiki_dir):
-            tracker.update_hash(rel, abs_path)
-            tracker.save_cache()
-        else:
-            logger.error(f"Failed to sync {rel}. Cache not updated.")
-
-    update_index(wiki_dir)
-
-
-def call_llm_for_batch(raw_content, source_path, instructions, self_wiki_dir, wiki_dir):
-    # Context-aware logic: Provide all potential wiki pages to the LLM and let it choose the best one.
-    all_wiki_pages = [
-        f.name
-        for f in wiki_dir.rglob("*.md")
-        if f.name not in ["INDEX.md", "audit.md"] and not f.name.endswith("-Hub.md")
-    ]
-    context_list = "\n".join([f"- {name}" for name in all_wiki_pages])
-
-    prompt = f"""
-    You are a Second Brain knowledge synthesizer.
-    {instructions}
-    SOURCE FILE: {source_path}
-    LANGUAGE RULE: ALWAYS respond in the EXACT same language as the "ACTUAL DATA". NO translation is allowed.
-
-    AVAILABLE WIKI PAGES:
-    {context_list}
-
-    ACTUAL DATA: {raw_content}
-
-    INSTRUCTIONS:
-    1. Determine ALL relevant wiki pages to merge into. If none fit, create a new file where filename is the title slugified (e.g., `wiki/Title_of_Page.md`).
-    2. Output markdown code blocks for EACH relevant page.
-    3. Strict Output Format (Example):
-    ```markdown
-    wiki/Knowledge_Title.md
-    ---
-    last_updated: 2026-05-19T10:00:00Z
-    title: Knowledge Title
-    description: A concise description.
-    tags: [type/synthesis, work, self]
-    ---
-
-    > A 2-3 sentence summary here.
-
-    ## Evolution
-    - Initial insights about the topic.
-
-    ## Content
-    ...content merged with ACTUAL DATA...
-
-    ## Backlinks
-    <!-- BEGIN BACKLINKS -->
-    - **Evolved from**: [[Topic]]
-    - **Mentioned in**: [[Topic]]
-    - **Contradicts**: [[Topic]]
-    <!-- END BACKLINKS -->
-
-    ## Sources
-    - [[{source_path}]] (Append this to the existing list of sources)
-    ```
-    4. DO NOT include any text outside the code blocks.
-    """  # Use environment variables for LLM configuration
-
-    llm_provider = os.environ.get("LLM_PROVIDER", "mlx").lower()
-    api_key = os.environ.get("DEEPSEEK_API_KEY", "")
-
-    if llm_provider == "deepseek":
-        url = "https://api.deepseek.com/v1/chat/completions"
-        model = os.environ.get("LLM_MODEL", "deepseek-chat")
-        headers = {"Authorization": f"Bearer {api_key}"}
     else:
-        url = os.environ.get("LLM_URL", "http://100.90.225.26:8080/v1/chat/completions")
-        model = os.environ.get("LLM_MODEL", "mlx-community/gemma-4-e4b-it-4bit")
-        headers = {}
+        # OpenAI-compatible (MLX, DeepSeek, Ollama)
+        url = os.environ.get("LLM_URL")
+        api_key = (
+            os.environ.get("OPENAI_API_KEY")
+            or os.environ.get("DEEPSEEK_API_KEY")
+            or "no-key"
+        )
+        model = os.environ.get("LLM_MODEL", "mlx-model")
 
-    payload = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.1,
-        "stream": False,
-    }
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.1,
+        }
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=60)
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            logger.error(f"{provider.upper()} call failed at {url}: {e}")
+            return None
+
+
+def chunk_text(text: str, max_lines: int = 500):
+    """Splits text into chunks of roughly max_lines."""
+    lines = text.splitlines()
+    for i in range(0, len(lines), max_lines):
+        yield "\n".join(lines[i : i + max_lines])
+
+
+def distill_content(rel_path: str, content: str, is_chunk: bool = False):
+    """
+    Core distillation logic for a piece of content.
+    """
+    instructions = GEMINI_CONF.read_text(encoding="utf-8")
+
+    # Get existing wiki titles for semantic matching
+    existing_titles = []
+    for f in WIKI_DIR.glob("*.md"):
+        try:
+            p = WikiPage(f)
+            if p.front_matter.get("title"):
+                existing_titles.append(p.front_matter["title"])
+        except:
+            continue
+
+    titles_context = "\n".join([f"- {t}" for t in sorted(list(set(existing_titles)))])
+    chunk_context = " (This is a chunk of a larger file)" if is_chunk else ""
+
+    # Socratic Mirror Prompt
+    prompt = f"""
+I am providing content from a raw source: [[{rel_path}]]{chunk_context}
+Content:
+---
+{content}
+---
+
+Existing Themes in the Wiki:
+{titles_context}
+
+Your task is to distill this into the Self-Wiki following the "Socratic Mirror" principles.
+1. **Semantic Matching**: Review the 'Existing Themes'. If this content relates to one of them (even if the wording differs), choose that exact existing title. Only create a new title if the topic is substantially different.
+2. **Diarization**: Extract semantic "nuggets" or insights.
+3. **Fidelity**: Use direct blockquotes ("> ") for raw truth. Do NOT interpret unless necessary.
+4. **Tagging**: Generate relevant tags. Include at least one functional tag from the taxonomy:
+   - `type/synthesis`: For connecting dots across entries.
+   - `type/principle`: For fundamental life laws or mental models.
+   - `type/shift`: For significant changes in belief or behavior.
+   - Add your own semantic tags for topical categorization.
+5. **Level**: Assign a level (1: Synthesis, 2: Principle).
+
+Output your response as a JSON object:
+{{
+  "actions": [
+    {{
+      "target_title": "Choose from Existing Themes or Create New",
+      "level": 1,
+      "summary": "2-3 sentence Socratic summary",
+      "new_body_content": "The distilled insights, integrated with existing knowledge if possible",
+      "tags": ["type/synthesis", "topic/growth", "emotion/anxiety"]
+    }}
+  ]
+}}
+"""
+
+    response_text = call_llm(prompt, instructions)
+    if not response_text:
+        return False
+
+    json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
+    if not json_match:
+        logger.error(f"Invalid JSON response for {rel_path}")
+        return False
 
     try:
-        logger.info(f"Using {llm_provider.upper()} for batch processing...")
-        # logger.info(f"Sending request to {url}...")
-        response = requests.post(url, json=payload, headers=headers, timeout=300)
-        if response.status_code == 200:
-            # ... (parsing logic remains the same)
-            raw_result = (
-                response.json()
-                .get("choices", [{}])[0]
-                .get("message", {})
-                .get("content", "")
-            )
-            # logger.info(f"LLM RESPONSE: {raw_result}")
-            blocks = re.findall(r"```(?:markdown)?\n(.*?)\n```", raw_result, re.DOTALL)
-            for block in blocks:
-                lines = block.splitlines()
-                if not lines:
-                    continue
-                first_line = lines[0].strip()
-                if first_line.startswith("wiki/") and first_line.endswith(".md"):
-                    target_path = self_wiki_dir / first_line
-                    content = "\n".join(lines[1:]).strip()
-                    target_path.parent.mkdir(parents=True, exist_ok=True)
-                    target_path.write_text(content, encoding="utf-8")
-            return True
-        else:
-            logger.error(
-                f"LLM request failed: {response.status_code} - {response.text}"
-            )
-            return False
+        data = json.loads(json_match.group(0))
+        for action in data.get("actions", []):
+            page = WikiPage.create_new(action["target_title"], level=action["level"])
+
+            if not page.summary:
+                page.summary = action["summary"]
+
+            # Smart Merging: Check if content already exists to avoid duplicates
+            if action["new_body_content"].strip() not in page.body:
+                page.body += f"\n\n### Distillation ({datetime.now().strftime('%Y-%m-%d')})\n{action['new_body_content']}\n"
+
+            # Additive Traceability: Append the raw file path to the sources list
+            if rel_path not in page.sources:
+                page.sources.append(rel_path)
+
+            # Log the source being added for transparency
+            logger.info(f"Source linked: [[{rel_path}]] -> {action['target_title']}")
+
+            current_tags = set(page.front_matter.get("tags", []))
+            current_tags.update(action.get("tags", []))
+            page.front_matter["tags"] = list(current_tags)
+            page.save()
+            logger.info(f"Integrated theme: {action['target_title']}")
+        return True
     except Exception as e:
-        logger.error(f"Sync error: {e}", exc_info=True)
+        logger.error(f"Error processing actions for {rel_path}: {e}")
         return False
 
 
-def process_batch(batch, instructions, self_wiki_dir, wiki_dir):
-    rel_path, abs_path = batch[0]
-    content = abs_path.read_text(encoding="utf-8")
-    lines = content.splitlines()
+def distill_file(rel_path: str, abs_path: Path):
+    """
+    Processes a single raw file, handles chunking if necessary.
+    """
+    raw_content = abs_path.read_text(encoding="utf-8")
+    line_count = len(raw_content.splitlines())
 
-    if len(lines) > 500:
-        logger.info(f"File {rel_path} is large ({len(lines)} lines). Chunking...")
-        chunk_size = 500
-        for i in range(0, len(lines), chunk_size):
-            chunk_lines = lines[i : i + chunk_size]
-            chunk_content = (
-                f"\n--- FILE: {rel_path} (Chunk {i // chunk_size + 1}) ---\n"
-                + "\n".join(chunk_lines)
-            )
-            if not call_llm_for_batch(
-                chunk_content, str(rel_path), instructions, self_wiki_dir, wiki_dir
-            ):
-                return False
-        return True
-
-    return call_llm_for_batch(
-        content, str(rel_path), instructions, self_wiki_dir, wiki_dir
-    )
+    if line_count > 500:
+        logger.info(f"Large file detected ({line_count} lines). Chunking...")
+        success = True
+        for i, chunk in enumerate(chunk_text(raw_content, 500)):
+            logger.info(f"Processing chunk {i + 1} of {rel_path}")
+            if not distill_content(rel_path, chunk, is_chunk=True):
+                success = False
+        return success
+    else:
+        return distill_content(rel_path, raw_content)
 
 
-def update_index(wiki_dir):
-    index_path = wiki_dir / "INDEX.md"
-    topics = sorted(
-        [
-            f.stem
-            for f in wiki_dir.rglob("*.md")
-            if f.name not in ["INDEX.md", "audit.md"] and not f.name.endswith("-Hub.md")
-        ],
-        key=str.lower,
-    )
-    with open(index_path, "w", encoding="utf-8") as f:
-        f.write("# Wiki Index\n\n")
-        for topic in topics:
-            f.write(f"* [[{topic}]]\n")
+def sync_wiki():
+    """Main sync loop."""
+    from orchestrator import SocraticOrchestrator
 
+    orchestrator = SocraticOrchestrator()
+    changed = orchestrator.get_changed_files()
 
-if __name__ == "__main__":
+    if not changed:
+        logger.info("Nothing to sync.")
+        return
+
+    logger.info(f"Starting distillation for {len(changed)} files.")
+
+    for rel, abs_p, h in changed:
+        if distill_file(rel, abs_p):
+            orchestrator.cache[rel] = h
+            orchestrator.save_cache()
+        else:
+            logger.warning(f"Skipping cache update for {rel} due to failure.")
+
+    if __name__ == "__main__":
+
     sync_wiki()

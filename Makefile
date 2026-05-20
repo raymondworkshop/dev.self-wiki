@@ -14,11 +14,23 @@ help:
 	@echo "  make query     - Query your Second Brain"
 	@echo "  make push      - Commit and push all changes"
 
-sync:
+# --- Workflow Targets ---
+
+# DESIGN: Gemini designs/updates the engine (via Gemini CLI)
+design:
+	@echo "Design phase is managed by Gemini CLI to maintain the operating manual."
+
+# RUN: Local MLX server executes the work (Production Engine)
+run:
 	$(PYTHON) scripts/sync_wiki.py
 
+# AUDIT: Gemini audits the quality of local execution (Quality Control)
 audit:
+	$(PYTHON) scripts/test_wiki_compliance.py
 	$(PYTHON) scripts/audit_wiki.py
+
+# FULL CYCLE
+all: run audit
 
 
 backliner:
