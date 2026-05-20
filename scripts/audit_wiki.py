@@ -17,9 +17,7 @@ def load_env(env_path):
 # Load .env
 load_env(Path(__file__).parent.parent / ".env")
 workspace = Path(
-    os.environ.get(
-        "WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki"
-    )
+    os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
 )
 
 
@@ -31,8 +29,9 @@ def get_yaml_field(content, field):
 
 
 def run_audit():
-    wiki_dir = workspace  # root of self-wiki
-    audit_file = workspace / "audit.md"
+    self_wiki_dir = workspace / "self-wiki"
+    wiki_dir = self_wiki_dir / "wiki"
+    audit_file = self_wiki_dir / "audit.md"
 
     # 1. Get all existing topics
     # Scan all .md files in all subdirectories, excluding top-level hubs/index/audit

@@ -14,6 +14,18 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
+def load_env(env_path):
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if line.strip() and not line.startswith("#"):
+                key, value = line.split("=", 1)
+                os.environ[key.strip()] = value.strip().strip('"').strip("'")
+
+
+# Load .env
+load_env(Path(__file__).parent.parent / ".env")
+
+
 def expand_query_terms(query):
     # Use LLM to get keywords in both Chinese and English
     llm_provider = os.environ.get("LLM_PROVIDER", "mlx").lower()
@@ -51,12 +63,12 @@ def expand_query_terms(query):
 
 
 def query_wiki(query):
-    # ... (Env loading logic)
     workspace = Path(
-        os.environ.get(
-            "WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki"
-        )
+        os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
     )
+
+    self_wiki_dir = workspace / "self-wiki"
+    wiki_dir = self_wiki_dir / "wiki"
 
     # 1. Retrieval: Find relevant documents based on expanded query terms
     logger.info(f"Expanding query: {query}")
@@ -64,14 +76,10 @@ def query_wiki(query):
     logger.info(f"Using search terms: {query_terms}")
 
     candidates = []
-    # Recursively scan all files in the self-wiki folder
-    for f in workspace.rglob("*.md"):
-        # Exclude management files and specific directories
-        if (
-            f.name in ["INDEX.md", "audit.md"]
-            or "outputs/" in str(f)
-            or "raw/" in str(f)
-        ):
+    # Recursively scan all files in the wiki folder
+    for f in wiki_dir.rglob("*.md"):
+        # Exclude management files
+        if f.name in ["INDEX.md", "audit.md"]:
             continue
         content = f.read_text(encoding="utf-8").lower()
         score = sum(1 for term in query_terms if term in content)

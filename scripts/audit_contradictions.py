@@ -8,10 +8,25 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
+def load_env(env_path):
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if line.strip() and not line.startswith("#"):
+                key, value = line.split("=", 1)
+                os.environ[key.strip()] = value.strip().strip('"').strip("'")
+
+
+# Load .env
+load_env(Path(__file__).parent.parent / ".env")
+
+
 def audit_contradictions():
-    workspace = Path(__file__).parent.parent.resolve()
-    wiki_dir = workspace / "wiki"
-    wiki_files = list(wiki_dir.glob("*.md"))
+    workspace = Path(
+        os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
+    )
+    self_wiki_dir = workspace / "self-wiki"
+    wiki_dir = self_wiki_dir / "wiki"
+    wiki_files = list(wiki_dir.rglob("*.md"))
 
     # Analyze files in batches for contradictions
     batch_size = 5

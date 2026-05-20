@@ -18,14 +18,13 @@ def load_env(env_path):
 # Load .env
 load_env(Path(__file__).parent.parent / ".env")
 WORKSPACE_PATH = Path(
-    os.environ.get(
-        "WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki"
-    )
+    os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
 )
 
 
 def update_backlinks():
-    wiki_dir = WORKSPACE_PATH  # root of self-wiki
+    self_wiki_dir = WORKSPACE_PATH / "self-wiki"
+    wiki_dir = self_wiki_dir / "wiki"
     wiki_files = [
         f
         for f in wiki_dir.rglob("*.md")

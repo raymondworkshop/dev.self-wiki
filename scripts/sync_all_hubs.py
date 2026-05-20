@@ -14,9 +14,7 @@ def load_env(env_path):
 # Load .env
 load_env(Path(__file__).parent.parent / ".env")
 WORKSPACE_PATH = Path(
-    os.environ.get(
-        "WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki"
-    )
+    os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
 )
 
 
@@ -33,7 +31,8 @@ def get_file_description(file_path):
 
 
 def sync_hubs():
-    wiki_dir = WORKSPACE_PATH
+    self_wiki_dir = WORKSPACE_PATH / "self-wiki"
+    wiki_dir = self_wiki_dir / "wiki"
     hub_map = {
         "Business-Hub.md": "business",
         "Communication-Hub.md": "communication",

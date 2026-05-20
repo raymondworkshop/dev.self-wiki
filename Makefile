@@ -9,6 +9,8 @@ help:
 	@echo "  make sync    - Get the prompt to synchronize wiki/ from raw/ sources"
 	@echo "  make audit   - Get the prompt to perform a wiki lint/audit"
 	@echo "  make backliner - Run the backliner script"
+	@echo "  make hub     - Update all hub pages"
+	@echo "  make test    - Test wiki compliance"
 	@echo "  make query     - Query your Second Brain"
 	@echo "  make push      - Commit and push all changes"
 

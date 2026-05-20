@@ -13,17 +13,16 @@ def load_env(env_path):
 # Load .env
 load_env(Path(__file__).parent.parent / ".env")
 WORKSPACE_ROOT = Path(
-    os.environ.get(
-        "WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki"
-    )
-).parent
+    os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
+)
 
 
 class SelfWikiOrchestrator:
     def __init__(self, workspace_root):
         self.root = Path(workspace_root)
-        self.wiki_dir = self.root / "self-wiki/wiki"
-        self.audit_file = self.root / "self-wiki/outputs/audit.md"
+        self.self_wiki_dir = self.root / "self-wiki"
+        self.wiki_dir = self.self_wiki_dir / "wiki"
+        self.audit_file = self.self_wiki_dir / "outputs/audit.md"
         self.gemini_config = self.root / "GEMINI.md"
 
     def generate_audit_prompt(self):

@@ -15,14 +15,13 @@ def load_env(env_path):
 # Load .env
 load_env(Path(__file__).parent.parent / ".env")
 WORKSPACE_PATH = Path(
-    os.environ.get(
-        "WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki"
-    )
+    os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
 )
 
 
 def check_compliance():
-    wiki_root = WORKSPACE_PATH
+    self_wiki_dir = WORKSPACE_PATH / "self-wiki"
+    wiki_root = self_wiki_dir / "wiki"
     md_files = [
         f
         for f in wiki_root.rglob("*.md")
