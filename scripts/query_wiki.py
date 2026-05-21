@@ -3,175 +3,127 @@ import logging
 import os
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import requests
 
-# Simple vector search implementation using word overlap as a proxy for RAG
-# (Avoiding heavy vector DB dependencies for local simplicity)
-
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-
-def load_env(env_path):
-    if env_path.exists():
-        for line in env_path.read_text().splitlines():
-            if line.strip() and not line.startswith("#"):
-                key, value = line.split("=", 1)
-                os.environ[key.strip()] = value.strip().strip('"').strip("'")
+WORKSPACE_PATH = Path(
+    os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
+)
+INDEX_PATH = WORKSPACE_PATH / "self-wiki" / "log" / "INDEX.json"
 
 
-# Load .env
-load_env(Path(__file__).parent.parent / ".env")
-
-
-def expand_query_terms(query):
-    # Use LLM to get keywords in both Chinese and English
-    llm_provider = os.environ.get("LLM_PROVIDER", "mlx").lower()
-    llm_model = os.environ.get("LLM_MODEL", "mlx-community/gemma-4-e4b-it-4bit")
-
-    prompt = f"""
-    Given the following user query, provide a list of search keywords in both Chinese and English, separated by spaces.
-    Only output the keywords, nothing else.
-
-    USER QUERY: {query}
-    KEYWORDS:
-    """
-
+def get_llm_response(prompt, system_prompt="You are a Socratic assistant."):
     url = os.environ.get("LLM_URL", "http://100.90.225.26:8080/v1/chat/completions")
     payload = {
-        "model": llm_model,
-        "messages": [{"role": "user", "content": prompt}],
+        "model": os.environ.get("LLM_MODEL", "mlx-community/gemma-4-e4b-it-4bit"),
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt},
+        ],
         "temperature": 0.1,
-        "stream": False,
     }
-
     try:
-        response = requests.post(url, json=payload, timeout=30)
-        result = (
-            response.json()
-            .get("choices", [{}])[0]
-            .get("message", {})
-            .get("content", "")
-            .strip()
-        )
-        return set(result.lower().split())
-    except Exception:
-        # Fallback to simple split if LLM fails
-        return set(query.lower().split())
+        response = requests.post(url, json=payload, timeout=300)
+        return response.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        logger.error(f"LLM Error: {e}")
+        return None
+
+
+def get_query_keywords(query):
+    # LLM translates and expands query into standard bilingual keywords
+    prompt = f"Extract core keywords from the query: '{query}'. Provide them as a comma-separated list of Chinese and English equivalents. Only output the list, nothing else."
+    response = get_llm_response(prompt, "You are a terminology extractor.")
+    if response:
+        return [t.strip() for t in response.split(",")]
+    return query.lower().split()
 
 
 def query_wiki(query):
-    workspace = Path(
-        os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
-    )
-
-    self_wiki_dir = workspace / "self-wiki"
-    wiki_dir = self_wiki_dir / "wiki"
-
-    # 1. Retrieval: Find relevant documents based on expanded query terms
-    logger.info(f"Expanding query: {query}")
-    query_terms = expand_query_terms(query)
-    logger.info(f"Using search terms: {query_terms}")
-
-    candidates = []
-    # Recursively scan all files in the wiki folder
-    for f in wiki_dir.rglob("*.md"):
-        # Exclude management files
-        if f.name in ["INDEX.md", "audit.md"]:
-            continue
-        content = f.read_text(encoding="utf-8").lower()
-        score = sum(1 for term in query_terms if term in content)
-        if score > 0:
-            candidates.append((score, f, content))
-
-    # Sort by relevance
-    candidates.sort(key=lambda x: x[0], reverse=True)
-    top_context = "\n".join(
-        [f"--- {f.name} ---\n{content}" for score, f, content in candidates[:5]]
-    )
-
-    if top_context:
-        print(f"top_context: {top_context}")
-    else:
-        print("No relevant information found.")
+    if query == "--list":
+        with open(INDEX_PATH, "r") as f:
+            index = json.load(f)
+            print("Available topics:")
+            print("\n".join(sorted(index["topics"].keys())))
         return
 
-    # 2. Augmentation: Synthesis via LLM
-    llm_provider = os.environ.get("LLM_PROVIDER", "mlx").lower()
-    llm_model = os.environ.get("LLM_MODEL", "mlx-community/gemma-4-e4b-it-4bit")
+    if not INDEX_PATH.exists():
+        logger.error("Index not found. Run 'make sync' first.")
+        return
+    with open(INDEX_PATH, "r") as f:
+        index = json.load(f)
 
-    prompt = f"""
-You are the "Second Brain" for a developer/thinker.
-Use the following context to answer the user's question.
+    # Synthesis Mode: Thematic Boost Ranking (Uses metadata from INDEX.json)
+    ranked_files = []
+    # Use LLM-extracted keywords instead of raw query terms
+    query_terms = get_query_keywords(query)
+    logger.info(f"Normalized query terms: {query_terms}")
 
-CONTEXT:
-{top_context}
+    logger.info("Ranking wiki files based on query relevance and foundational level...")
+    for name, data in index["topics"].items():
+        f = WORKSPACE_PATH / data["path"]
+        level = data.get("level", 0)
+        tags = " ".join(data.get("tags", []))
 
-USER QUESTION:
-{query}
-
-CRITICAL RULES:
-- Use the context to formulate an analytical and insightful answer.
-- Always cite the source files using (Source: [[filename]]) format.
-- Maintain the language of the query or the original source notes.
-- If the answer is not in the context, say "I have no record of this in your data."
-"""
-
-    # Calling the LLM (reuse logic from sync_wiki.py)
-    try:
-        if llm_provider == "mlx":
-            url = os.environ.get(
-                "LLM_URL", "http://100.90.225.26:8080/v1/chat/completions"
-            )
-            payload = {
-                "model": llm_model,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.1,
-                "stream": False,
-            }
-            response = requests.post(url, json=payload, timeout=300)
-            answer = (
-                response.json()
-                .get("choices", [{}])[0]
-                .get("message", {})
-                .get("content", "")
-            )
-        else:
-            print("Only MLX provider supported for queries currently.")
-            return
-
-        print(f"\n--- ANSWER ---\n{answer}")
-
-        # Auto-save the answer to outputs/
-        from datetime import datetime
-
-        date_str = datetime.now().strftime("%Y-%m-%d")
-        safe_filename = re.sub(r"[^a-zA-Z0-9\u4e00-\u9fa5]+", "-", query)[:50].strip(
-            "-"
+        # Thematic Boost: +20 points for each query term match in name or tags
+        match_boost = sum(
+            20 for term in query_terms if term in name.lower() or term in tags.lower()
         )
-        title = f"{safe_filename}-{date_str}.md"
+        score = (level * 10) + match_boost
 
-        qa_dir = workspace / "outputs"
-        qa_dir.mkdir(exist_ok=True)
+        ranked_files.append((score, f))
 
-        note_content = f"""
+    ranked_files.sort(key=lambda x: x[0], reverse=True)
+    top_3 = ranked_files[:3]
+    logger.info(f"Selected top 3 files for synthesis: {[f.name for _, f in top_3]}")
+
+    bucket = [f.read_text(encoding="utf-8") for _, f in top_3]
+
+    logger.info("Synthesizing answer using LLM...")
+    # Strict prompt requiring source citations
+    prompt = f"""Synthesize the following principles and content into a comprehensive response answering: {query}
+
+    Context: {" ".join(bucket)}
+
+    CRITICAL INSTRUCTION: For every insight provided, you MUST include its source using the format (Source: [[filename]]).
+
+    Format:
+    [AI Synthesis]: Your analysis here.
+    [Source Evidence]: Provide clear citations for every claim.
+    """
+
+    answer = get_llm_response(
+        prompt,
+        "You are a Socratic analyst. Always provide synthesized reasoning based on your Principles and cite your sources using (Source: [[filename]]) for every insight.",
+    )
+    logger.info("Synthesis complete.")
+    print(f"\n--- SYNTHESIS REPORT ---\n{answer}")
+
+    # Auto-save the answer to self-wiki/outputs/
+    qa_dir = WORKSPACE_PATH / "self-wiki" / "outputs"
+    qa_dir.mkdir(exist_ok=True)
+
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    safe_query = re.sub(r"[^a-zA-Z0-9\u4e00-\u9fa5]+", "-", query)[:50].strip("-")
+    filename = f"{safe_query}-{date_str}.md"
+
+    note_content = f"""
 ---
 tags: #type/synthesis
+date: {date_str}
 ---
-# {title.replace(".md", "")}
+# {query}
 
-Question: {query}
-
-Answer:
 {answer}
 """
-        (qa_dir / title).write_text(note_content, encoding="utf-8")
-        print(f"\nInsight automatically saved to {qa_dir / title}.")
-
-    except Exception as e:
-        logger.error(f"Error querying wiki: {e}")
+    (qa_dir / filename).write_text(note_content, encoding="utf-8")
+    logger.info(f"Insight automatically saved to {qa_dir / filename}.")
+    print(f"\nInsight automatically saved to {qa_dir / filename}.")
 
 
 if __name__ == "__main__":

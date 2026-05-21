@@ -245,7 +245,9 @@ def sync_wiki():
 
     for rel, abs_p, h in changed:
         if distill_file(rel, abs_p):
-            orchestrator.cache[rel] = h
+            # Recalculate hash after distillation in case update_raw_with_link modified it
+            new_hash = hashlib.md5(abs_p.read_bytes()).hexdigest()
+            orchestrator.cache[rel] = new_hash
             orchestrator.save_cache()
         else:
             logger.warning(f"Skipping cache update for {rel} due to failure.")

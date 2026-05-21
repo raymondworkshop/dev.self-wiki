@@ -1,7 +1,10 @@
 
 #### self-wiki  
 
-##### tasks  
+##### tasks 
+- todo  
+    - 引入置信度  
+    
 - sync-wiki
   *  /sync-wiki, /audit-wiki skills in gemini cli  
     - todo  /query-wiki 
