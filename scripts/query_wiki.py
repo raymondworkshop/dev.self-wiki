@@ -198,9 +198,7 @@ def estimate_tokens(text: str) -> int:
     return max(1, len(text) // 3)
 
 
-def get_llm_response(
-    messages: List[Dict[str, str]]
-) -> str | None:
+def get_llm_response(messages: List[Dict[str, str]]) -> str | None:
     api_key = (
         os.environ.get("OPENAI_API_KEY")
         or os.environ.get("DEEPSEEK_API_KEY")
@@ -239,7 +237,15 @@ def compute_profile_scores(query: str) -> Dict[str, int]:
     scores: Dict[str, int] = {}
 
     analyze_verbs = ["analyze", "analysis", "分析", "請分析", "请分析"]
-    value_verbs = ["what are", "what is", "什麼", "是什么", "是什麼", "價值觀", "价值观"]
+    value_verbs = [
+        "what are",
+        "what is",
+        "什麼",
+        "是什么",
+        "是什麼",
+        "價值觀",
+        "价值观",
+    ]
 
     for profile, cfg in QUESTION_PROFILES.items():
         if profile == "general":
@@ -306,7 +312,11 @@ def llm_expand_keywords(query: str, profile: str) -> List[str]:
         "Return 12-24 concise bilingual retrieval keywords (Chinese + English), "
         "comma-separated only, no explanation. Include variants for principles, patterns, and behavior."
     )
-    response = get_llm_response(prompt, "You are a precise terminology extractor.")
+    messages = [
+        {"role": "system", "content": "You are a precise terminology extractor."},
+        {"role": "user", "content": prompt},
+    ]
+    response = get_llm_response(messages)
     if not response:
         return []
 
@@ -591,7 +601,13 @@ def save_output(question: str, messages: List[Dict[str, str]]) -> Path:
     out = OUTPUT_ROOT / f"{safe_q}-{date_str}.md"
 
     # Filter out system prompt for better readability in the saved file
-    dialogue = "\n\n".join([f"**{m['role'].capitalize()}**: {m['content']}" for m in messages if m['role'] != 'system'])
+    dialogue = "\n\n".join(
+        [
+            f"**{m['role'].capitalize()}**: {m['content']}"
+            for m in messages
+            if m["role"] != "system"
+        ]
+    )
 
     note_content = f"""---
 tags: [type/synthesis, query-wiki]
@@ -650,7 +666,9 @@ Tips:
     print(intro.strip())
 
 
-def query_wiki(query: str | None, debug_retrieval: bool = False, list_mode: bool = False):
+def query_wiki(
+    query: str | None, debug_retrieval: bool = False, list_mode: bool = False
+):
     if list_mode:
         index = load_index()
         print("Available topics:")
@@ -664,33 +682,40 @@ def query_wiki(query: str | None, debug_retrieval: bool = False, list_mode: bool
         logger.error(str(e))
         return
 
-    # If no initial query, start interactive loop
-    if not query:
-        print("Starting interactive session. Type 'quit' or 'exit' to finish.")
-        messages = []
-        while True:
-            q = input("\nQuery: ").strip()
-            if q.lower() in ["quit", "exit"]:
-                break
-            if not q:
-                continue
-
-            # For simplicity, treat each input as a fresh retrieval query,
-            # or could append to context.
-            perform_query_turn(q, index, messages, debug_retrieval)
-        return
-
-    # One-shot mode
+    index = load_index()
     messages = []
-    perform_query_turn(query, index, messages, debug_retrieval)
+    first_query = query
 
-    # After one-shot, prompt for save
-    save_choice = input("\nSave this conversation? [y/N]: ").strip().lower()
-    if save_choice == 'y':
-        out_path = save_output(query, messages)
-        print(f"Conversation saved to {out_path}")
+    # If initial query provided, run one-shot turn
+    if query:
+        perform_query_turn(query, index, messages, debug_retrieval)
 
-def perform_query_turn(query: str, index: dict, messages: List[Dict[str, str]], debug_retrieval: bool):
+    # Start interactive loop if no query or continue after initial query
+    print("Starting interactive session. Type 'quit' or 'exit' to finish.")
+    while True:
+        q = input("\nQuery: ").strip()
+        if q.lower() in ["quit", "exit"]:
+            break
+        if not q:
+            continue
+
+        if not first_query:
+            first_query = q
+
+        perform_query_turn(q, index, messages, debug_retrieval)
+
+    # Prompt to save after exiting
+    if len(messages) > 0 and first_query:
+        save_choice = input("\nSave this conversation? [y/N]: ").strip().lower()
+        if save_choice == "y":
+            out_path = save_output(first_query, messages)
+            print(f"Conversation saved to {out_path}")
+    return
+
+
+def perform_query_turn(
+    query: str, index: dict, messages: List[Dict[str, str]], debug_retrieval: bool
+):
     profile, strong_profile, profile_scores = detect_profile_confidence(query)
     language = detect_language(query)
     query_terms = build_query_terms(query, profile)
@@ -730,7 +755,6 @@ def perform_query_turn(query: str, index: dict, messages: List[Dict[str, str]], 
 
     print(f"\n--- ANSWER ---\n{answer}")
     messages.append({"role": "assistant", "content": answer})
-
 
 
 if __name__ == "__main__":
