@@ -99,95 +99,80 @@ def run_audit():
 
     # ... (Keep existing EMOTIONAL_PATTERNS and link logic) ...
 
-    # 3. Contradiction Audit (LLM integration)
-    contradictions = []
-    language = "Chinese"
-
-    # 1. BucketManager: Rank and group files by token budget
-    def get_file_stats(f):
-        content = f.read_text(encoding="utf-8")
-        return {
-            "path": f,
-            "tokens": len(content) // 4,
-            "content": content,
-            "level": int(get_yaml_field(content, "level") or 0),
-            "mtime": f.stat().st_mtime,
-        }
-
-    file_list = [get_file_stats(f) for f in wiki_files]
-    # Sort: Level (high to low) then mtime (new to old)
-    file_list.sort(key=lambda x: (x["level"], x["mtime"]), reverse=True)
-
-    buckets = []
-    current_bucket = []
-    current_tokens = 0
-    # MAX_TOKENS = 8192
-    # PROMPT_OVERHEAD = 2000  # Headroom for ongoing summary
-    # WORKING_BUDGET = MAX_TOKENS - PROMPT_OVERHEAD
-
+    # 2. Emotional Trigger Audit
+    emotional_triggers = []
+    # Identify patterns matching emotion indicators
     for item in file_list:
-        if current_tokens + item["tokens"] > WORKING_BUDGET and current_bucket:
-            buckets.append(current_bucket)
-            logger.info(
-                f"Created bucket with {len(current_bucket)} files ({current_tokens} tokens)"
-            )
-            current_bucket = []
-            current_tokens = 0
-        current_bucket.append(item)
-        current_tokens += item["tokens"]
-    if current_bucket:
-        buckets.append(current_bucket)
-        logger.info(
-            f"Created final bucket with {len(current_bucket)} files ({current_tokens} tokens)"
-        )
-    logger.info(f"Total buckets created: {len(buckets)}")
+        content = item["content"]
+        # Look for tag lines like "- emotion/..."
+        matches = re.findall(r"- emotion/([a-zA-Z0-9_-]+)", content)
+        if matches:
+            # For each emotion, get context (a few lines around the match)
+            for emotion in matches:
+                # Find the line containing the emotion
+                lines = content.splitlines()
+                for i, line in enumerate(lines):
+                    if f"emotion/{emotion}" in line:
+                        # Grab some context (the line and maybe 1-2 lines before for "why")
+                        context = " ".join(lines[max(0, i - 2) : i + 1]).strip()
+                        emotional_triggers.append(
+                            {
+                                "emotion": emotion,
+                                "context": context,
+                                "path": str(item["path"]),
+                            }
+                        )
 
-    # 2. Sequential Reasoning with Running Summary
-    running_summary = "None yet."
-    for i, bucket in enumerate(buckets):
-        logger.info(f"Processing reasoning bucket {i + 1}/{len(buckets)}...")
-        bucket_text = "\n".join(
-            [f"--- FILE: {item['path'].name} ---\n{item['content']}" for item in bucket]
-        )
-        prompt = f"""
-        Analyze these wiki notes for contradictions or cognitive shifts compared to previous findings.
-
-        Running Principle Summary: {running_summary}
-
-        New Notes to Analyze:
-        {bucket_text}
-
-        Format: Contradiction: [desc]\nLabels: [AI Synthesis]... [Source Evidence]...\nSuggestion: [how to resolve].
-        Update the 'Running Principle Summary' based on these findings.
-        """
-
-        result = call_llm(prompt, language)
-        if result and "Audit failed" not in result:
-            logger.info(f"Successfully processed bucket {i + 1} reasoning.")
-            contradictions.append(result)
-            if "Running Principle Summary:" in result:
-                running_summary = result.split("Running Principle Summary:")[-1].strip()
-        else:
-            logger.error(f"Reasoning failed for bucket {i + 1}")
-
-    # 3. Global Aggregation Pass
-    if len(buckets) > 1:
-        logger.info("Performing global aggregation pass...")
-        agg_prompt = f"Consolidate these findings into a final report on logical contradictions across the entire wiki:\n\n{' '.join(contradictions)}"
-        final_report = call_llm(agg_prompt, language)
-        contradictions = [final_report]
+    # ... (Keep existing Contradiction Audit logic) ...
 
     # 4. Generate Report
-    # ... (Keep existing report generation logic) ...
+    report = [
+        "# Wiki Audit and Quality Review",
+        f"**Last Automated Run**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        "\n---",
+        "\n### ⚖️ Cognitive Contradictions & Shifts",
+        "\n".join(contradictions) if contradictions else "No contradictions found.",
+        "\n### 🎭 Emotional Triggers & Shifts",
+        "| Emotion | Context / Cause | File Path |",
+        "| :--- | :--- | :--- |",
+    ]
+    for trigger in emotional_triggers:
+        report.append(
+            f"| {trigger['emotion']} | {trigger['context']} | `{trigger['path']}` |"
+        )
 
-    # Proactive Console Summary
-    print("\n--- 🧠 Proactive Audit Summary ---")
-    if contradictions:
-        print(f"Found {len(contradictions)} potential contradictions/shifts.")
-        print(contradictions[0][:300] + "...")
+    report.extend(
+        [
+            "\n### 🧠 AI Instructions",
+            "1. Prioritize creating stubs for the high-frequency Red Links listed below.",
+            "2. Reflect on the 'Socratic Questions' provided for each contradiction.",
+            "\n### 🚨 Red Links (Missing topics, Frequency > 1)",
+            "\n| Frequency | Topic |",
+            "| :--- | :--- |",
+        ]
+    )
+
+    red_link_counts = Counter(red_links).most_common()
+    filtered_red_links = [item for item in red_link_counts if item[1] > 1]
+    if not filtered_red_links:
+        report.append("| - | No recurring red links found! |")
     else:
-        print("No critical contradictions found.")
-    print(f"Full report updated at: {audit_file}\n")
+        for topic, count in filtered_red_links:
+            report.append(f"| {count} | [[{topic}]] |")
+
+    report.extend(
+        [
+            "\n### ⚠️ Structural Warnings",
+            "\n".join(structural_warnings)
+            if structural_warnings
+            else "No structural warnings found.",
+        ]
+    )
+
+    with open(audit_file, "w", encoding="utf-8") as f:
+        f.write("\n".join(report))
+    logger.info(f"Audit completed. Report updated at {audit_file}")
+    print(f"Audit completed. Report updated at {audit_file}")
 
 
 if __name__ == "__main__":
