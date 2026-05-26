@@ -27,7 +27,7 @@ def update_backlinks():
     wiki_dir = self_wiki_dir / "wiki"
     wiki_files = [
         f
-        for f in wiki_dir.rglob("*.md")
+        for f in wiki_dir.rglob("*.md", recurse_symlinks=True)
         if f.name not in ["INDEX.md", "audit.md"] and not f.name.endswith("-Hub.md")
     ]
 

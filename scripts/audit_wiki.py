@@ -79,7 +79,7 @@ def run_audit():
 
     # 1. Collect all content and topics
     wiki_files = []
-    for f in wiki_dir.rglob("*.md"):
+    for f in wiki_dir.rglob("*.md", recurse_symlinks=True):
         if f.name in ["audit.md", "INDEX.md"] or f.name.endswith("-Hub.md"):
             continue
         wiki_files.append(f)

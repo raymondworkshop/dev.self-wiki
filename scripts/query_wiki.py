@@ -350,6 +350,7 @@ def build_query_terms(query: str, profile: str) -> List[str]:
 
 def score_topic(name: str, data: dict, query_terms: List[str], profile: str) -> int:
     name_l = name.lower()
+    alias_l = str(data.get("alias", "")).lower()
     tags = [str(t).lower() for t in data.get("tags", [])]
     tag_blob = " ".join(tags)
 
@@ -372,7 +373,7 @@ def score_topic(name: str, data: dict, query_terms: List[str], profile: str) -> 
 
     profile_terms = QUESTION_PROFILES[profile]["keywords"]
     for term in query_terms:
-        if term in name_l:
+        if term in name_l or (alias_l and term in alias_l):
             score += 28
         if term in tag_blob:
             score += 16
@@ -386,17 +387,37 @@ def score_topic(name: str, data: dict, query_terms: List[str], profile: str) -> 
 
 
 def extract_key_lines(
-    content: str, query_terms: List[str], max_lines: int = 18
+    content: str, query_terms: List[str], max_lines: int = 24
 ) -> List[str]:
     lines = [ln.strip() for ln in content.splitlines() if ln.strip()]
     selected: List[str] = []
 
-    # Prioritize Socratic summary blockquotes and key headers.
+    # 1. Prioritize Socratic summary blockquotes (high signal)
     for ln in lines:
-        if ln.startswith(">") and len(selected) < max_lines // 3:
+        if ln.startswith(">") and len(selected) < 5:
             selected.append(ln)
 
-    # Add lines matching query terms.
+    # 2. Add high-signal headers and their direct children (Evolution, Sources, Principles)
+    in_high_signal = False
+    for ln in lines:
+        if ln.startswith("## "):
+            lower_h = ln.lower()
+            if any(
+                term in lower_h
+                for term in ["evolution", "source", "principle", "shift"]
+            ):
+                in_high_signal = True
+                if ln not in selected:
+                    selected.append(ln)
+            else:
+                in_high_signal = False
+        elif in_high_signal and (ln.startswith("-") or ln.startswith("*")):
+            if ln not in selected:
+                selected.append(ln)
+            if len(selected) >= max_lines // 2:
+                in_high_signal = False
+
+    # 3. Add lines matching query terms for relevance
     qset = [t for t in query_terms if len(t) > 1]
     for ln in lines:
         lnl = ln.lower()
@@ -406,10 +427,10 @@ def extract_key_lines(
             if len(selected) >= max_lines:
                 break
 
-    # Fallback: first non-noisy lines.
-    if len(selected) < 8:
-        for ln in lines[:40]:
-            if ln.startswith("---"):
+    # 4. Fallback: first non-noisy lines if we're still low on context
+    if len(selected) < 10:
+        for ln in lines[:50]:
+            if ln.startswith("---") or ln.startswith("# "):
                 continue
             if ln not in selected:
                 selected.append(ln)
@@ -420,11 +441,17 @@ def extract_key_lines(
 
 
 def build_evidence_snippet(path: Path, query_terms: List[str]) -> str:
-    content = path.read_text(encoding="utf-8", errors="ignore")
-    lines = extract_key_lines(content, query_terms)
-    filename = path.name
-    body = "\n".join(f"- {ln}" for ln in lines)
-    return f"### [[{filename}]]\n{body}\n"
+    try:
+        content = path.read_text(encoding="utf-8", errors="ignore")
+        lines = extract_key_lines(content, query_terms)
+        filename = path.name
+        body = "\n".join(
+            lines
+        )  # Removed "-" prefixing here to keep original formatting
+        return f"### [[{filename}]]\n{body}\n"
+    except Exception as e:
+        logger.error(f"Error reading {path}: {e}")
+        return ""
 
 
 def sanitize_filename(question: str, max_len: int = 80) -> str:
@@ -444,10 +471,11 @@ def matched_terms(
     name: str, data: dict, query_terms: List[str], top_n: int = 12
 ) -> List[str]:
     name_l = name.lower()
+    alias_l = str(data.get("alias", "")).lower()
     tags = " ".join([str(t).lower() for t in data.get("tags", [])])
     hits = []
     for term in query_terms:
-        if term in name_l or term in tags:
+        if term in name_l or (alias_l and term in alias_l) or term in tags:
             hits.append(term)
     # de-dup keep order
     seen = set()
@@ -511,7 +539,7 @@ def trim_evidence_to_budget(
         "1) Answer strictly from the provided wiki evidence.\n"
         "2) Use this method implicitly: extract principles -> validate with repeated patterns -> then synthesize.\n"
         "3) Follow the profile-specific instruction.\n"
-        "4) Include a concise 'Socratic Question' at the end.\n\n"
+        "4) Include one or two concise 'Socratic Questions' at the end.\n\n"
         "Output format (markdown):\n"
         f"- # {query}\n"
         "- > 2-3 sentence Socratic summary\n"
@@ -545,23 +573,34 @@ def build_synthesis_prompt(
     strict_profile: bool,
 ) -> Tuple[str, str]:
     system_prompt = (
-        "You are a Socratic analyst for a personal wiki. "
+        "You are a Socratic analyst for a personal wiki, acting as a 'Reasoning Engine' and a 'Socratic Mirror'. "
         "Ground every claim in provided wiki evidence. "
+        "Match the user's input language perfectly (Chinese or English). "
         "If inferring beyond explicit wording, label it [AI Synthesis]. "
-        "If raising reflective challenge, label it [Socratic Observation]. "
+        "If raising reflective challenge or identifying a blind spot/bias, label it [Socratic Observation]. "
+        "If identifying a significant change in belief or contradiction, flag it as a [Cognitive Shift]. "
+        "Trace claims back to original raw sources whenever available in evidence. "
         "Never invent sources."
     )
 
+    # Protocols from GEMINI.md
+    protocols = """
+    Interaction Protocols:
+    - Deep Analysis: Subject -> Analysis Framework -> Key Insights -> Implications -> Socratic Question.
+    - Comparison: Entity A vs Entity B -> Overlap -> Divergence -> Synthesis/Conclusion.
+    - Recommendation: Context -> Options (Max 3) -> Rationale -> Potential Pitfalls.
+    """
+
     strict_profile_instruction = {
-        "values": "Identify 5-7 core values, explain each with evidence, and include tensions between values.",
-        "personality_logic": "Analyze personality traits and underlying operating logic, including recurring loops and contradiction points.",
+        "values": "Identify 5-7 core values, explain each with evidence, and include tensions between values. Use the Deep Analysis protocol.",
+        "personality_logic": "Analyze personality traits and underlying operating logic, including recurring loops and contradiction points. Use the Deep Analysis protocol.",
         "swot": "Provide three sections: strengths, weaknesses, blind spots. Each item must include evidence and one actionable correction.",
-        "general": "Answer comprehensively with themes, implications, and practical next steps.",
+        "general": "Answer comprehensively with themes, implications, and practical next steps. If comparing or recommending, use the respective protocol.",
     }[profile]
 
     flexible_instruction = (
         "Answer naturally based on evidence, using the structure that best fits the user's question. "
-        "Do not force a rigid template unless clearly required by the question wording."
+        "Apply the most relevant Interaction Protocol (Deep Analysis, Comparison, or Recommendation) if applicable."
     )
 
     profile_instruction = (
@@ -574,22 +613,21 @@ Detected profile: {profile}
 Language: {language}
 Retrieval terms: {", ".join(query_terms[:40])}
 
+{protocols}
+
 Task:
 1) Answer strictly from the provided wiki evidence.
 2) Use this method implicitly: extract principles -> validate with repeated patterns -> then synthesize.
 3) {profile_instruction}
-4) Include a concise "Socratic Question" at the end.
+4) Include one or two high-impact "Socratic Questions" at the end. These questions should be heuristic and designed to pierce through surface behaviors to elicit your 'bottom-level logic' (底层逻辑) or expose hidden cognitive contradictions.
+5) Ensure all headers and summaries align with the Socratic Mirror philosophy.
 
 Output format (markdown):
 - # {query}
 - > 2-3 sentence Socratic summary
-- ## Question
-- ## Answer
+- ## Analysis / Answer
 - ## Provenance
-  - list sources as [[filename.md]]
-
-Evidence Pack:
-{evidence_block}
+  - list sources as [[filename.md]] or [[raw-file-path]]
 """
     return system_prompt, prompt
 
@@ -650,8 +688,10 @@ Built-in query logic:
 3) Rank INDEX topics by level/tags/term-matches
 4) Select high-signal candidates
 5) Extract evidence snippets from wiki files
-6) Synthesize answer with [AI Synthesis] / [Socratic Observation]
-7) Save to self-wiki/outputs/{{question}}-{{date}}.md
+6) Synthesize answer with [AI Synthesis] / [Socratic Observation] / [Cognitive Shift]
+7) Apply Interaction Protocols (Deep Analysis, Comparison, Recommendation)
+8) Save to self-wiki/outputs/{question}-{date}.md
+
 
 Examples:
 - python3 scripts/query_wiki.py "what are my values?"

@@ -53,7 +53,7 @@ def call_llm(prompt: str, system_instruction: str = ""):
     }
 
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=300)
+        response = requests.post(url, json=payload, headers=headers, timeout=360)
         response.raise_for_status()
         data = response.json()
         return data["choices"][0]["message"]["content"]
@@ -62,16 +62,32 @@ def call_llm(prompt: str, system_instruction: str = ""):
         return None
 
 
-def chunk_text(text: str, max_lines: int = 500):
-    """Splits text into chunks of roughly max_lines."""
+def chunk_text(text: str, max_lines: int = 200, overlap: int = 20):
+    """Splits text into chunks with a specified overlap to maintain context."""
     lines = text.splitlines()
-    for i in range(0, len(lines), max_lines):
-        yield "\n".join(lines[i : i + max_lines])
+    if not lines:
+        return
+
+    start = 0
+    while start < len(lines):
+        end = start + max_lines
+        chunk = "\n".join(lines[start:end])
+        yield chunk
+
+        if end >= len(lines):
+            break
+        # Slide forward by max_lines - overlap
+        start += max_lines - overlap
 
 
-def distill_content(
-    rel_path: str, content: str, is_chunk: bool = False, abs_path: Path = None
-):
+def detect_language(text: str) -> str:
+    """Detects if the content is primarily Chinese or English."""
+    if re.search(r"[\u4e00-\u9fff]", text):
+        return "Chinese"
+    return "English"
+
+
+def distill_content(rel_path: str, content: str, is_chunk: bool = False):
     """
     Core distillation logic for a piece of content.
     """
@@ -79,23 +95,40 @@ def distill_content(
 
     # Get existing wiki titles and aliases for semantic matching
     existing_titles = []
-    for f in WIKI_DIR.glob("*.md"):
+    title_to_path = {}
+    for f in WIKI_DIR.rglob("*.md", recurse_symlinks=True):
         try:
-            p = WikiPage(f)
-            if p.front_matter.get("title"):
-                existing_titles.append(p.front_matter["title"])
-            if p.front_matter.get("alias"):
-                existing_titles.append(p.front_matter["alias"])
+            # Simple header parsing to avoid full WikiPage load if not needed
+            f_content = f.read_text(encoding="utf-8")
+            t_match = re.search(r"^title:\s*(.*)", f_content, re.MULTILINE)
+            a_match = re.search(r"^alias:\s*(.*)", f_content, re.MULTILINE)
+
+            if t_match:
+                title = t_match.group(1).strip().strip("'\"")
+                existing_titles.append(title)
+                title_to_path[title] = f
+            if a_match:
+                alias = a_match.group(1).strip().strip("'\"")
+                existing_titles.append(alias)
+                title_to_path[alias] = f
         except:
             continue
 
     titles_context = "\n".join([f"- {t}" for t in sorted(list(set(existing_titles)))])
     chunk_context = " (This is a chunk of a larger file)" if is_chunk else ""
+    source_lang = detect_language(content)
+    target_lang = "English" if source_lang == "Chinese" else "Chinese"
 
     # Socratic Mirror Prompt
     prompt = f"""
 You are a knowledge synthesizer.
-LANGUAGE RULE: ALWAYS respond in the EXACT same language as the "ACTUAL DATA". NO translation is allowed.
+STRICT LANGUAGE RULE:
+- The source content is in {source_lang}.
+- All generated content (summary, description, body, target_title) MUST be in {source_lang}.
+- **Target Title & Alias Rule**:
+    1. Review the 'Existing Themes' below.
+    2. If this content relates to an existing theme (matched by title OR alias), you MUST choose that EXACT title.
+    3. If creating a NEW title in {source_lang}, you MUST also provide a 'bilingual_alias' strictly in {target_lang}.
 
 I am providing content from a raw source: [[{rel_path}]]{chunk_context}
 Content:
@@ -107,15 +140,15 @@ Existing Themes in the Wiki:
 {titles_context}
 
 Your task is to distill this into the Self-Wiki following the "Socratic Mirror" principles.
-1. **Semantic Matching**: Review the 'Existing Themes'. If this content relates to one of them, choose that exact existing title. If creating a new title, it MUST be concise and professional. DO NOT use informal parenthetical suffixes like "(Initial Draft)", "(Draft)", or "(Notes)".
-2. **Bilingual Alias**: Provide an alias in the OTHER language (if source is Chinese, provide English; if source is English, provide Chinese). If content is neutral, leave empty.
-3. **Diarization**: Extract semantic "nuggets" or insights.
-4. **Fidelity**: Use EXACTLY ONE single blockquote character ("> ") for the summary. Do NOT use double quotes or nested blockquotes ("> >").
-5. **Tagging**: Generate relevant tags. Include at least one functional tag from the taxonomy:
-   - `type/synthesis`: For connecting dots across entries.
-   - `type/principle`: For fundamental life laws or mental models.
-   - `type/shift`: For significant changes in belief or behavior.
-   - Add your own semantic tags for topical categorization.
+1. **Semantic Matching**: prioritize matching existing themes or their aliases across languages.
+2. **Confidence Scoring**: Assign a `confidence_score` (0.0 to 1.0) and a `confidence_rationale`:
+   - 0.9-1.0 (Literal): Direct, clear statement in source.
+   - 0.7-0.89 (Explicit Pattern): Strong pattern shown by multiple explicit actions.
+   - 0.5-0.69 (Synthesized Inference): Logical inference from recurring themes. MUST label content with `[AI Synthesis]`.
+   - < 0.5 (Speculative Observation): Weak evidence or subtle tone. MUST label content with `[Socratic Observation]`.
+3. **Bilingual Alias**: Provide a high-quality translation of the title strictly in {target_lang}.
+4. **Diarization**: Extract semantic "nuggets". Use EXACTLY ONE single blockquote character ("> ") for the summary.
+5. **Tagging**: Include functional tags: `type/synthesis`, `type/principle`, `type/shift`.
 6. **Level**: Assign a level (1: Synthesis, 2: Principle).
 
 
@@ -124,12 +157,14 @@ Output your response as a JSON object:
   "actions": [
     {{
       "target_title": "Choose from Existing Themes or Create New",
-      "bilingual_alias": "Translation or Alias in other language",
+      "confidence_score": 0.85,
+      "confidence_rationale": "Explanation based on evidence",
+      "bilingual_alias": "Translation in {target_lang}",
       "level": 1,
       "summary": "2-3 sentence Socratic summary",
-      "description": "A concise description of this page.",
-      "new_body_content": "The distilled insights, integrated with existing knowledge if possible",
-      "tags": ["type/synthesis", "topic/growth", "emotion/anxiety"]
+      "description": "Concise description",
+      "new_body_content": "Distilled insights. If confidence < 0.7, start with [AI Synthesis] or [Socratic Observation]",
+      "tags": ["type/synthesis", "topic/growth"]
     }}
   ]
 }}
@@ -147,7 +182,23 @@ Output your response as a JSON object:
     try:
         data = json.loads(json_match.group(0))
         for action in data.get("actions", []):
-            page = WikiPage.create_new(action["target_title"], level=action["level"])
+            target_title = action["target_title"]
+
+            # Check if this title or alias already exists in any directory
+            if target_title in title_to_path:
+                page = WikiPage(title_to_path[target_title])
+                logger.info(
+                    f"Merging into existing page: {title_to_path[target_title].name}"
+                )
+            else:
+                page = WikiPage.create_new(target_title, level=action["level"])
+                logger.info(f"Creating new page for theme: {target_title}")
+
+            # Update confidence metrics
+            page.front_matter["confidence"] = action.get("confidence_score", 1.0)
+            page.front_matter["confidence_rationale"] = action.get(
+                "confidence_rationale", ""
+            )
 
             # Store the bilingual alias if provided
             if action.get("bilingual_alias"):
@@ -165,7 +216,6 @@ Output your response as a JSON object:
                 page.front_matter["description"] = action.get("description", "")
 
             # Smart Merging: Check if content already exists to avoid duplicates
-            # Strip leading blockquote markers from lines in LLM output
             cleaned_body = "\n".join(
                 [
                     re.sub(r"^>\s*", "", line)
@@ -176,13 +226,16 @@ Output your response as a JSON object:
                 # Add distillation section with source link
                 page.body += f"\n\n### Distillation ({datetime.now().strftime('%Y-%m-%d')}) - source: [[../raw/{rel_path}]]\n{cleaned_body}\n"
 
-            # Additive Traceability: Append the raw file path to the sources list
-            # We use ../raw/ to point from self-wiki/wiki/ to self-wiki/raw/
+            # Additive Traceability
             source_link = f"../raw/{rel_path}"
             if source_link not in page.sources:
                 page.sources.append(source_link)
 
-            # Log the source being added for transparency
+            # Record Evolution
+            evo_entry = f"- {datetime.now().strftime('%Y-%m-%d')}: Distilled from raw source [[{source_link}]]."
+            if evo_entry not in page.evolution:
+                page.evolution = (page.evolution + "\n" + evo_entry).strip()
+
             logger.info(f"Source linked: [[{rel_path}]] -> {action['target_title']}")
 
             current_tags = set(page.front_matter.get("tags", []))
@@ -190,23 +243,10 @@ Output your response as a JSON object:
             page.front_matter["tags"] = list(current_tags)
             page.save()
             logger.info(f"Integrated theme: {action['target_title']}")
-            if abs_path:
-                update_raw_with_link(abs_path, action["target_title"])
         return True
     except Exception as e:
         logger.error(f"Error processing actions for {rel_path}: {e}")
         return False
-
-
-def update_raw_with_link(abs_p: Path, target_title: str):
-    """Appends an 'Evolved into' link to the raw file."""
-    try:
-        content = abs_p.read_text(encoding="utf-8")
-        link = f"\n\n---\nEvolved into: [[{target_title}]]"
-        if f"[[{target_title}]]" not in content:
-            abs_p.write_text(content + link, encoding="utf-8")
-    except Exception as e:
-        logger.error(f"Failed to update raw file {abs_p}: {e}")
 
 
 def distill_file(rel_path: str, abs_path: Path):
@@ -216,18 +256,19 @@ def distill_file(rel_path: str, abs_path: Path):
     raw_content = abs_path.read_text(encoding="utf-8")
     line_count = len(raw_content.splitlines())
 
-    if line_count > 500:
-        logger.info(f"Large file detected ({line_count} lines). Chunking...")
+    # Set threshold to 450 lines to handle 400-line chunks gracefully
+    if line_count > 220:
+        logger.info(
+            f"Large file detected ({line_count} lines). Chunking with overlap..."
+        )
         success = True
-        for i, chunk in enumerate(chunk_text(raw_content, 500)):
+        for i, chunk in enumerate(chunk_text(raw_content, 200, 20)):
             logger.info(f"Processing chunk {i + 1} of {rel_path}")
             if not distill_content(rel_path, chunk, is_chunk=True):
                 success = False
         return success
     else:
-        # Pass the abs_path to distill_content so it can update the raw file
-        # We need to adjust distill_content to accept this
-        return distill_content(rel_path, raw_content, abs_path=abs_path)
+        return distill_content(rel_path, raw_content)
 
 
 def sync_wiki():
@@ -245,7 +286,6 @@ def sync_wiki():
 
     for rel, abs_p, h in changed:
         if distill_file(rel, abs_p):
-            # Recalculate hash after distillation in case update_raw_with_link modified it
             new_hash = hashlib.md5(abs_p.read_bytes()).hexdigest()
             orchestrator.cache[rel] = new_hash
             orchestrator.save_cache()

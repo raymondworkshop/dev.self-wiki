@@ -30,14 +30,12 @@ audit:
 	$(PYTHON) scripts/audit_wiki.py
 
 # FULL CYCLE
-all: run audit
+all: sync audit
 
 
 backliner:
 	$(PYTHON) scripts/backliner.py
 
-hub: # update all hub pages
-	$(PYTHON) scripts/sync_all_hubs.py
 
 test:
 	$(PYTHON) scripts/test_wiki_compliance.py

@@ -119,13 +119,8 @@ class WikiPage:
         # Sanitize title: remove problematic characters
         safe_title = re.sub(r'[\\/*?:"<>|,]', "", title)
 
-        if is_chinese:
-            # For Chinese, keep characters, only remove spaces if preferred
-            filename = f"{safe_title}.md"
-        else:
-            # For English, enforce snake_case
-            safe_title = re.sub(r"\s+", "_", safe_title)
-            filename = f"{safe_title}.md"
+        # Use natural title as filename (Obsidian handles spaces well)
+        filename = f"{safe_title}.md"
 
         path = WIKI_DIR / filename
 
@@ -137,6 +132,8 @@ class WikiPage:
                 "last_updated": datetime.now().isoformat(),
                 "description": "",
                 "level": level,
+                "confidence": 1.0,
+                "confidence_rationale": "Initial creation",
                 "tags": [],
             }
         return page

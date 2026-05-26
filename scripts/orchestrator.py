@@ -32,7 +32,7 @@ class SocraticOrchestrator:
 
     def get_changed_files(self):
         changed = []
-        for p in RAW_DIR.rglob("*.md"):
+        for p in RAW_DIR.rglob("*.md", recurse_symlinks=True):
             rel = str(p.relative_to(RAW_DIR))
             curr_hash = hashlib.md5(p.read_bytes()).hexdigest()
             if self.cache.get(rel) != curr_hash:

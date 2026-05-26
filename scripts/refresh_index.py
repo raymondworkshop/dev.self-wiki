@@ -42,7 +42,7 @@ def refresh_index():
 
     # Find all topics and extract metadata
     topics_data = {}
-    for f in wiki_dir.rglob("*.md"):
+    for f in wiki_dir.rglob("*.md", recurse_symlinks=True):
         if f.name in ["INDEX.md", "audit.md"]:
             continue
 
@@ -66,10 +66,19 @@ def refresh_index():
             # Get tags
             tags = get_yaml_field(fm_content, "tags") or []
 
+            # Get alias
+            alias_val = get_yaml_field(fm_content, "alias")
+            alias = (
+                alias_val[0]
+                if isinstance(alias_val, list) and alias_val
+                else (alias_val or "")
+            )
+
             topics_data[f.stem] = {
                 "path": str(f.relative_to(workspace)),
                 "level": level,
                 "tags": tags,
+                "alias": alias,
             }
         except Exception as e:
             logger.warning(f"Failed to index {f.name}: {e}")

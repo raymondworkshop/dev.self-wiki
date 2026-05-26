@@ -9,7 +9,7 @@ from config import WIKI_DIR
 
 class TestWikiCompliance(unittest.TestCase):
     def setUp(self):
-        self.wiki_files = list(WIKI_DIR.rglob("*.md"))
+        self.wiki_files = list(WIKI_DIR.rglob("*.md", recurse_symlinks=True))
         # Exclude specific non-content files
         self.wiki_files = [
             f
