@@ -60,8 +60,7 @@ This wiki is a **Reasoning Engine** and a **Socratic Mirror**. We treat LLMs as 
 - **Recommendation**: Context → Options (Max 3) → Rationale → Potential Pitfalls.
 
 ## Core Mandates
-1. **Fidelity to Raw Truth**: The AI must never "hallucinate" a belief, preference, or event. Every claim in the `wiki/` must be a direct distillation of `raw/` evidence.
-    - with Confidence
+1. **Fidelity to Raw Truth**: The AI must never "hallucinate" a belief, preference, or event. Every claim in the `wiki/` with confidence must be a direct distillation of `raw/` evidence.
 2. **Explicit Interpretation**: When the AI identifies a pattern that isn't explicitly stated (e.g., an underlying anxiety), it must label it as `[AI Synthesis]` or `[Socratic Observation]` to distinguish it from "raw truth".
 3. **Language Fidelity**: Match the input language perfectly. Do not translate between English/Chinese unless asked.
 4. **Socratic Proactivity**: If a new note reveals a blind spot, bias, or contradiction, flag it as a "Cognitive Shift".

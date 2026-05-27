@@ -6,14 +6,11 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
+import yaml
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
-
-MAX_TOKENS = 8192  # local mlx
-PROMPT_OVERHEAD = 2000  # Headroom for ongoing summary
-WORKING_BUDGET = MAX_TOKENS - PROMPT_OVERHEAD
 
 
 # Load .env
@@ -38,7 +35,7 @@ def get_yaml_field(content, field):
     return None
 
 
-def call_llm(prompt: str, language: str = "Chinese"):
+def call_llm(prompt: str, system_prompt: str):
     url = os.environ.get("LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
     api_key = (
         os.environ.get("OPENAI_API_KEY")
@@ -46,7 +43,6 @@ def call_llm(prompt: str, language: str = "Chinese"):
         or "no-key"
     )
     model = os.environ.get("LLM_MODEL", "mlx-community/gemma-4-e4b-it-4bit")
-    system_prompt = f"You are a Socratic assistant helping the user audit their personal wiki. Always label your analysis with '[AI Synthesis]' and cite your sources with '[Source Evidence]'. Respond in {language}."
     payload = {
         "model": model,
         "messages": [
@@ -59,16 +55,10 @@ def call_llm(prompt: str, language: str = "Chinese"):
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=420)
         if response.status_code != 200:
-            logger.error(f"LLM API Error: {response.text}")
-            return "Audit failed (LLM API error)"
-        return (
-            response.json()
-            .get("choices", [{}])[0]
-            .get("message", {})
-            .get("content", "")
-        )
-    except Exception as e:
-        return f"Contradiction audit failed: {e}"
+            return None
+        return response.json()["choices"][0]["message"]["content"]
+    except Exception:
+        return None
 
 
 def run_audit():
@@ -77,61 +67,110 @@ def run_audit():
     wiki_dir = self_wiki_dir / "wiki"
     audit_file = self_wiki_dir / "audit.md"
 
-    # 1. Collect all content and topics
-    wiki_files = []
-    for f in wiki_dir.rglob("*.md", recurse_symlinks=True):
+    if not wiki_dir.exists():
+        logger.error(f"Wiki directory not found: {wiki_dir}")
+        return
+
+    wiki_files = list(wiki_dir.rglob("*.md"))
+
+    # 1. Data Collection
+    pages_data = []
+    all_titles = set()
+    for f in wiki_files:
         if f.name in ["audit.md", "INDEX.md"] or f.name.endswith("-Hub.md"):
             continue
-        wiki_files.append(f)
-
-    # Sort files by level (Level 2 first)
-    def get_level(f):
         try:
             content = f.read_text(encoding="utf-8")
-            return int(get_yaml_field(content, "level") or 0)
-        except:
-            return 0
+            pages_data.append(
+                {
+                    "path": f,
+                    "rel_path": f.relative_to(workspace),
+                    "content": content,
+                    "title": f.stem,
+                }
+            )
+            all_titles.add(f.stem)
+        except Exception as e:
+            logger.error(f"Error reading {f}: {e}")
 
-    wiki_files.sort(key=get_level, reverse=True)
-
-    existing_topics = {f.stem for f in wiki_files}
-    red_links, stale_files, emotional_triggers, structural_warnings = [], [], [], []
-
-    # ... (Keep existing EMOTIONAL_PATTERNS and link logic) ...
-
-    # 2. Emotional Trigger Audit
+    # 2. Audits
+    red_links = []
     emotional_triggers = []
-    # Identify patterns matching emotion indicators
-    for item in file_list:
-        content = item["content"]
-        # Look for tag lines like "- emotion/..."
-        matches = re.findall(r"- emotion/([a-zA-Z0-9_-]+)", content)
-        if matches:
-            # For each emotion, get context (a few lines around the match)
-            for emotion in matches:
-                # Find the line containing the emotion
-                lines = content.splitlines()
-                for i, line in enumerate(lines):
-                    if f"emotion/{emotion}" in line:
-                        # Grab some context (the line and maybe 1-2 lines before for "why")
-                        context = " ".join(lines[max(0, i - 2) : i + 1]).strip()
-                        emotional_triggers.append(
-                            {
-                                "emotion": emotion,
-                                "context": context,
-                                "path": str(item["path"]),
-                            }
-                        )
+    contradictions = []
+    structural_warnings = []
 
-    # ... (Keep existing Contradiction Audit logic) ...
+    for page in pages_data:
+        content = page["content"]
 
-    # 4. Generate Report
+        # 2. Structural Audit (GEMINI Standards)
+        missing_sections = []
+        if not re.search(r"^>\s", content, re.MULTILINE):
+            missing_sections.append("Socratic Summary (`>`)")
+        if "## Evolution" not in content:
+            missing_sections.append("Evolution Section")
+        if "## Sources" not in content:
+            missing_sections.append("Sources Section")
+
+        if missing_sections:
+            structural_warnings.append(
+                f"#### [[{page['title']}]]\n- Missing: {', '.join(missing_sections)}"
+            )
+
+        # Red Links Audit
+        links = re.findall(r"\[\[(.*?)\]\]", content)
+        for link in links:
+            link_clean = link.split("|")[0].split("#")[0].strip()
+            if link_clean and link_clean not in all_titles:
+                red_links.append(link_clean)
+
+        # Emotional Trigger Audit
+        # Look for tag lines like "- emotion/..." or explicit mentions
+        emotion_matches = re.findall(r"emotion/([a-zA-Z0-9_-]+)", content)
+        for emotion in emotion_matches:
+            lines = content.splitlines()
+            for i, line in enumerate(lines):
+                if f"emotion/{emotion}" in line:
+                    context = " ".join(lines[max(0, i - 1) : i + 2]).strip()
+                    emotional_triggers.append(
+                        {
+                            "emotion": emotion,
+                            "context": context,
+                            "path": page["rel_path"],
+                        }
+                    )
+                    break
+
+        # LLM Audit (Cognitive Shifts / Contradictions)
+        # We only do this for Level 2 or high-value files to save time
+        level = int(get_yaml_field(content, "level") or 0)
+        if level >= 1:
+            logger.info(f"LLM Auditing {page['title']}...")
+            sys_prompt = (
+                "You are a Socratic Auditor, acting as a 'Socratic Mirror'. Your duty is to identify 'Emotional Triggers', "
+                "'Cognitive Shifts' (contradictions), and 'Stale Wisdom'. "
+                "If raising a reflective challenge, label it [Socratic Observation]. "
+                "Respond in the same language as the input."
+            )
+            audit_prompt = (
+                f"Audit this wiki entry: [[{page['title']}]]\n\n"
+                "Focus on identifying patterns that contradict other principles or reveal underlying anxieties. "
+                "End with a heuristic 'Socratic Question' to elicit the user's bottom-level logic.\n\n"
+                f"Content:\n{content[:2000]}"
+            )
+            res = call_llm(audit_prompt, sys_prompt)
+            if res and "PASS" not in res.upper():
+                contradictions.append(f"#### [[{page['title']}]]\n{res}")
+
+    # 3. Generate Report
     report = [
-        "# Wiki Audit and Quality Review",
-        f"**Last Automated Run**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        "# Wiki Audit & Socratic Mirror Report",
+        f"**Last Run**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        "\n> This report scans for cognitive shifts, emotional patterns, and structural fidelity to the GEMINI.md standards.",
         "\n---",
-        "\n### ⚖️ Cognitive Contradictions & Shifts",
-        "\n".join(contradictions) if contradictions else "No contradictions found.",
+        "\n### ⚖️ Cognitive Shifts & [Socratic Observations]",
+        "\n\n".join(contradictions)
+        if contradictions
+        else "No significant cognitive shifts identified.",
         "\n### 🎭 Emotional Triggers & Shifts",
         "| Emotion | Context / Cause | File Path |",
         "| :--- | :--- | :--- |",
@@ -143,9 +182,6 @@ def run_audit():
 
     report.extend(
         [
-            "\n### 🧠 AI Instructions",
-            "1. Prioritize creating stubs for the high-frequency Red Links listed below.",
-            "2. Reflect on the 'Socratic Questions' provided for each contradiction.",
             "\n### 🚨 Red Links (Missing topics, Frequency > 1)",
             "\n| Frequency | Topic |",
             "| :--- | :--- |",
@@ -169,10 +205,8 @@ def run_audit():
         ]
     )
 
-    with open(audit_file, "w", encoding="utf-8") as f:
-        f.write("\n".join(report))
+    audit_file.write_text("\n".join(report), encoding="utf-8")
     logger.info(f"Audit completed. Report updated at {audit_file}")
-    print(f"Audit completed. Report updated at {audit_file}")
 
 
 if __name__ == "__main__":

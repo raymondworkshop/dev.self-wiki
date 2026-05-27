@@ -444,11 +444,14 @@ def build_evidence_snippet(path: Path, query_terms: List[str]) -> str:
     try:
         content = path.read_text(encoding="utf-8", errors="ignore")
         lines = extract_key_lines(content, query_terms)
-        filename = path.name
+        try:
+            source_ref = str(path.relative_to(WORKSPACE_PATH))
+        except ValueError:
+            source_ref = str(path)
         body = "\n".join(
             lines
         )  # Removed "-" prefixing here to keep original formatting
-        return f"### [[{filename}]]\n{body}\n"
+        return f"### [[{source_ref}]]\n{body}\n"
     except Exception as e:
         logger.error(f"Error reading {path}: {e}")
         return ""
@@ -460,9 +463,18 @@ def sanitize_filename(question: str, max_len: int = 80) -> str:
     return safe[:max_len] or "query"
 
 
-def load_index() -> dict:
+def yaml_string(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def load_index(required: bool = True) -> dict:
     if not INDEX_PATH.exists():
-        raise FileNotFoundError("Index not found. Run 'make sync' first.")
+        if required:
+            raise FileNotFoundError("Index not found. Run 'make sync' first.")
+        logger.warning(
+            "Index not found. Falling back to full-text wiki scan. Run 'make sync' to rebuild INDEX.json."
+        )
+        return {"topics": {}}
     with open(INDEX_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -488,10 +500,83 @@ def matched_terms(
     return ordered[:top_n]
 
 
-def rank_topics(
-    index: dict, query_terms: List[str], profile: str
+def iter_wiki_files() -> List[Path]:
+    if not WIKI_ROOT.exists():
+        logger.warning(f"Wiki root not found: {WIKI_ROOT}")
+        return []
+    return sorted(p for p in WIKI_ROOT.rglob("*.md") if p.is_file())
+
+
+def query_literal_terms(query: str) -> List[str]:
+    return [
+        p.lower()
+        for p in re.findall(r"[a-zA-Z]+|[\u4e00-\u9fff]+", query)
+        if len(p.strip()) > 1
+    ]
+
+
+def score_fulltext(
+    path: Path, query: str, query_terms: List[str], profile: str
+) -> int:
+    try:
+        content = path.read_text(encoding="utf-8", errors="ignore")
+    except Exception as e:
+        logger.error(f"Error reading {path}: {e}")
+        return 0
+
+    text_l = content.lower()
+    name_l = path.stem.lower()
+    profile_terms = {t.lower() for t in QUESTION_PROFILES[profile]["keywords"]}
+    literal_terms = set(query_literal_terms(query))
+
+    headers = "\n".join(
+        ln.lower() for ln in content.splitlines() if ln.startswith("#")
+    )
+    blockquotes = "\n".join(
+        ln.lower() for ln in content.splitlines() if ln.startswith(">")
+    )
+
+    score = 0
+    for term in query_terms:
+        term = term.strip().lower()
+        if len(term) <= 1:
+            continue
+
+        if term in literal_terms:
+            weight = 8
+        elif term in profile_terms:
+            weight = 2
+        else:
+            weight = 4
+
+        body_hits = text_l.count(term)
+        if body_hits == 0 and term not in name_l:
+            continue
+
+        if term in name_l:
+            score += weight * 12
+        if term in headers:
+            score += weight * 8
+        if term in blockquotes:
+            score += weight * 6
+        score += min(body_hits, 8) * weight
+
+    if score > 0:
+        if re.search(r"^>\s", content, re.MULTILINE):
+            score += 4
+        if re.search(r"^##\s+Evolution\b", content, re.MULTILINE | re.IGNORECASE):
+            score += 3
+        if re.search(r"\(Source:\s*\[\[|^-\s*\[\[", content, re.MULTILINE):
+            score += 3
+
+    return score
+
+
+def rank_wiki_candidates(
+    index: dict, query: str, query_terms: List[str], profile: str
 ) -> List[Tuple[int, Path, str, dict]]:
-    ranked: List[Tuple[int, Path, str, dict]] = []
+    candidates: Dict[str, Dict[str, object]] = {}
+
     for name, data in index.get("topics", {}).items():
         rel_path = data.get("path")
         if not rel_path:
@@ -501,7 +586,39 @@ def rank_topics(
             continue
 
         score = score_topic(name, data, query_terms, profile)
-        ranked.append((score, f, name, data))
+        key = str(f.resolve())
+        candidates[key] = {
+            "score": score,
+            "path": f,
+            "name": name,
+            "data": data,
+            "metadata_score": score,
+            "fulltext_score": 0,
+        }
+
+    for f in iter_wiki_files():
+        score = score_fulltext(f, query, query_terms, profile)
+        if score <= 0:
+            continue
+
+        key = str(f.resolve())
+        if key in candidates:
+            candidates[key]["score"] = int(candidates[key]["score"]) + score
+            candidates[key]["fulltext_score"] = score
+        else:
+            candidates[key] = {
+                "score": score,
+                "path": f,
+                "name": f.stem,
+                "data": {"path": str(f.relative_to(WORKSPACE_PATH)), "tags": []},
+                "metadata_score": 0,
+                "fulltext_score": score,
+            }
+
+    ranked = [
+        (int(item["score"]), item["path"], str(item["name"]), item["data"])
+        for item in candidates.values()
+    ]
 
     ranked.sort(key=lambda x: x[0], reverse=True)
     return ranked
@@ -575,12 +692,13 @@ def build_synthesis_prompt(
     system_prompt = (
         "You are a Socratic analyst for a personal wiki, acting as a 'Reasoning Engine' and a 'Socratic Mirror'. "
         "Ground every claim in provided wiki evidence. "
+        "Every key claim must carry an inline source reference from the Evidence Pack. "
         "Match the user's input language perfectly (Chinese or English). "
         "If inferring beyond explicit wording, label it [AI Synthesis]. "
         "If raising reflective challenge or identifying a blind spot/bias, label it [Socratic Observation]. "
         "If identifying a significant change in belief or contradiction, flag it as a [Cognitive Shift]. "
         "Trace claims back to original raw sources whenever available in evidence. "
-        "Never invent sources."
+        "Never invent sources, filenames, raw paths, dates, events, or preferences."
     )
 
     # Protocols from GEMINI.md
@@ -621,20 +739,31 @@ Task:
 3) {profile_instruction}
 4) Include one or two high-impact "Socratic Questions" at the end. These questions should be heuristic and designed to pierce through surface behaviors to elicit your 'bottom-level logic' (底层逻辑) or expose hidden cognitive contradictions.
 5) Ensure all headers and summaries align with the Socratic Mirror philosophy.
+6) Provenance rules:
+   - Add an inline source marker after every key factual claim, interpretation, value, pattern, or recommendation, e.g. (Source: [[self-wiki/wiki/example.md]]).
+   - If a source line contains a raw origin reference, prefer that raw source in the inline marker; otherwise cite the Evidence Pack page.
+   - If multiple sources support one claim, cite the strongest 2-3 sources.
+   - If evidence is weak, say "Insufficient wiki evidence" instead of answering confidently.
+   - Do not cite files or raw paths that are not visible in the Evidence Pack.
 
 Output format (markdown):
 - # {query}
 - > 2-3 sentence Socratic summary
 - ## Analysis / Answer
 - ## Provenance
-  - list sources as [[filename.md]] or [[raw-file-path]]
+  - list each cited source once, with a 1-sentence note explaining what evidence it contributed
+
+Evidence Pack:
+{evidence_block or "[No evidence snippets were retrieved. Say that the wiki evidence is insufficient instead of inventing an answer.]"}
 """
     return system_prompt, prompt
 
 
 def save_output(question: str, messages: List[Dict[str, str]]) -> Path:
     OUTPUT_ROOT.mkdir(exist_ok=True)
-    date_str = datetime.now().strftime("%Y-%m-%d")
+    now = datetime.now()
+    date_str = now.strftime("%Y-%m-%d")
+    last_updated = now.isoformat(timespec="seconds")
     safe_q = sanitize_filename(question)
     out = OUTPUT_ROOT / f"{safe_q}-{date_str}.md"
 
@@ -648,14 +777,36 @@ def save_output(question: str, messages: List[Dict[str, str]]) -> Path:
     )
 
     note_content = f"""---
+last_updated: {last_updated}
+title: {yaml_string(question)}
+description: {yaml_string(f"Query-wiki synthesis generated from self-wiki evidence for: {question}")}
+level: 1
 tags: [type/synthesis, query-wiki]
 date: {date_str}
-title: {question}
-question: {question}
+question: {yaml_string(question)}
 scope: self-wiki/wiki
 ---
 
+> This query note captures a reasoning snapshot generated from the curated wiki evidence available at query time. Treat confident claims as valid only when they carry provenance back to the cited wiki or raw sources.
+> It is a Level 1 synthesis artifact: useful for reflection and follow-up, but not a replacement for the underlying source notes.
+
+## Query
+
+{question}
+
+## Conversation
+
 {dialogue}
+
+## Evolution
+
+- {date_str}: Created by `query-wiki` from the current `self-wiki/wiki` index and retrieved evidence snippets.
+
+## Backlinks
+
+- **Evolved from**: [[self-wiki/wiki]]
+- **Mentioned in**: [[GEMINI.md]]
+- **Contradicts**: None identified in this query output.
 """
     out.write_text(note_content, encoding="utf-8")
     return out
@@ -685,12 +836,12 @@ Built-in query logic:
    - general
 2) Score profile confidence (strong only if best>=6 and best-second>=2)
 3) Build bilingual retrieval keywords (deterministic + optional MLX expansion)
-3) Rank INDEX topics by level/tags/term-matches
-4) Select high-signal candidates
-5) Extract evidence snippets from wiki files
-6) Synthesize answer with [AI Synthesis] / [Socratic Observation] / [Cognitive Shift]
-7) Apply Interaction Protocols (Deep Analysis, Comparison, Recommendation)
-8) Save to self-wiki/outputs/{question}-{date}.md
+4) Rank full-text wiki matches plus INDEX metadata when available
+5) Select high-signal candidates
+6) Extract evidence snippets from wiki files
+7) Synthesize answer with [AI Synthesis] / [Socratic Observation] / [Cognitive Shift]
+8) Apply Interaction Protocols (Deep Analysis, Comparison, Recommendation)
+9) Save to self-wiki/outputs/{question}-{date}.md
 
 
 Examples:
@@ -700,7 +851,7 @@ Examples:
 - python3 scripts/query_wiki.py --list
 
 Tips:
-- Run `make sync` first if INDEX is missing.
+- Run `make sync` to refresh INDEX metadata; query falls back to full-text scan if INDEX is missing.
 - Use --debug-retrieval to inspect ranking scores and matched terms.
 """
     print(intro.strip())
@@ -710,19 +861,17 @@ def query_wiki(
     query: str | None, debug_retrieval: bool = False, list_mode: bool = False
 ):
     if list_mode:
-        index = load_index()
+        index = load_index(required=False)
         print("Available topics:")
-        print("\n".join(sorted(index.get("topics", {}).keys())))
+        topics = sorted(index.get("topics", {}).keys())
+        if topics:
+            print("\n".join(topics))
+        else:
+            print("\n".join(str(p.relative_to(WIKI_ROOT)) for p in iter_wiki_files()))
         return
 
     # Initial setup
-    try:
-        index = load_index()
-    except FileNotFoundError as e:
-        logger.error(str(e))
-        return
-
-    index = load_index()
+    index = load_index(required=False)
     messages = []
     first_query = query
 
@@ -760,8 +909,22 @@ def perform_query_turn(
     language = detect_language(query)
     query_terms = build_query_terms(query, profile)
 
-    ranked = rank_topics(index, query_terms, profile)
+    ranked = rank_wiki_candidates(index, query, query_terms, profile)
     candidates = select_candidates(ranked, top_k=16)
+
+    if debug_retrieval:
+        print("\n--- RETRIEVAL DEBUG ---")
+        print(f"profile={profile}, strong_profile={strong_profile}")
+        print(f"profile_scores={profile_scores}")
+        print(f"query_terms={', '.join(query_terms[:40])}")
+        for score, path, name, data in candidates:
+            try:
+                ref = path.relative_to(WORKSPACE_PATH)
+            except ValueError:
+                ref = path
+            hits = matched_terms(name, data, query_terms)
+            hit_text = f" | matched metadata terms: {', '.join(hits)}" if hits else ""
+            print(f"{score:4d} | {ref}{hit_text}")
 
     evidence_snippets = [
         build_evidence_snippet(p, query_terms) for _, p, _, _ in candidates

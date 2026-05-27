@@ -1,7 +1,4 @@
-
-.obsidian
-log/
 .git/
 .selfwikienv/
-_self_wiki
+self-wiki/.obsidian
 scripts/__pycache__
