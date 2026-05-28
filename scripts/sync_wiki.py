@@ -24,12 +24,67 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def get_gemini_response(messages, instructions):
+    """Call Google Gemini API via REST."""
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    model = os.environ.get("GEMINI_MODEL", "gemini-1.5-pro")
+
+    if not api_key:
+        logger.error("GEMINI_API_KEY not set.")
+        return None
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+
+    system_instruction = {"parts": [{"text": instructions}]}
+    contents = []
+
+    for m in messages:
+        role = "user" if m["role"] == "user" else "model"
+        contents.append({"role": role, "parts": [{"text": m["content"]}]})
+
+    # Ensure alternating roles for Gemini (user -> model -> user)
+    if contents and contents[0]["role"] == "model":
+        contents.pop(0)
+
+    payload = {
+        "contents": contents,
+        "generationConfig": {
+            "temperature": 0.1,
+            "maxOutputTokens": 4096,
+        },
+        "safetySettings": [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ],
+        "system_instruction": system_instruction,
+    }
+
+    try:
+        response = requests.post(url, json=payload, timeout=400)
+        response.raise_for_status()
+        data = response.json()
+        if "candidates" not in data or not data["candidates"]:
+            return None
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+    except Exception as e:
+        logger.error(f"Gemini API Error in sync: {e}")
+        return None
+
+
 def call_llm(prompt: str, system_instruction: str = ""):
     """
-    Calls the LLM using the local MLX server.
+    Calls the LLM based on LLM_PROVIDER.
     """
     # Force reload env vars to ensure we have the latest configuration
     load_env(Path(__file__).parent.parent / ".env")
+    provider = os.environ.get("LLM_PROVIDER", "mlx").lower()
+
+    if provider == "gemini":
+        return get_gemini_response(
+            [{"role": "user", "content": prompt}], system_instruction
+        )
 
     url = os.environ.get("LLM_URL", "http://100.90.225.26:8080/v1/chat/completions")
     api_key = (
@@ -62,7 +117,7 @@ def call_llm(prompt: str, system_instruction: str = ""):
         return None
 
 
-def chunk_text(text: str, max_lines: int = 200, overlap: int = 20):
+def chunk_text(text: str, max_lines: int = 500, overlap: int = 50):
     """Splits text into chunks with a specified overlap to maintain context."""
     lines = text.splitlines()
     if not lines:
@@ -252,17 +307,31 @@ Output your response as a JSON object:
 def distill_file(rel_path: str, abs_path: Path):
     """
     Processes a single raw file, handles chunking if necessary.
+    Adjusts chunking strategy based on LLM_PROVIDER.
     """
     raw_content = abs_path.read_text(encoding="utf-8")
     line_count = len(raw_content.splitlines())
 
-    # Set threshold to 450 lines to handle 400-line chunks gracefully
-    if line_count > 220:
+    # Reload env to check provider
+    load_env(Path(__file__).parent.parent / ".env")
+    provider = os.environ.get("LLM_PROVIDER", "mlx").lower()
+
+    # Adjust limits based on provider power
+    if provider == "gemini":
+        threshold = 8000
+        chunk_size = 10000
+        overlap = 500
+    else:
+        threshold = 220
+        chunk_size = 500
+        overlap = 50
+
+    if line_count > threshold:
         logger.info(
-            f"Large file detected ({line_count} lines). Chunking with overlap..."
+            f"Large file detected ({line_count} lines). Chunking with overlap using {provider} limits..."
         )
         success = True
-        for i, chunk in enumerate(chunk_text(raw_content, 200, 20)):
+        for i, chunk in enumerate(chunk_text(raw_content, chunk_size, overlap)):
             logger.info(f"Processing chunk {i + 1} of {rel_path}")
             if not distill_content(rel_path, chunk, is_chunk=True):
                 success = False

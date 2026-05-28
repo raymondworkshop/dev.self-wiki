@@ -1,64 +1,98 @@
+import json
 import logging
 import os
 from pathlib import Path
 
 import requests
 
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
-# Simple .env loader
-def load_env(env_path):
+# Project root is one level up
+WORKSPACE_PATH = Path(__file__).parent.parent
+
+
+def load_env():
+    env_path = WORKSPACE_PATH / ".env"
     if env_path.exists():
         for line in env_path.read_text().splitlines():
-            if line.strip() and not line.startswith("#"):
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
                 key, value = line.split("=", 1)
                 os.environ[key.strip()] = value.strip().strip('"').strip("'")
 
 
-# Project root is one level up
-load_env(Path(__file__).parent.parent / ".env")
+load_env()
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
+def get_gemini_response(messages, api_key, model):
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+
+    contents = []
+    for m in messages:
+        role = "user" if m["role"] == "user" else "model"
+        contents.append({"role": role, "parts": [{"text": m["content"]}]})
+
+    payload = {
+        "contents": contents,
+        "generationConfig": {
+            "temperature": 0.1,
+            "maxOutputTokens": 100,
+        },
+    }
+
+    response = requests.post(url, json=payload, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+    return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
 def test_connection():
     provider = os.environ.get("LLM_PROVIDER", "mlx").lower()
-    model = os.environ.get("LLM_MODEL", "")
-    api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+    model = os.environ.get("LLM_MODEL", "mlx-community/gemma-4-e4b-it-4bit")
+    gemini_model = os.environ.get("GEMINI_MODEL", "gemini-1.5-pro")
+    gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
+    llm_url = os.environ.get("LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
 
-    print(f"--- Configuration ---")
+    print(f"--- Connection Test ---")
     print(f"Provider: {provider}")
-    print(f"Model: {model}")
-
-    if provider == "deepseek":
-        url = "https://api.deepseek.com/v1/chat/completions"
-        headers = {"Authorization": f"Bearer {api_key}"}
-        print(f"URL: {url}")
-    else:
-        url = os.environ.get("LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
-        headers = {}
-        print(f"URL: {url}")
 
     prompt = "Hi, testing connection. Reply 'OK' if working."
-    payload = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.1,
-        "stream": False,
-    }
+    messages = [{"role": "user", "content": prompt}]
 
     try:
-        print(f"\nSending request...")
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
-        print(f"Status Code: {response.status_code}")
-        if response.status_code == 200:
-            print(f"Response: {response.json()['choices'][0]['message']['content']}")
+        if provider == "gemini":
+            print(f"Model: {gemini_model}")
+            print(f"API Key: {'Configured' if gemini_api_key else 'MISSING'}")
+            response_text = get_gemini_response(messages, gemini_api_key, gemini_model)
+        else:
+            print(f"Model: {model}")
+            print(f"URL: {llm_url}")
+            api_key = (
+                os.environ.get("OPENAI_API_KEY")
+                or os.environ.get("DEEPSEEK_API_KEY")
+                or "no-key"
+            )
+            payload = {
+                "model": model,
+                "messages": messages,
+                "temperature": 0.1,
+            }
+            headers = {"Authorization": f"Bearer {api_key}"}
+            response = requests.post(llm_url, json=payload, headers=headers, timeout=30)
+            response.raise_for_status()
+            response_text = response.json()["choices"][0]["message"]["content"]
+
+        print(f"\nResponse: {response_text}")
+        if "OK" in response_text.upper():
             print("\nSUCCESS: Connection is working.")
         else:
-            print(f"Response Body: {response.text}")
-            print("\nFAILURE: Connection failed.")
+            print("\nSUCCESS (Partial): Received response, but not the expected 'OK'.")
+
     except Exception as e:
-        print(f"\nError: {e}")
+        print(f"\nFAILURE: Connection failed with error: {e}")
+        if "response" in locals() and hasattr(response, "text"):
+            print(f"Response Body: {response.text}")
 
 
 if __name__ == "__main__":

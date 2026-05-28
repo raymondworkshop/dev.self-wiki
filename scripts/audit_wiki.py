@@ -14,46 +14,102 @@ logger = logging.getLogger(__name__)
 
 
 # Load .env
-def load_env(env_path):
+def load_env():
+    env_path = Path(__file__).parent.parent / ".env"
     if env_path.exists():
         for line in env_path.read_text().splitlines():
-            if line.strip() and not line.startswith("#"):
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
                 key, value = line.split("=", 1)
                 os.environ[key.strip()] = value.strip().strip('"').strip("'")
 
 
-load_env(Path(__file__).parent.parent / ".env")
+load_env()
 workspace = Path(
     os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
 )
 
+# LLM Configuration
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "mlx").lower()
+LLM_URL = os.environ.get("LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
+LLM_MODEL = os.environ.get("LLM_MODEL", "mlx-community/gemma-4-e4b-it-4bit")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-pro")
 
-def get_yaml_field(content, field):
-    match = re.search(rf"^{field}:\s*(.*)", content, re.MULTILINE)
-    if match:
-        return match.group(1).strip().strip('"').strip("'")
-    return None
+
+def get_gemini_response(messages):
+    """Call Google Gemini API via REST."""
+    if not GEMINI_API_KEY:
+        logger.error("GEMINI_API_KEY not set.")
+        return None
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+
+    system_instruction = None
+    contents = []
+
+    for m in messages:
+        if m["role"] == "system":
+            system_instruction = {"parts": [{"text": m["content"]}]}
+        else:
+            role = "user" if m["role"] == "user" else "model"
+            contents.append({"role": role, "parts": [{"text": m["content"]}]})
+
+    # Ensure alternating roles for Gemini (user -> model -> user)
+    if contents and contents[0]["role"] == "model":
+        contents.pop(0)
+
+    payload = {
+        "contents": contents,
+        "generationConfig": {
+            "temperature": 0.1,
+            "maxOutputTokens": 2048,
+        },
+        "safetySettings": [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ],
+    }
+
+    if system_instruction:
+        payload["system_instruction"] = system_instruction
+
+    try:
+        response = requests.post(url, json=payload, timeout=300)
+        response.raise_for_status()
+        data = response.json()
+        if "candidates" not in data or not data["candidates"]:
+            return None
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+    except Exception as e:
+        logger.error(f"Gemini API Error: {e}")
+        return None
 
 
 def call_llm(prompt: str, system_prompt: str):
-    url = os.environ.get("LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": prompt},
+    ]
+
+    if LLM_PROVIDER == "gemini":
+        return get_gemini_response(messages)
+
     api_key = (
         os.environ.get("OPENAI_API_KEY")
         or os.environ.get("DEEPSEEK_API_KEY")
         or "no-key"
     )
-    model = os.environ.get("LLM_MODEL", "mlx-community/gemma-4-e4b-it-4bit")
     payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt},
-        ],
+        "model": LLM_MODEL,
+        "messages": messages,
         "temperature": 0.1,
     }
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=420)
+        response = requests.post(LLM_URL, json=payload, headers=headers, timeout=420)
         if response.status_code != 200:
             return None
         return response.json()["choices"][0]["message"]["content"]
