@@ -6,13 +6,12 @@ sys.path.append(str(Path(__file__).parent.resolve()))
 import hashlib
 import json
 import logging
-import os
 import re
 from datetime import datetime
 
-import requests
 import yaml
-from config import GEMINI_CONF, LOG_DIR, RAW_DIR, WIKI_DIR, load_env
+from config import GEMINI_CONF, LOG_DIR, RAW_DIR, WIKI_DIR
+from llm_provider import call_llm, provider_name
 from models import WikiPage
 
 # Configure logging
@@ -22,99 +21,6 @@ logging.basicConfig(
     handlers=[logging.FileHandler(LOG_DIR / "sync_v2.log"), logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
-
-
-def get_gemini_response(messages, instructions):
-    """Call Google Gemini API via REST."""
-    api_key = os.environ.get("GEMINI_API_KEY", "")
-    model = os.environ.get("GEMINI_MODEL", "gemini-1.5-pro")
-
-    if not api_key:
-        logger.error("GEMINI_API_KEY not set.")
-        return None
-
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-
-    system_instruction = {"parts": [{"text": instructions}]}
-    contents = []
-
-    for m in messages:
-        role = "user" if m["role"] == "user" else "model"
-        contents.append({"role": role, "parts": [{"text": m["content"]}]})
-
-    # Ensure alternating roles for Gemini (user -> model -> user)
-    if contents and contents[0]["role"] == "model":
-        contents.pop(0)
-
-    payload = {
-        "contents": contents,
-        "generationConfig": {
-            "temperature": 0.1,
-            "maxOutputTokens": 4096,
-        },
-        "safetySettings": [
-            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-        ],
-        "system_instruction": system_instruction,
-    }
-
-    try:
-        response = requests.post(url, json=payload, timeout=400)
-        response.raise_for_status()
-        data = response.json()
-        if "candidates" not in data or not data["candidates"]:
-            return None
-        return data["candidates"][0]["content"]["parts"][0]["text"]
-    except Exception as e:
-        logger.error(f"Gemini API Error in sync: {e}")
-        return None
-
-
-def call_llm(prompt: str, system_instruction: str = ""):
-    """
-    Calls the LLM based on LLM_PROVIDER.
-    """
-    # Force reload env vars to ensure we have the latest configuration
-    load_env(Path(__file__).parent.parent / ".env")
-    provider = os.environ.get("LLM_PROVIDER", "mlx").lower()
-
-    if provider == "gemini":
-        return get_gemini_response(
-            [{"role": "user", "content": prompt}], system_instruction
-        )
-
-    url = os.environ.get("LLM_URL", "http://100.90.225.26:8080/v1/chat/completions")
-    api_key = (
-        os.environ.get("OPENAI_API_KEY")
-        or os.environ.get("DEEPSEEK_API_KEY")
-        or "no-key"
-    )
-    model = os.environ.get("LLM_MODEL", "mlx-model")
-
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system_instruction},
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": 0.1,
-    }
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=360)
-        response.raise_for_status()
-        data = response.json()
-        return data["choices"][0]["message"]["content"]
-    except Exception as e:
-        logger.error(f"MLX call failed at {url}: {e}")
-        return None
 
 
 def chunk_text(text: str, max_lines: int = 500, overlap: int = 50):
@@ -312,9 +218,7 @@ def distill_file(rel_path: str, abs_path: Path):
     raw_content = abs_path.read_text(encoding="utf-8")
     line_count = len(raw_content.splitlines())
 
-    # Reload env to check provider
-    load_env(Path(__file__).parent.parent / ".env")
-    provider = os.environ.get("LLM_PROVIDER", "mlx").lower()
+    provider = provider_name()
 
     # Adjust limits based on provider power
     if provider == "gemini":

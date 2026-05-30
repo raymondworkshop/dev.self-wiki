@@ -2,3 +2,4 @@
 .selfwikienv/
 self-wiki/.obsidian
 scripts/__pycache__
+.env

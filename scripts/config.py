@@ -8,10 +8,10 @@ def load_env(env_path):
         for line in env_path.read_text().splitlines():
             if line.strip() and not line.startswith("#"):
                 key, value = line.split("=", 1)
-                os.environ[key.strip()] = value.strip().strip('"').strip("'")
+                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
-load_env(Path(__file__).parent / ".env")
+load_env(Path(__file__).parent.parent / ".env")
 
 WORKSPACE_PATH = Path(
     os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")

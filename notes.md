@@ -5,15 +5,14 @@
 
 ##### tasks  
 
-- todo  
-    - 引入置信度  
-    
-- sync-wiki
-  *  /sync-wiki, /audit-wiki skills in gemini cli  
-    - todo  /query-wiki 
+- make    
+    * # Sync stays local 
+    > LLM_PROVIDER=mlx make sync 
+    * # Query with Gemini (cloud)
+    > LLM_PROVIDER=gemini make query
+    * # Audit with Gemini (cloud)  
+    >  LLM_PROVIDER=gemini make audit
 
-  * gemini monitor, gemma4 works in zed
-    -  sync_wiki.py is called and the log is `outputs/sync_execution.log`
     
 - backliner 
    - backliner.py

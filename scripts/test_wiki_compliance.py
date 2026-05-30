@@ -1,10 +1,10 @@
-import os
 import re
 import unittest
 from pathlib import Path
 
 import yaml
 from config import WIKI_DIR
+from llm_provider import context_limits, extract_json_object, provider_name
 
 
 class TestWikiCompliance(unittest.TestCase):
@@ -76,6 +76,21 @@ class TestWikiCompliance(unittest.TestCase):
                     # It's okay if sources is empty for some files if they are L1/L2 and haven't been linked yet,
                     # but typically we want at least the markers or a comment.
                     # For this test, we just check if it's there.
+
+
+class TestLLMProvider(unittest.TestCase):
+    def test_provider_name_accepts_explicit_override(self):
+        self.assertEqual(provider_name("gemini"), "gemini")
+
+    def test_context_limits_are_provider_aware(self):
+        gemini_context, gemini_reserved, _ = context_limits("gemini")
+        mlx_context, mlx_reserved, _ = context_limits("mlx")
+        self.assertGreater(gemini_context, mlx_context)
+        self.assertGreater(gemini_reserved, mlx_reserved)
+
+    def test_extract_json_object_from_model_text(self):
+        parsed = extract_json_object('```json\n{"actions": []}\n```')
+        self.assertEqual(parsed, {"actions": []})
 
 
 if __name__ == "__main__":
