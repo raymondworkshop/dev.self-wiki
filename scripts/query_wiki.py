@@ -811,6 +811,95 @@ scope: self-wiki/wiki
     return out
 
 
+def generate_query_answer(
+    query: str,
+    *,
+    index: dict | None = None,
+    messages: List[Dict[str, str]] | None = None,
+    debug_retrieval: bool = False,
+) -> dict:
+    """Generate one query answer and return structured data for CLI/web callers."""
+    index = index if index is not None else load_index(required=False)
+    messages = messages if messages is not None else []
+
+    profile, strong_profile, profile_scores = detect_profile_confidence(query)
+    language = detect_language(query)
+    query_terms = build_query_terms(query, profile)
+
+    ranked = rank_wiki_candidates(index, query, query_terms, profile)
+    candidates = select_candidates(ranked, top_k=16)
+
+    debug_rows = []
+    for score, path, name, data in candidates:
+        try:
+            ref = path.relative_to(WORKSPACE_PATH)
+        except ValueError:
+            ref = path
+        hits = matched_terms(name, data, query_terms)
+        debug_rows.append(
+            {
+                "score": score,
+                "path": str(ref),
+                "name": name,
+                "matched_terms": hits,
+            }
+        )
+
+    if debug_retrieval:
+        print("\n--- RETRIEVAL DEBUG ---")
+        print(f"profile={profile}, strong_profile={strong_profile}")
+        print(f"profile_scores={profile_scores}")
+        print(f"query_terms={', '.join(query_terms[:40])}")
+        for row in debug_rows:
+            hit_text = (
+                f" | matched metadata terms: {', '.join(row['matched_terms'])}"
+                if row["matched_terms"]
+                else ""
+            )
+            print(f"{row['score']:4d} | {row['path']}{hit_text}")
+
+    evidence_snippets = [
+        build_evidence_snippet(p, query_terms) for _, p, _, _ in candidates
+    ]
+    evidence_block = trim_evidence_to_budget(
+        query=query,
+        profile=profile,
+        language=language,
+        query_terms=query_terms,
+        snippets=evidence_snippets,
+    )
+
+    system_prompt, user_prompt = build_synthesis_prompt(
+        query=query,
+        profile=profile,
+        language=language,
+        query_terms=query_terms,
+        evidence_block=evidence_block,
+        strict_profile=strong_profile,
+    )
+
+    if not messages:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": user_prompt})
+
+    answer = get_llm_response(messages, max_tokens=RESERVED_OUTPUT_TOKENS)
+    if not answer:
+        raise RuntimeError("Failed to generate answer from LLM.")
+
+    messages.append({"role": "assistant", "content": answer})
+    return {
+        "query": query,
+        "answer": answer,
+        "profile": profile,
+        "strong_profile": strong_profile,
+        "profile_scores": profile_scores,
+        "language": language,
+        "query_terms": query_terms,
+        "candidates": debug_rows,
+        "messages": messages,
+    }
+
+
 def print_intro_help():
     intro = f"""
 query-wiki introduction
@@ -905,59 +994,15 @@ def query_wiki(
 def perform_query_turn(
     query: str, index: dict, messages: List[Dict[str, str]], debug_retrieval: bool
 ):
-    profile, strong_profile, profile_scores = detect_profile_confidence(query)
-    language = detect_language(query)
-    query_terms = build_query_terms(query, profile)
-
-    ranked = rank_wiki_candidates(index, query, query_terms, profile)
-    candidates = select_candidates(ranked, top_k=16)
-
-    if debug_retrieval:
-        print("\n--- RETRIEVAL DEBUG ---")
-        print(f"profile={profile}, strong_profile={strong_profile}")
-        print(f"profile_scores={profile_scores}")
-        print(f"query_terms={', '.join(query_terms[:40])}")
-        for score, path, name, data in candidates:
-            try:
-                ref = path.relative_to(WORKSPACE_PATH)
-            except ValueError:
-                ref = path
-            hits = matched_terms(name, data, query_terms)
-            hit_text = f" | matched metadata terms: {', '.join(hits)}" if hits else ""
-            print(f"{score:4d} | {ref}{hit_text}")
-
-    evidence_snippets = [
-        build_evidence_snippet(p, query_terms) for _, p, _, _ in candidates
-    ]
-    evidence_block = trim_evidence_to_budget(
-        query=query,
-        profile=profile,
-        language=language,
-        query_terms=query_terms,
-        snippets=evidence_snippets,
-    )
-
-    system_prompt, user_prompt = build_synthesis_prompt(
-        query=query,
-        profile=profile,
-        language=language,
-        query_terms=query_terms,
-        evidence_block=evidence_block,
-        strict_profile=strong_profile,
-    )
-
-    if not messages:
-        messages.append({"role": "system", "content": system_prompt})
-
-    messages.append({"role": "user", "content": user_prompt})
-
-    answer = get_llm_response(messages, max_tokens=RESERVED_OUTPUT_TOKENS)
-    if not answer:
+    try:
+        result = generate_query_answer(
+            query, index=index, messages=messages, debug_retrieval=debug_retrieval
+        )
+    except RuntimeError:
         logger.error("Failed to generate answer from LLM.")
         return
 
-    print(f"\n--- ANSWER ---\n{answer}")
-    messages.append({"role": "assistant", "content": answer})
+    print(f"\n--- ANSWER ---\n{result['answer']}")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
 requests
-pathlib
-datetime
+fastapi
+uvicorn
+python-multipart
+httpx

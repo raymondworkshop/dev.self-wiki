@@ -12,7 +12,8 @@
     > LLM_PROVIDER=gemini make query
     * # Audit with Gemini (cloud)  
     >  LLM_PROVIDER=gemini make audit
-
+- site
+    > QUERY_LLM_PROVIDER=gemini make query-web  
     
 - backliner 
    - backliner.py

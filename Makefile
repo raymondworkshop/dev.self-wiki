@@ -2,8 +2,11 @@
 
 PYTHON = .selfwikienv/bin/python3
 LLM_PROVIDER ?= mlx
+QUERY_LLM_PROVIDER ?= $(LLM_PROVIDER)
+QUERY_WEB_HOST ?= 127.0.0.1
+QUERY_WEB_PORT ?= 5050
 
-.PHONY: help sync audit push test-llm
+.PHONY: help sync audit push test-llm query-web
 
 help:
 	@echo "self-wiki Commands:"
@@ -13,6 +16,7 @@ help:
 	@echo "  make test    - Test wiki compliance"
 	@echo "  make test-llm  - Test the configured LLM provider connection"
 	@echo "  make query     - Query your Second Brain"
+	@echo "  make query-web - Start the local FastAPI query UI"
 	@echo "  make push      - Commit and push all changes"
 
 # --- Workflow Targets ---
@@ -43,7 +47,10 @@ test:
 	$(PYTHON) scripts/test_wiki_compliance.py
 
 query:
-	@read -p "Query your Second Brain: " q; LLM_PROVIDER=$(LLM_PROVIDER) $(PYTHON) scripts/query_wiki.py "$$q"
+	@read -p "Query your Second Brain: " q; LLM_PROVIDER=$(QUERY_LLM_PROVIDER) $(PYTHON) scripts/query_wiki.py "$$q"
+
+query-web:
+	LLM_PROVIDER=$(QUERY_LLM_PROVIDER) QUERY_WEB_HOST=$(QUERY_WEB_HOST) QUERY_WEB_PORT=$(QUERY_WEB_PORT) $(PYTHON) scripts/query_server.py
 
 test-llm:
 	LLM_PROVIDER=$(LLM_PROVIDER) $(PYTHON) scripts/test_llm_conn.py
