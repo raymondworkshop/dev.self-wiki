@@ -1,0 +1,199 @@
+{
+  "main": {
+    "id": "31b36fd51ec6f7a2",
+    "type": "split",
+    "children": [
+      {
+        "id": "ce9c825442e510a8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "011d36277de74e80",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "self-wiki/outputs/what-are-my-core-values-2026-05-30.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "what-are-my-core-values-2026-05-30"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e826566af1d2cef3",
+    "type": "split",
+    "children": [
+      {
+        "id": "9b8562dd2cd7f5ee",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c1e42c1a15fb72ef",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "7aa1b0ab2824999c",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "da90615ed1c0487e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 461.5
+  },
+  "right": {
+    "id": "c9f23b2f3cd7c519",
+    "type": "split",
+    "children": [
+      {
+        "id": "d8760ead2e0f1b83",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dbcc0416dfa0e211",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "self-wiki/outputs/what-are-my-core-values-2026-05-30.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for what-are-my-core-values-2026-05-30"
+            }
+          },
+          {
+            "id": "2a3bfa92aaa46b38",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "self-wiki/outputs/what-are-my-core-values-2026-05-30.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from what-are-my-core-values-2026-05-30"
+            }
+          },
+          {
+            "id": "279644985dfcf3a7",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "b55d68b2cb200581",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "6957ffdfe15c4e27",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "self-wiki/outputs/what-are-my-core-values-2026-05-30.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of what-are-my-core-values-2026-05-30"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "011d36277de74e80",
+  "lastOpenFiles": [
+    "self-wiki/raw/origin-apple-notes/我答应自己不会因他们的询问而生气或厌烦，不会在别人主动指点后防备性地回答,只会笑着点头.md",
+    "self-wiki/outputs/what-are-my-core-values-2026-05-30.md",
+    "self-wiki/raw/origin-apple-notes/今天是个分手和伤心的日子.md",
+    "self-wiki/raw/diary/notes/2023-06-13-on-managing-yourself.md",
+    "scripts/__pycache__/query_server.cpython-314.pyc",
+    "scripts/__pycache__/llm_provider.cpython-314.pyc",
+    "self-wiki/log/sync_v2.log",
+    "scripts/test_query_server.py",
+    "scripts/query_server.py",
+    "scripts/llm_provider.py"
+  ]
+}

@@ -50,7 +50,7 @@ query:
 	@read -p "Query your Second Brain: " q; LLM_PROVIDER=$(QUERY_LLM_PROVIDER) $(PYTHON) scripts/query_wiki.py "$$q"
 
 query-web:
-	LLM_PROVIDER=$(QUERY_LLM_PROVIDER) QUERY_WEB_HOST=$(QUERY_WEB_HOST) QUERY_WEB_PORT=$(QUERY_WEB_PORT) $(PYTHON) scripts/query_server.py
+	LLM_PROVIDER=$(QUERY_LLM_PROVIDER) $(PYTHON) scripts/query_server.py
 
 test-llm:
 	LLM_PROVIDER=$(LLM_PROVIDER) $(PYTHON) scripts/test_llm_conn.py

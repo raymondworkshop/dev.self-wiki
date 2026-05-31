@@ -8,7 +8,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from llm_provider import context_limits, get_llm_response, model_name, provider_name
+from llm_provider import (
+    LAST_LLM_ERROR,
+    context_limits,
+    get_llm_response,
+    model_name,
+    normalize_provider,
+    provider_name,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -291,8 +298,11 @@ def detect_profile_confidence(query: str) -> Tuple[str, bool, Dict[str, int]]:
     return best_profile, strong, scores
 
 
-def llm_expand_keywords(query: str, profile: str) -> List[str]:
-    """Optional MLX-assisted keyword expansion. Falls back safely if unavailable."""
+def llm_expand_keywords(
+    query: str, profile: str, *, provider: str | None = None
+) -> List[str]:
+    """Optional LLM-assisted keyword expansion. Falls back safely if unavailable."""
+    _, reserved_output, _ = context_limits(provider)
     seed = ", ".join(QUESTION_PROFILES[profile]["keywords"][:20])
     prompt = (
         f"Query: {query}\n"
@@ -305,7 +315,9 @@ def llm_expand_keywords(query: str, profile: str) -> List[str]:
         {"role": "system", "content": "You are a precise terminology extractor."},
         {"role": "user", "content": prompt},
     ]
-    response = get_llm_response(messages, max_tokens=RESERVED_OUTPUT_TOKENS)
+    response = get_llm_response(
+        messages, provider=provider, max_tokens=min(reserved_output, 400)
+    )
     if not response:
         return []
 
@@ -320,10 +332,11 @@ def deterministic_keywords(query: str, profile: str) -> List[str]:
     return base + parts
 
 
-def build_query_terms(query: str, profile: str) -> List[str]:
+def build_query_terms(
+    query: str, profile: str, *, provider: str | None = None
+) -> List[str]:
     terms = deterministic_keywords(query, profile)
-    # Let local MLX improve recall, but keep deterministic safety.
-    terms += llm_expand_keywords(query, profile)
+    terms += llm_expand_keywords(query, profile, provider=provider)
 
     dedup = []
     seen = set()
@@ -427,11 +440,12 @@ def extract_key_lines(
     return selected[:max_lines]
 
 
-def build_evidence_snippet(path: Path, query_terms: List[str]) -> str:
+def build_evidence_snippet(
+    path: Path, query_terms: List[str], *, provider: str | None = None
+) -> str:
     try:
         content = path.read_text(encoding="utf-8", errors="ignore")
-        # Increase lines per snippet for Gemini to provide richer context
-        lines_budget = 40 if LLM_PROVIDER == "gemini" else 15
+        lines_budget = 40 if normalize_provider(provider) == "gemini" else 15
         lines = extract_key_lines(content, query_terms, max_lines=lines_budget)
         try:
             source_ref = str(path.relative_to(WORKSPACE_PATH))
@@ -628,6 +642,8 @@ def trim_evidence_to_budget(
     language: str,
     query_terms: List[str],
     snippets: List[str],
+    *,
+    max_prompt_tokens: int | None = None,
 ) -> str:
     """Fit evidence snippets into the prompt token budget.
 
@@ -653,7 +669,7 @@ def trim_evidence_to_budget(
         "Evidence Pack:\n"
     )
 
-    budget = MAX_PROMPT_TOKENS
+    budget = max_prompt_tokens if max_prompt_tokens is not None else MAX_PROMPT_TOKENS
     used = estimate_tokens(header)
     kept: List[str] = []
 
@@ -816,18 +832,22 @@ def generate_query_answer(
     *,
     index: dict | None = None,
     messages: List[Dict[str, str]] | None = None,
+    provider: str | None = None,
     debug_retrieval: bool = False,
 ) -> dict:
     """Generate one query answer and return structured data for CLI/web callers."""
+    llm_provider = normalize_provider(provider)
+    _, reserved_output, max_prompt_tokens = context_limits(llm_provider)
     index = index if index is not None else load_index(required=False)
     messages = messages if messages is not None else []
 
     profile, strong_profile, profile_scores = detect_profile_confidence(query)
     language = detect_language(query)
-    query_terms = build_query_terms(query, profile)
+    query_terms = build_query_terms(query, profile, provider=llm_provider)
 
     ranked = rank_wiki_candidates(index, query, query_terms, profile)
-    candidates = select_candidates(ranked, top_k=16)
+    top_k = 40 if llm_provider == "gemini" else 16
+    candidates = select_candidates(ranked, top_k=top_k)
 
     debug_rows = []
     for score, path, name, data in candidates:
@@ -859,7 +879,8 @@ def generate_query_answer(
             print(f"{row['score']:4d} | {row['path']}{hit_text}")
 
     evidence_snippets = [
-        build_evidence_snippet(p, query_terms) for _, p, _, _ in candidates
+        build_evidence_snippet(p, query_terms, provider=llm_provider)
+        for _, p, _, _ in candidates
     ]
     evidence_block = trim_evidence_to_budget(
         query=query,
@@ -867,6 +888,7 @@ def generate_query_answer(
         language=language,
         query_terms=query_terms,
         snippets=evidence_snippets,
+        max_prompt_tokens=max_prompt_tokens,
     )
 
     system_prompt, user_prompt = build_synthesis_prompt(
@@ -882,14 +904,19 @@ def generate_query_answer(
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": user_prompt})
 
-    answer = get_llm_response(messages, max_tokens=RESERVED_OUTPUT_TOKENS)
+    answer = get_llm_response(
+        messages, provider=llm_provider, max_tokens=reserved_output
+    )
     if not answer:
-        raise RuntimeError("Failed to generate answer from LLM.")
+        detail = LAST_LLM_ERROR or "No response returned by the configured LLM provider."
+        raise RuntimeError(f"Failed to generate answer from LLM. {detail}")
 
     messages.append({"role": "assistant", "content": answer})
     return {
         "query": query,
         "answer": answer,
+        "provider": llm_provider,
+        "model": model_name(llm_provider),
         "profile": profile,
         "strong_profile": strong_profile,
         "profile_scores": profile_scores,

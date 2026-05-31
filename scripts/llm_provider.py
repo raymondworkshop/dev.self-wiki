@@ -15,6 +15,9 @@ from typing import Dict, List
 import requests
 
 logger = logging.getLogger(__name__)
+LAST_LLM_ERROR: str | None = None
+DEFAULT_MLX_MODEL = "mlx-community/gemma-4-e4b-it-4bit"
+PLACEHOLDER_MODELS = {"", "mlx-model", "local-model"}
 
 
 def load_env(env_path: Path | None = None) -> None:
@@ -35,6 +38,11 @@ def provider_name(provider: str | None = None) -> str:
     return (provider or os.environ.get("LLM_PROVIDER", "mlx")).lower()
 
 
+def normalize_provider(raw: str | None = None) -> str:
+    value = provider_name(raw)
+    return value if value in {"mlx", "gemini"} else "mlx"
+
+
 def context_limits(provider: str | None = None) -> tuple[int, int, int]:
     """Return max context, reserved output, and max prompt token budgets."""
 
@@ -50,11 +58,60 @@ def context_limits(provider: str | None = None) -> tuple[int, int, int]:
     return max_context, reserved_output, max_prompt
 
 
+def chat_completions_url() -> str:
+    load_env()
+    return os.environ.get("LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
+
+
+def openai_compatible_api_base() -> str:
+    url = chat_completions_url().rstrip("/")
+    suffix = "/chat/completions"
+    if url.endswith(suffix):
+        return url[: -len(suffix)]
+    return url
+
+
+def resolve_openai_compatible_model() -> str:
+    load_env()
+    configured = os.environ.get("LLM_MODEL", "").strip()
+    if configured and configured not in PLACEHOLDER_MODELS:
+        return configured
+
+    models_url = f"{openai_compatible_api_base()}/models"
+    try:
+        response = requests.get(models_url, timeout=5)
+        response.raise_for_status()
+        models = response.json().get("data", [])
+        if models:
+            model_id = str(models[0].get("id", "")).strip()
+            if model_id:
+                logger.info("Auto-selected MLX model: %s", model_id)
+                return model_id
+    except Exception as exc:
+        logger.warning("Could not auto-resolve MLX model from %s: %s", models_url, exc)
+
+    return DEFAULT_MLX_MODEL
+
+
 def model_name(provider: str | None = None) -> str:
     current = provider_name(provider)
     if current == "gemini":
         return os.environ.get("GEMINI_MODEL", "gemini-1.5-pro")
-    return os.environ.get("LLM_MODEL", "mlx-model")
+    return resolve_openai_compatible_model()
+
+
+def format_request_error(exc: Exception, *, url: str) -> str:
+    if isinstance(exc, requests.HTTPError) and exc.response is not None:
+        try:
+            payload = exc.response.json()
+            if isinstance(payload, dict) and payload.get("detail"):
+                return f"{provider_name()} at {url}: {payload['detail']}"
+        except Exception:
+            pass
+        body = (exc.response.text or "").strip()
+        if body:
+            return f"{provider_name()} at {url}: {body[:500]}"
+    return f"{provider_name()} at {url}: {exc}"
 
 
 def get_gemini_response(
@@ -123,15 +180,17 @@ def get_openai_compatible_response(
 ) -> str | None:
     """Call MLX, DeepSeek, or any OpenAI-compatible chat endpoint."""
 
+    global LAST_LLM_ERROR
     load_env()
-    url = os.environ.get("LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
+    url = chat_completions_url()
+    model = resolve_openai_compatible_model()
     api_key = (
         os.environ.get("OPENAI_API_KEY")
         or os.environ.get("DEEPSEEK_API_KEY")
         or "no-key"
     )
     payload = {
-        "model": os.environ.get("LLM_MODEL", "mlx-model"),
+        "model": model,
         "messages": messages,
         "temperature": 0.1,
     }
@@ -146,9 +205,11 @@ def get_openai_compatible_response(
         response = requests.post(url, json=payload, headers=headers, timeout=360)
         response.raise_for_status()
         data = response.json()
+        LAST_LLM_ERROR = None
         return data["choices"][0]["message"]["content"]
     except Exception as exc:
-        logger.error(f"LLM Error ({provider_name()} at {url}): {exc}")
+        LAST_LLM_ERROR = format_request_error(exc, url=url)
+        logger.error("LLM Error: %s", LAST_LLM_ERROR)
         return None
 
 
