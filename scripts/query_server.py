@@ -34,6 +34,7 @@ def markdown_to_html(markdown: str, *, base: str = "wiki") -> str:
     blocks = []
     in_list = False
     in_code = False
+    fence_lang = ""
     code_lines = []
 
     def close_list() -> None:
@@ -42,18 +43,27 @@ def markdown_to_html(markdown: str, *, base: str = "wiki") -> str:
             blocks.append("</ul>")
             in_list = False
 
+    def close_code_fence() -> None:
+        nonlocal in_code, fence_lang, code_lines
+        body = html.escape(chr(10).join(code_lines))
+        if fence_lang == "mermaid":
+            blocks.append(f'<pre class="mermaid">{body}</pre>')
+        else:
+            blocks.append(f"<pre><code>{body}</code></pre>")
+        code_lines = []
+        in_code = False
+        fence_lang = ""
+
     for raw_line in markdown.splitlines():
         line = raw_line.rstrip()
         if line.strip().startswith("```"):
             if in_code:
-                blocks.append(
-                    f"<pre><code>{html.escape(chr(10).join(code_lines))}</code></pre>"
-                )
-                code_lines = []
-                in_code = False
+                close_code_fence()
             else:
                 close_list()
                 in_code = True
+                info = line.strip()[3:].strip().lower()
+                fence_lang = info.split()[0] if info else ""
             continue
 
         if in_code:
@@ -86,7 +96,7 @@ def markdown_to_html(markdown: str, *, base: str = "wiki") -> str:
 
     close_list()
     if in_code:
-        blocks.append(f"<pre><code>{html.escape(chr(10).join(code_lines))}</code></pre>")
+        close_code_fence()
     return "\n".join(blocks)
 
 
@@ -292,6 +302,14 @@ def page_shell(
     blockquote {{ margin: 18px 0; padding: 16px 18px; border-left: 4px solid var(--accent-2); background: var(--blockquote-bg); border-radius: 16px; color: var(--blockquote-text); }}
     code {{ color: var(--code-text); background: var(--code-bg); padding: 2px 6px; border-radius: 7px; }}
     pre {{ overflow: auto; padding: 16px; border-radius: 16px; background: var(--pre-bg); }}
+    pre.mermaid {{
+      overflow-x: auto;
+      margin: 1rem 0;
+      padding: 0;
+      background: transparent;
+      border: 0;
+    }}
+    pre.mermaid svg {{ max-width: 100%; height: auto; display: block; margin: 0 auto; }}
     .sources {{ display: grid; gap: 10px; margin-top: 18px; }}
     .source {{ padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--source-bg); }}
     .source small {{ color: var(--muted); }}
@@ -353,6 +371,16 @@ def page_shell(
       </aside>
     </section>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({{ startOnLoad: false, securityLevel: "strict", theme: "default" }});
+    document.addEventListener("DOMContentLoaded", () => {{
+      const nodes = document.querySelectorAll("pre.mermaid");
+      if (nodes.length) {{
+        mermaid.run({{ nodes }});
+      }}
+    }});
+  </script>
 </body>
 </html>"""
 
