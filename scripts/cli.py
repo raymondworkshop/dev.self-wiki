@@ -145,6 +145,11 @@ def cmd_promote(args: argparse.Namespace) -> int:
 def cmd_sync(args: argparse.Namespace) -> int:
     orchestrator = SocraticOrchestrator()
     changed = orchestrator.get_changed_files()
+    if args.file:
+        changed = [item for item in changed if item[0] == args.file]
+        if not changed:
+            logger.info("No changed raw file matched --file=%s", args.file)
+            return 0
     if not changed:
         logger.info("Nothing to sync.")
         return 0
@@ -253,6 +258,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_sync = sub.add_parser("sync", help="Full ingest pipeline")
     p_sync.add_argument("--provider", default=None)
+    p_sync.add_argument("--file", help="Single raw rel path under self-wiki/raw/")
     p_sync.set_defaults(func=cmd_sync)
 
     return parser
