@@ -14,13 +14,35 @@ class QueryServerTests(unittest.TestCase):
     def test_home_page_renders(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Ask your self-wiki", response.text)
+        self.assertIn("Self-Wiki", response.text)
         self.assertIn("Socratic Mirror", response.text)
+        self.assertIn("make query", response.text)
+
+    def test_wiki_index_renders(self):
+        response = self.client.get("/wiki")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Wiki", response.text)
+
+    def test_profile_empty_state(self):
+        missing = query_server.WORKSPACE_PATH / "twin" / "__missing_profile_test__.md"
+        with patch.object(query_server, "TWIN_PROFILE", missing):
+            response = self.client.get("/profile")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("not generated yet", response.text)
+
+    def test_wikilink_renders_as_href(self):
+        html = query_server.markdown_to_html(
+            "See (Source: [[self-wiki/wiki/example.md]]) for details.",
+            base="outputs",
+        )
+        self.assertIn('href="/wiki/example.md"', html)
 
     def test_query_page_uses_query_core(self):
         fake_result = {
             "query": "what are my values?",
             "answer": "# Answer\n\n> grounded summary\n\n## Provenance\n- [[note.md]]",
+            "provider": "mlx",
+            "model": "test-model",
             "profile": "values",
             "strong_profile": True,
             "profile_scores": {"values": 10},
@@ -35,6 +57,7 @@ class QueryServerTests(unittest.TestCase):
                 }
             ],
             "messages": [{"role": "assistant", "content": "answer"}],
+            "pending_path": "self-wiki/log/pending/query-test.json",
         }
 
         with (
@@ -54,6 +77,7 @@ class QueryServerTests(unittest.TestCase):
         self.assertIn("grounded summary", response.text)
         self.assertIn("Retrieved Evidence", response.text)
         self.assertIn("self-wiki/wiki/note.md", response.text)
+        self.assertIn('href="/wiki/note.md"', response.text)
 
 
 if __name__ == "__main__":

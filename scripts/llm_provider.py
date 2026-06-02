@@ -38,9 +38,14 @@ def provider_name(provider: str | None = None) -> str:
     return (provider or os.environ.get("LLM_PROVIDER", "mlx")).lower()
 
 
+VALID_PROVIDERS = frozenset({"mlx", "gemini", "openai"})
+DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
+DEFAULT_OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+
+
 def normalize_provider(raw: str | None = None) -> str:
     value = provider_name(raw)
-    return value if value in {"mlx", "gemini"} else "mlx"
+    return value if value in VALID_PROVIDERS else "mlx"
 
 
 def context_limits(provider: str | None = None) -> tuple[int, int, int]:
@@ -50,6 +55,9 @@ def context_limits(provider: str | None = None) -> tuple[int, int, int]:
     if current == "gemini":
         max_context = int(os.environ.get("MAX_CONTEXT_TOKENS", "100000"))
         reserved_output = int(os.environ.get("RESERVED_OUTPUT_TOKENS", "4096"))
+    elif current == "openai":
+        max_context = int(os.environ.get("MAX_CONTEXT_TOKENS", "128000"))
+        reserved_output = int(os.environ.get("RESERVED_OUTPUT_TOKENS", "4096"))
     else:
         max_context = int(os.environ.get("MAX_CONTEXT_TOKENS", "8092"))
         reserved_output = int(os.environ.get("RESERVED_OUTPUT_TOKENS", "1200"))
@@ -58,26 +66,39 @@ def context_limits(provider: str | None = None) -> tuple[int, int, int]:
     return max_context, reserved_output, max_prompt
 
 
-def chat_completions_url() -> str:
+def chat_completions_url(provider: str | None = None) -> str:
     load_env()
-    return os.environ.get("LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
+    explicit = os.environ.get("LLM_URL", "").strip()
+    current = provider_name(provider)
+    if current == "openai":
+        return explicit or DEFAULT_OPENAI_URL
+    return explicit or "http://127.0.0.1:8080/v1/chat/completions"
 
 
-def openai_compatible_api_base() -> str:
-    url = chat_completions_url().rstrip("/")
+def openai_compatible_api_base(provider: str | None = None) -> str:
+    url = chat_completions_url(provider).rstrip("/")
     suffix = "/chat/completions"
     if url.endswith(suffix):
         return url[: -len(suffix)]
     return url
 
 
-def resolve_openai_compatible_model() -> str:
+def resolve_openai_compatible_model(provider: str | None = None) -> str:
     load_env()
+    current = provider_name(provider)
     configured = os.environ.get("LLM_MODEL", "").strip()
+    if current == "openai":
+        openai_model = os.environ.get("OPENAI_MODEL", "").strip()
+        if openai_model:
+            return openai_model
+        if configured and configured not in PLACEHOLDER_MODELS:
+            return configured
+        return DEFAULT_OPENAI_MODEL
+
     if configured and configured not in PLACEHOLDER_MODELS:
         return configured
 
-    models_url = f"{openai_compatible_api_base()}/models"
+    models_url = f"{openai_compatible_api_base(provider)}/models"
     try:
         response = requests.get(models_url, timeout=5)
         response.raise_for_status()
@@ -97,7 +118,7 @@ def model_name(provider: str | None = None) -> str:
     current = provider_name(provider)
     if current == "gemini":
         return os.environ.get("GEMINI_MODEL", "gemini-1.5-pro")
-    return resolve_openai_compatible_model()
+    return resolve_openai_compatible_model(provider)
 
 
 def format_request_error(exc: Exception, *, url: str) -> str:
@@ -177,18 +198,23 @@ def get_openai_compatible_response(
     messages: List[Dict[str, str]],
     *,
     max_tokens: int | None = None,
+    provider: str | None = None,
 ) -> str | None:
-    """Call MLX, DeepSeek, or any OpenAI-compatible chat endpoint."""
+    """Call MLX, OpenAI cloud, DeepSeek, or any OpenAI-compatible chat endpoint."""
 
     global LAST_LLM_ERROR
     load_env()
-    url = chat_completions_url()
-    model = resolve_openai_compatible_model()
+    current = provider_name(provider)
+    url = chat_completions_url(provider)
+    model = resolve_openai_compatible_model(provider)
     api_key = (
         os.environ.get("OPENAI_API_KEY")
         or os.environ.get("DEEPSEEK_API_KEY")
-        or "no-key"
+        or ("no-key" if current == "mlx" else "")
     )
+    if current == "openai" and not api_key:
+        logger.error("OPENAI_API_KEY not set.")
+        return None
     payload = {
         "model": model,
         "messages": messages,
@@ -222,7 +248,9 @@ def get_llm_response(
     current = provider_name(provider)
     if current == "gemini":
         return get_gemini_response(messages, max_output_tokens=max_tokens)
-    return get_openai_compatible_response(messages, max_tokens=max_tokens)
+    return get_openai_compatible_response(
+        messages, max_tokens=max_tokens, provider=provider
+    )
 
 
 def call_llm(

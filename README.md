@@ -1,8 +1,70 @@
-### self-wiki
-A personal knowledge management system designed to capture, organize, and synthesize insights from various sources to foster self-discovery, emotional regulation, and deeper cognitive engagement. It serves as a dynamic repository of evolving understanding of oneself and the world, helping to integrate insights from various sources and experiences into a coherent framework for living. The self-wiki is structured into categories such as self, work, relationship, habit, and growth-trajectory, each containing interconnected topics that support personal learning and content creation. It is maintained through a systematic process of syncing raw source material into an organized wiki, with regular audits to ensure accuracy, relevance, and coherence. The self-wiki is a living document, continuously updated and refined as one learns and grows in understanding of various topics, particularly Stoicism in this context.
+# dev.self-wiki
 
+Personal **compile-first** wiki + digital twin workspace. Raw notes → structured wiki → query / audit.
 
-* Commands:
-    -  make sync    - Get the prompt to synchronize wiki/ from raw/ sources
-    -  make audit   - Get the prompt to perform a wiki lint/audit
-	- make push    - Commit and push all changes
+Architecture: [ARCHITECTURE.md](ARCHITECTURE.md) · Operating manual: [GEMINI.md](GEMINI.md)
+
+## Quick start
+
+```bash
+python3 -m venv .selfwikienv && .selfwikienv/bin/pip install -r requirements.txt
+cp .env.example .env    # LLM_PROVIDER, LLM_URL, keys
+make sync               # ingest changed raw → wiki
+make query Q="what are my values?"
+make query-web          # browser UI (same query pipeline)
+```
+
+## Commands
+
+| Command | What it does |
+|---------|----------------|
+| `make sync` | Ingest changed raw → wiki |
+| `make query` | Ask wiki; saves to `self-wiki/outputs/` |
+| `make audit` | Compliance tests + deterministic `audit.md` |
+| `make audit LINT=1` | Above + one global cognitive lint (LLM) |
+| `make query-web` | Web UI: ask + browse Wiki / Outputs / Profile |
+
+Advanced (Cursor mode, promote, twin, …): `python scripts/cli.py --help`
+
+Override provider: `LLM_PROVIDER=gemini make query` · `LLM_PROVIDER=openai make query`
+
+## Project structure
+
+```
+skills/           Prompts (ingest, query, lint) + query profiles
+scripts/          Harness (cli, run_skill) + deterministic tooling
+self-wiki/
+  raw/            Input — never modified by automation
+  wiki/           Compiled second brain
+  outputs/        Query answers & reports
+  log/pending/    Skill input packages (JSON)
+  log/INDEX.json  Machine topic index
+GEMINI.md         Philosophy, wiki standards, skill resolver
+twin/             Digital twin PROFILE (post-ingest)
+archive/          Legacy archive notes (_self-wiki removed from repo)
+```
+
+## Skills (where intelligence lives)
+
+| Skill | Makefile | Output |
+|-------|----------|--------|
+| [skills/ingest.md](skills/ingest.md) | `make sync` | JSON `actions[]` → wiki pages |
+| [skills/query.md](skills/query.md) | `make query`, `query-web` | Markdown answer + provenance |
+| [skills/lint.md](skills/lint.md) | `make lint` | Cognitive lint section |
+
+Retrieval profiles: [skills/query-profiles.yaml](skills/query-profiles.yaml)
+
+## Interactive (Cursor) workflow
+
+```bash
+python scripts/cli.py prepare-ingest          # or prepare-query "…"
+# Open self-wiki/log/pending/*.json + matching skills/*.md in chat
+python scripts/cli.py apply-ingest --file …
+python scripts/cli.py post-ingest
+```
+
+See `python scripts/cli.py --help` for promote, twin, lint, etc.
+
+## License / privacy
+
+Local-first by default (`LLM_PROVIDER=mlx`). Raw and wiki stay on disk under `self-wiki/`.

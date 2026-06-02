@@ -1,6 +1,7 @@
 # My Self-Wiki Operating Manual (LLM-Native Edition)
 
 ## Operating Philosophy: The Socratic Mirror
+
 This wiki is a **Reasoning Engine** and a **Socratic Mirror**. We treat LLMs as the "OS" and the wiki as the "Context Window" for high-resolution self-reflection.
 
 - **Dual-Model Workflow**:
@@ -19,6 +20,10 @@ This wiki is a **Reasoning Engine** and a **Socratic Mirror**. We treat LLMs as 
 - `self-wiki/raw/`: Input stream. Read-only for AI. Never modify raw files.
 - `self-wiki/wiki/`: The "Second Brain". AI-curated, structured, and cross-linked.
 - `self-wiki/outputs/`: Snapshots of reasoning, reports, and deep-dives.
+- `self-wiki/log/pending/`: Harness builds JSON here; skills read `user_message` from pending files.
+- `self-wiki/log/INDEX.json` + `log/index.md`: Machine index (auto); `self-wiki/INDEX.md`: human Obsidian hub.
+- `twin/PROFILE.md`: Digital twin snapshot (post-ingest).
+
 
 ## Agent Skills (Operational Mandates)
 
@@ -26,12 +31,14 @@ This wiki is a **Reasoning Engine** and a **Socratic Mirror**. We treat LLMs as 
 - **Action**: Ingest `raw/`, identify patterns, update/create `wiki/` entries.
 - **Note**: Focus on *lossy compression*—discard the fluff, capture the core insight.
 
-### `audit-wiki` (`make audit`)
-- **Action**: Scan for "Emotional Triggers", "Cognitive Shifts" (contradictions), "Stale Wisdom", and "Red Links".
+### `audit-wiki` (`make audit` / `make audit LINT=1`)
+- **`make audit`**: Deterministic scan — structure, red links, duplicate themes, Level-2 guidance.
+- **`make audit LINT=1`**: Above + one global LLM pass via `skills/lint.md` for cross-page cognitive contradictions.
 - **Socratic Duty**: Prompt the user when a new insight contradicts an old principle or habit.
 
 ### `query-wiki` (`make query`)
-- **Action**: Reason over the entire wiki to answer complex life queries.
+- **Pipeline**: `prepare-query` (deterministic retrieval) → `run-skill(query.md)` → save output.
+- **Profiles**: [skills/query-profiles.yaml](skills/query-profiles.yaml) — values, personality_logic, swot, general.
 - **Output**: Synthesis + Provenance (tracing back to raw sources).
 
 ## Wiki Standards (LLM-Optimized)

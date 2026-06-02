@@ -1,0 +1,181 @@
+# Question profiles for deterministic retrieval (no LLM keyword expansion).
+profiles:
+  values:
+    triggers:
+      - what are my values
+      - my values
+      - core values
+      - 价值观
+      - 價值觀
+      - 价值
+      - 價值
+      - 什麼對我重要
+      - what matters
+      - principles
+    keywords:
+      - values
+      - value
+      - core
+      - principle
+      - meaning
+      - freedom
+      - responsibility
+      - contribution
+      - relationship
+      - purpose
+      - 价值观
+      - 價值觀
+      - 价值
+      - 價值
+      - 原則
+      - 原则
+      - 意義
+      - 意义
+      - 自由
+      - 責任
+      - 责任
+      - 貢獻
+      - 贡献
+      - 關係
+      - 关系
+    strict_instruction: >-
+      Perform a 'Deep Analysis' of my core values. Identify 5-7 core values, explain each with evidence,
+      and explore the tensions between them. Incorporate a Mermaid diagram to visualize the value system
+      and provide specific 'Next Steps' for value-aligned living.
+
+  personality_logic:
+    triggers:
+      - personality
+      - character
+      - 底层逻辑
+      - 底層邏輯
+      - 性格
+      - 人格
+      - self-awareness
+      - self-perception
+      - operating logic
+    keywords:
+      - personality
+      - character
+      - trait
+      - self-awareness
+      - self-perception
+      - identity
+      - decision
+      - control
+      - anxiety
+      - action
+      - reflection
+      - 性格
+      - 人格
+      - 特质
+      - 特質
+      - 自我认知
+      - 自我認知
+      - 自我觉察
+      - 自我覺察
+      - 底层逻辑
+      - 底層邏輯
+      - 控制
+      - 焦虑
+      - 焦慮
+      - 行动
+      - 行動
+      - 決策
+      - 决策
+    strict_instruction: |
+      Analyze my personality traits and underlying operating logic using a 'Deep Analysis' approach.
+      Your goal is to produce a high-resolution, multi-dimensional report similar to a professional character audit.
+
+      Key Sections to include:
+      1. **Core Personality Portrait**: Identify 5-7 fundamental traits with direct wiki evidence.
+      2. **Underlying Operating Logic**: Explain 3-5 core beliefs that drive behaviors.
+      3. **Internal Tensions & Paradoxes**: Map the contradictions (e.g., control vs. freedom).
+      4. **Mermaid Structure Map**: A graph (e.g., graph TD) visualizing the personality/logic system.
+      5. **Actionable Upgrades (Next Steps)**: 3-5 specific, evidence-based recommendations for growth.
+
+      Requirements:
+      - Use abundant [AI Synthesis] and [Socratic Observation] labels.
+      - Every claim must carry inline source markers: (Source: [[filename.md]]).
+      - Conclude with 1-2 high-impact Socratic Questions.
+
+  swot:
+    triggers:
+      - strength
+      - weakness
+      - blind spot
+      - blindspot
+      - 优点
+      - 優點
+      - 弱点
+      - 弱點
+      - 盲点
+      - 盲點
+      - 长处
+      - 長處
+      - 短板
+      - 不足
+    keywords:
+      - strength
+      - weakness
+      - blind
+      - blind spot
+      - areas for improvement
+      - self-critique
+      - self-doubt
+      - execution
+      - indecision
+      - avoidance
+      - 优点
+      - 優點
+      - 弱点
+      - 弱點
+      - 盲点
+      - 盲點
+      - 长处
+      - 長處
+      - 短板
+      - 不足
+      - 改进
+      - 改進
+      - 自我怀疑
+      - 自我懷疑
+      - 拖延
+      - 逃避
+      - 决策
+      - 決策
+    strict_instruction: >-
+      Perform a self-audit. Categorize findings into Strengths, Weaknesses, and Blind Spots.
+      Each finding must include evidence and one actionable correction. Use a structured, report-like format
+      and include a summary 'Next Steps' section.
+
+  general:
+    triggers: []
+    keywords:
+      - principle
+      - synthesis
+      - self
+      - growth
+      - relationship
+      - decision
+      - emotion
+      - cognitive
+      - 原则
+      - 原則
+      - 成长
+      - 成長
+      - 关系
+      - 關係
+      - 情绪
+      - 情緒
+      - 认知
+      - 認知
+    strict_instruction: >-
+      Answer comprehensively. If the question involves complex analysis, comparison, or recommendation,
+      apply the corresponding Interaction Protocol (Deep Analysis, Comparison, or Recommendation).
+      Use a Mermaid diagram if it clarifies the synthesis and always provide 'Next Steps'.
+
+flexible_instruction: >-
+  Answer naturally based on evidence, using a professional, report-like structure.
+  Apply the most relevant Interaction Protocol (Deep Analysis, Comparison, or Recommendation) if applicable.
+  Include a Mermaid diagram to visualize complex relationships and always provide 'Next Steps'.

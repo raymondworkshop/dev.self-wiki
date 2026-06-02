@@ -1,10 +1,16 @@
 import re
 import unittest
+import warnings
 from pathlib import Path
 
 import yaml
 from config import WIKI_DIR
-from llm_provider import context_limits, extract_json_object, provider_name
+from llm_provider import (
+    context_limits,
+    extract_json_object,
+    normalize_provider,
+    provider_name,
+)
 
 
 class TestWikiCompliance(unittest.TestCase):
@@ -77,16 +83,53 @@ class TestWikiCompliance(unittest.TestCase):
                     # but typically we want at least the markers or a comment.
                     # For this test, we just check if it's there.
 
+    def test_level2_soft_guidance(self):
+        """Advisory only — surfaces Level-2 gaps without failing the corpus."""
+        issues: list[str] = []
+        for f in self.wiki_files:
+            content = f.read_text(encoding="utf-8")
+            match = re.search(r"^---\n(.*?)\n---", content, re.DOTALL)
+            if not match:
+                continue
+            fm = yaml.safe_load(match.group(1)) or {}
+            level = int(fm.get("level") or 0)
+            if level < 2:
+                continue
+            tags = fm.get("tags") or []
+            if isinstance(tags, str):
+                tags = [tags]
+            tag_blob = " ".join(str(t) for t in tags)
+            confidence = float(fm.get("confidence") or 0)
+            if "type/principle" not in tag_blob:
+                issues.append(f"{f.name}: missing type/principle")
+            if confidence < 0.7:
+                issues.append(f"{f.name}: confidence {confidence:.2f} < 0.7")
+        if issues:
+            warnings.warn(
+                f"Level-2 soft guidance ({len(issues)} items). "
+                f"See `make audit` → Level-2 soft guidance. "
+                f"Sample: {issues[0]}",
+                stacklevel=1,
+            )
+
 
 class TestLLMProvider(unittest.TestCase):
     def test_provider_name_accepts_explicit_override(self):
         self.assertEqual(provider_name("gemini"), "gemini")
+        self.assertEqual(provider_name("openai"), "openai")
+
+    def test_normalize_provider_accepts_openai(self):
+        self.assertEqual(normalize_provider("openai"), "openai")
+        self.assertEqual(normalize_provider("unknown-vendor"), "mlx")
 
     def test_context_limits_are_provider_aware(self):
         gemini_context, gemini_reserved, _ = context_limits("gemini")
         mlx_context, mlx_reserved, _ = context_limits("mlx")
+        openai_context, openai_reserved, _ = context_limits("openai")
         self.assertGreater(gemini_context, mlx_context)
         self.assertGreater(gemini_reserved, mlx_reserved)
+        self.assertGreater(openai_context, mlx_context)
+        self.assertGreater(openai_reserved, mlx_reserved)
 
     def test_extract_json_object_from_model_text(self):
         parsed = extract_json_object('```json\n{"actions": []}\n```')

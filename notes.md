@@ -1,27 +1,24 @@
 
 #### self-wiki  
-* 数字孪生Reid AI  
-    - 领英(LinkedIn)联合创始人、风投公司Greylock Partners合伙人雷德·霍夫曼(Reid Hoffman)主要将他的数字孪生Reid AI用于公开露面和媒体采访。该系统利用霍夫曼22年来的书籍、演讲、播客和文章进行了训练，自2024年推出以来，已发表了超过75次演讲和演示。不过，这些内容仍需人类协助准备。  
 
 ##### tasks  
 
 - make    
-    * # Sync stays local 
-    > LLM_PROVIDER=mlx make sync 
-    * # Query with Gemini (cloud)
+    > make sync
+    > make query
+    > make audit
+    > make audit LINT=1
     > LLM_PROVIDER=gemini make query
-    * # Audit with Gemini (cloud)  
-    >  LLM_PROVIDER=gemini make audit
 
 - site
     > make query-web
-    > http://100.90.225.26:5050/  
-    
-- backliner 
-   - backliner.py
-   - **Evolved from**: Your path of intellectual progress.
-   - **Mentioned in**: Broad associations and context.
-   - **Contradicts**: Points of cognitive friction.
+    > http://100.90.225.26:5050/
+
+- advanced
+    > python scripts/cli.py --help
+
+- docs
+    > [README.md](README.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [GEMINI.md](GEMINI.md)
 
 ##### the architecture
 * Push intelligence up into skills, and push execution down into deterministic tooling. keep the harness thin.  

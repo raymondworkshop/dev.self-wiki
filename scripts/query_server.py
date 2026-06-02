@@ -9,20 +9,17 @@ from urllib.parse import quote, unquote
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
-from llm_provider import load_env, model_name, normalize_provider, provider_name
-from query_wiki import (
-    OUTPUT_ROOT,
-    WIKI_ROOT,
-    WORKSPACE_PATH,
-    generate_query_answer,
-    load_index,
-    save_output,
-)
+from config import OUTPUTS_DIR, RAW_DIR, TWIN_PROFILE, WIKI_DIR, WORKSPACE_PATH
+from llm_provider import model_name, normalize_provider
+from query_engine import generate_query_answer
+from query_retrieval import load_index
+from save_query_output import save_output
 
-load_env()
 HOST = os.environ.get("QUERY_WEB_HOST", "127.0.0.1")
 PORT = int(os.environ.get("QUERY_WEB_PORT", "5050"))
-RAW_ROOT = WORKSPACE_PATH / "self-wiki" / "raw"
+WIKI_ROOT = WIKI_DIR
+OUTPUT_ROOT = OUTPUTS_DIR
+RAW_ROOT = RAW_DIR
 
 SESSIONS: dict[str, dict[str, Any]] = {}
 
@@ -170,8 +167,13 @@ def page_shell(
         else ""
     )
     provider_options = []
-    for option in ("mlx", "gemini"):
-        label = "MLX (local)" if option == "mlx" else "Gemini (cloud)"
+    for option in ("mlx", "gemini", "openai"):
+        labels = {
+            "mlx": "MLX (local)",
+            "gemini": "Gemini (cloud)",
+            "openai": "OpenAI (cloud)",
+        }
+        label = labels[option]
         selected = " selected" if option == selected_provider else ""
         provider_options.append(
             f'<option value="{option}"{selected}>{html.escape(label)}</option>'
@@ -337,12 +339,12 @@ def page_shell(
   <main class="wrap">
     <section class="hero">
       <a href="/" class="eyebrow home-link">Socratic Mirror</a>
-      <h1>Ask your self-wiki</h1>
-      <p class="subtitle">A private query surface over your curated wiki memory. Choose MLX for fully local reasoning, or Gemini for deeper synthesis over selected wiki evidence.</p>
+      <h1>Self-Wiki</h1>
+      <p class="subtitle">Ask questions via the same pipeline as <code>make query</code>. Citations in answers link to wiki and raw sources.</p>
       <nav class="nav">
-        <a href="/">Query</a>
         <a href="/wiki">Wiki</a>
         <a href="/outputs">Outputs</a>
+        <a href="/profile">Profile</a>
         <a href="/sessions">Sessions</a>
       </nav>
     </section>
@@ -367,7 +369,7 @@ def page_shell(
         <div class="metric"><div class="label">Model</div><div class="value">{html.escape(model)}</div></div>
         <div class="metric"><div class="label">Privacy</div><div class="value">Listening on {html.escape(HOST)}:{PORT}</div></div>
         <div class="metric"><div class="label">Loop</div><div class="value">{'Session ' + html.escape(session_id[:8]) if session_id else 'New session on first query'}</div></div>
-        <div class="metric"><div class="label">CLI Equivalent</div><div class="value"><code>make query</code></div></div>
+        <div class="metric"><div class="label">CLI Equivalent</div><div class="value"><code>make query Q="..."</code></div></div>
       </aside>
     </section>
   </main>
@@ -387,9 +389,12 @@ def page_shell(
 
 @app.get("/", response_class=HTMLResponse)
 def home() -> HTMLResponse:
-    intro = """<section class="card answer">
-      <h2>Private query loop</h2>
-      <p>Ask a question, inspect retrieved wiki/raw evidence, then ask a follow-up in the same session.</p>
+    wiki_count = len(wiki_items())
+    output_count = len(list(OUTPUT_ROOT.glob("*.md")))
+    intro = f"""<section class="card answer">
+      <h2>Query</h2>
+      <p>Ask a question, inspect retrieved wiki/raw evidence, then follow up in the same session.</p>
+      <p class="hint">{wiki_count} wiki page(s) · {output_count} saved output(s)</p>
     </section>"""
     return HTMLResponse(page_shell(intro))
 
@@ -444,6 +449,7 @@ def query_page(
             "model": result.get("model", ""),
             "candidates": result["candidates"],
             "output_path": str(output_path),
+            "pending_path": result.get("pending_path", ""),
         }
     )
     session["output_path"] = str(output_path)
@@ -505,6 +511,7 @@ def query_api(payload: dict) -> JSONResponse:
             "model": result.get("model", ""),
             "candidates": result["candidates"],
             "output_path": str(output_path),
+            "pending_path": result.get("pending_path", ""),
         }
     )
     session["output_path"] = str(output_path)
@@ -592,6 +599,24 @@ def output_page(output_path: str) -> HTMLResponse:
       <div class="eyebrow">Generated Output</div>
       <h2>{html.escape(path.stem)}</h2>
       {markdown_to_html(strip_frontmatter(text), base='outputs')}
+    </section>"""
+    return HTMLResponse(page_shell(body))
+
+
+@app.get("/profile", response_class=HTMLResponse)
+def profile_page() -> HTMLResponse:
+    if not TWIN_PROFILE.exists():
+        body = """<section class="card answer">
+      <h2>Digital Twin Profile</h2>
+      <p><code>twin/PROFILE.md</code> is not generated yet. It will appear after Iter 3 (<code>build_twin_profile</code> in post-ingest).</p>
+    </section>"""
+        return HTMLResponse(page_shell(body))
+
+    text = read_private_file(TWIN_PROFILE)
+    body = f"""<section class="card answer">
+      <div class="eyebrow">Digital Twin</div>
+      <h2>Profile</h2>
+      {markdown_to_html(strip_frontmatter(text), base='wiki')}
     </section>"""
     return HTMLResponse(page_shell(body))
 
