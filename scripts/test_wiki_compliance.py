@@ -1,5 +1,6 @@
 import re
 import unittest
+from unittest import mock
 import warnings
 from pathlib import Path
 
@@ -134,6 +135,36 @@ class TestLLMProvider(unittest.TestCase):
     def test_extract_json_object_from_model_text(self):
         parsed = extract_json_object('```json\n{"actions": []}\n```')
         self.assertEqual(parsed, {"actions": []})
+
+    def test_fallback_chain_mlx_only_without_cloud_keys(self):
+        from llm_provider import fallback_provider_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "mlx",
+                "LLM_FALLBACK_ENABLED": "1",
+                "GEMINI_API_KEY": "",
+                "OPENAI_API_KEY": "",
+            },
+            clear=False,
+        ):
+            self.assertEqual(fallback_provider_chain(None), ["mlx"])
+
+    def test_fallback_chain_includes_gemini_when_key_set(self):
+        from llm_provider import fallback_provider_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "mlx",
+                "LLM_FALLBACK_ENABLED": "1",
+                "GEMINI_API_KEY": "test-key",
+                "OPENAI_API_KEY": "",
+            },
+            clear=False,
+        ):
+            self.assertEqual(fallback_provider_chain(None), ["mlx", "gemini"])
 
 
 if __name__ == "__main__":

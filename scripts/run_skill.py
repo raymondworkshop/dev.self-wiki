@@ -4,16 +4,108 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 
 import yaml
 
 from config import WORKSPACE_PATH
-from llm_provider import call_llm, extract_json_object, provider_name
+from llm_provider import (
+    LAST_LLM_ERROR,
+    call_llm,
+    default_output_tokens,
+    extract_json_object,
+    fallback_provider_chain,
+    provider_name,
+)
 
 logger = logging.getLogger(__name__)
 
 TEXT_KINDS = frozenset({"query", "lint"})
+
+INGEST_COMPACT_RETRY_SUFFIX = """
+
+CRITICAL (previous response was incomplete JSON):
+- Reply with ONE complete JSON object only (no markdown fences).
+- At most 2 actions for this chunk.
+- summary: max 2 short sentences per action.
+- new_body_content: max 400 characters per action; essential bullets only.
+"""
+
+
+def _ingest_output_tokens(provider: str | None, attempt: int) -> int:
+    base = int(
+        os.environ.get(
+            "INGEST_MAX_OUTPUT_TOKENS",
+            str(default_output_tokens(provider)),
+        )
+    )
+    if attempt <= 1:
+        return base
+    return min(base * 2, int(os.environ.get("INGEST_MAX_OUTPUT_TOKENS_CAP", "4096")))
+
+
+def _run_llm_with_retries(
+    *,
+    kind: str,
+    subject: str,
+    user_message: str,
+    system_instruction: str,
+    provider: str,
+) -> tuple[str, dict | None]:
+    """Call LLM with per-provider parse/empty retries; returns (text, parsed ingest data)."""
+
+    parse_attempts = max(1, int(os.environ.get("INGEST_PARSE_RETRY_ATTEMPTS", "2")))
+    response_text = ""
+    data: dict | None = None
+
+    for attempt in range(1, parse_attempts + 1):
+        prompt = user_message
+        max_tokens = None
+        if kind == "ingest":
+            max_tokens = _ingest_output_tokens(provider, attempt)
+            if attempt > 1:
+                prompt = user_message + INGEST_COMPACT_RETRY_SUFFIX
+
+        response_text = call_llm(
+            prompt,
+            system_instruction,
+            provider=provider,
+            max_tokens=max_tokens,
+        )
+        if not response_text:
+            if attempt >= parse_attempts:
+                detail = f": {LAST_LLM_ERROR}" if LAST_LLM_ERROR else ""
+                raise RuntimeError(f"LLM returned empty response{detail}")
+            logger.warning(
+                "Empty LLM response for %s via %s on attempt %d/%d; retrying...",
+                subject,
+                provider,
+                attempt,
+                parse_attempts,
+            )
+            continue
+
+        if kind == "ingest":
+            data = extract_json_object(response_text)
+            if data and "actions" in data:
+                return response_text, data
+            if attempt >= parse_attempts:
+                raise ValueError(
+                    f"Invalid skill output (expected actions[]): {response_text[:500]}"
+                )
+            logger.warning(
+                "Malformed ingest JSON for %s via %s on attempt %d/%d; retrying...",
+                subject,
+                provider,
+                attempt,
+                parse_attempts,
+            )
+            continue
+
+        return response_text, None
+
+    return response_text, data
 
 
 def parse_skill(skill_path: Path) -> tuple[dict, str]:
@@ -67,17 +159,52 @@ def run_skill_from_pending(
         raise ValueError(f"pending file missing user_message: {pending_path}")
 
     subject = pending.get("raw_path") or pending.get("query") or pending_path.name
+    providers = fallback_provider_chain(provider)
     logger.info(
         "Running skill %s (%s) via %s for %s",
         skill_rel,
         kind,
-        provider_name(provider),
+        " → ".join(providers),
         subject,
     )
 
-    response_text = call_llm(user_message, system_instruction, provider=provider)
-    if not response_text:
-        raise RuntimeError("LLM returned empty response")
+    response_text = ""
+    data = None
+    last_exc: Exception | None = None
+
+    for index, active_provider in enumerate(providers):
+        if index > 0:
+            logger.warning(
+                "Falling back to %s for %s after %s failed",
+                active_provider,
+                subject,
+                providers[index - 1],
+            )
+        try:
+            response_text, data = _run_llm_with_retries(
+                kind=kind,
+                subject=subject,
+                user_message=user_message,
+                system_instruction=system_instruction,
+                provider=active_provider,
+            )
+            if index > 0:
+                logger.info("Recovered %s using fallback provider %s", subject, active_provider)
+            break
+        except Exception as exc:
+            last_exc = exc
+            if index >= len(providers) - 1:
+                raise
+            logger.warning(
+                "Provider %s failed for %s: %s",
+                active_provider,
+                subject,
+                exc,
+            )
+    else:
+        if last_exc:
+            raise last_exc
+        raise RuntimeError("LLM call failed with no providers configured")
 
     should_write = write_output if write_output is not None else write_actions
 
@@ -94,7 +221,6 @@ def run_skill_from_pending(
     if kind != "ingest":
         raise ValueError(f"Unknown skill kind: {kind}")
 
-    data = extract_json_object(response_text)
     if not data or "actions" not in data:
         raise ValueError(f"Invalid skill output (expected actions[]): {response_text[:500]}")
 

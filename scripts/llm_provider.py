@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from pathlib import Path
 from typing import Dict, List
 
@@ -48,6 +49,59 @@ def normalize_provider(raw: str | None = None) -> str:
     return value if value in VALID_PROVIDERS else "mlx"
 
 
+def is_provider_configured(provider: str) -> bool:
+    """Whether a provider can be called (API key or local endpoint)."""
+
+    load_env()
+    name = normalize_provider(provider)
+    if name == "mlx":
+        return True
+    if name == "gemini":
+        return bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    if name == "openai":
+        return bool(os.environ.get("OPENAI_API_KEY", "").strip())
+    return False
+
+
+def fallback_enabled() -> bool:
+    load_env()
+    return os.environ.get("LLM_FALLBACK_ENABLED", "1").strip().lower() not in {
+        "0",
+        "false",
+        "no",
+    }
+
+
+def fallback_provider_chain(primary: str | None = None) -> list[str]:
+    """Primary provider first, then configured fallbacks (deduped)."""
+
+    load_env()
+    primary = normalize_provider(primary)
+    if not fallback_enabled():
+        return [primary]
+
+    explicit = os.environ.get("LLM_FALLBACK_PROVIDERS", "").strip()
+    if explicit:
+        candidates = [
+            normalize_provider(part)
+            for part in explicit.split(",")
+            if part.strip()
+        ]
+    elif primary == "mlx":
+        candidates = ["gemini", "openai"]
+    else:
+        candidates = []
+
+    chain = [primary]
+    for candidate in candidates:
+        if (
+            candidate not in chain
+            and is_provider_configured(candidate)
+        ):
+            chain.append(candidate)
+    return chain
+
+
 def context_limits(provider: str | None = None) -> tuple[int, int, int]:
     """Return max context, reserved output, and max prompt token budgets."""
 
@@ -64,6 +118,13 @@ def context_limits(provider: str | None = None) -> tuple[int, int, int]:
     margin = int(os.environ.get("PROMPT_SAFETY_MARGIN", "500"))
     max_prompt = max(1024, max_context - reserved_output - margin)
     return max_context, reserved_output, max_prompt
+
+
+def default_output_tokens(provider: str | None = None) -> int:
+    """Default completion budget when callers omit max_tokens."""
+
+    _, reserved_output, _ = context_limits(provider)
+    return reserved_output
 
 
 def chat_completions_url(provider: str | None = None) -> str:
@@ -166,7 +227,7 @@ def get_gemini_response(
         "contents": contents,
         "generationConfig": {
             "temperature": 0.1,
-            "maxOutputTokens": max_output_tokens or 4096,
+            "maxOutputTokens": max_output_tokens or default_output_tokens("gemini"),
         },
         "safetySettings": [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -215,24 +276,48 @@ def get_openai_compatible_response(
     if current == "openai" and not api_key:
         logger.error("OPENAI_API_KEY not set.")
         return None
+    if max_tokens is None:
+        max_tokens = default_output_tokens(provider)
+
     payload = {
         "model": model,
         "messages": messages,
         "temperature": 0.1,
+        "max_tokens": max_tokens,
     }
-    if max_tokens is not None:
-        payload["max_tokens"] = max_tokens
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
+    timeout_seconds = int(os.environ.get("LLM_TIMEOUT_SECONDS", "360"))
+    attempts = max(1, int(os.environ.get("LLM_RETRY_ATTEMPTS", "2")))
+    backoff_seconds = max(1, int(os.environ.get("LLM_RETRY_BACKOFF_SECONDS", "5")))
+
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=360)
-        response.raise_for_status()
-        data = response.json()
-        LAST_LLM_ERROR = None
-        return data["choices"][0]["message"]["content"]
+        for attempt in range(1, attempts + 1):
+            try:
+                response = requests.post(
+                    url,
+                    json=payload,
+                    headers=headers,
+                    timeout=timeout_seconds,
+                )
+                response.raise_for_status()
+                data = response.json()
+                LAST_LLM_ERROR = None
+                return data["choices"][0]["message"]["content"]
+            except (requests.Timeout, requests.ConnectionError) as exc:
+                if attempt >= attempts:
+                    raise exc
+                logger.warning(
+                    "LLM transient error on attempt %d/%d: %s. Retrying in %ss...",
+                    attempt,
+                    attempts,
+                    exc,
+                    backoff_seconds,
+                )
+                time.sleep(backoff_seconds)
     except Exception as exc:
         LAST_LLM_ERROR = format_request_error(exc, url=url)
         logger.error("LLM Error: %s", LAST_LLM_ERROR)
@@ -264,6 +349,8 @@ def call_llm(
         {"role": "system", "content": system_instruction},
         {"role": "user", "content": prompt},
     ]
+    if max_tokens is None:
+        max_tokens = default_output_tokens(provider)
     return get_llm_response(messages, provider=provider, max_tokens=max_tokens)
 
 

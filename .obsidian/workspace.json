@@ -11,14 +11,10 @@
             "id": "011d36277de74e80",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "self-wiki/outputs/what-are-my-core-values-2026-05-30.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "what-are-my-core-values-2026-05-30"
+              "title": "New tab"
             }
           }
         ]
@@ -180,20 +176,49 @@
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "bases:Create new base": false
+      "bases:Create new base": false,
+      "obsidian-importer:Open Importer": false
     }
   },
-  "active": "011d36277de74e80",
+  "active": "c1e42c1a15fb72ef",
   "lastOpenFiles": [
-    "self-wiki/raw/origin-apple-notes/我答应自己不会因他们的询问而生气或厌烦，不会在别人主动指点后防备性地回答,只会笑着点头.md",
-    "self-wiki/outputs/what-are-my-core-values-2026-05-30.md",
-    "self-wiki/raw/origin-apple-notes/今天是个分手和伤心的日子.md",
-    "self-wiki/raw/diary/notes/2023-06-13-on-managing-yourself.md",
-    "scripts/__pycache__/query_server.cpython-314.pyc",
-    "scripts/__pycache__/llm_provider.cpython-314.pyc",
-    "self-wiki/log/sync_v2.log",
-    "scripts/test_query_server.py",
-    "scripts/query_server.py",
-    "scripts/llm_provider.py"
+    "self-wiki/log/pending/ingest-20260603T113401-origin-apple-notes-work-career.md.json",
+    "self-wiki/log/pending/ingest-actions-20260603T113220-origin-apple-notes-self-important.md.json",
+    "self-wiki/log/pending/ingest-20260603T113220-origin-apple-notes-self-important.md.json",
+    "self-wiki/log/pending/ingest-actions-20260603T113045-origin-apple-notes-to-buy.md.json",
+    "self-wiki/log/pending/ingest-20260603T113045-origin-apple-notes-to-buy.md.json",
+    "self-wiki/log/pending/ingest-actions-20260603T112849-origin-apple-notes-idea-business-startup.md.json",
+    "self-wiki/log/pending/ingest-20260603T112849-origin-apple-notes-idea-business-startup.md.json",
+    "self-wiki/log/pending/ingest-actions-20260603T112709-origin-apple-notes-edu.md.json",
+    "self-wiki/log/pending/ingest-20260603T112709-origin-apple-notes-edu.md.json",
+    "self-wiki/wiki/开放.md",
+    "self-wiki/log/pending/ingest-actions-20260603T112522-origin-apple-notes-insight-people.md.json",
+    "self-wiki/log/pending/ingest-20260603T112522-origin-apple-notes-insight-people.md.json",
+    "self-wiki/wiki/在大学里，每每最基础的学术讨论都没法进行，因为大家只要一说话，就不断地偷换概念，不间断地从一个主题跳到另一个主题。立论不讲证据，即使提出了证据，背后也没有数据支撑。.md",
+    "self-wiki/wiki/git.md.md",
+    "self-wiki/wiki/内地 关系 很重要，尤其是熟人之间.md",
+    "self-wiki/wiki/Bean Workshop Limited.md",
+    "self-wiki/wiki/与领导保持规律性沟通，定期积极主动寻求反馈。.md",
+    "self-wiki/wiki/做事，一定要遵从本心，付出，也得你自己真想付出才行。靠指望别人感恩活.md",
+    "self-wiki/wiki/你应该每天努力工作了，至少10个小时.md",
+    "self-wiki/wiki/拿不定主意的事情也尽量去征求他的意见，反正每天都有meeting.md.md",
+    "self-wiki/wiki/中环扶梯序列.md",
+    "self-wiki/wiki/如何在互动中营造友善氛围.md",
+    "self-wiki/wiki/购物.md.md",
+    "self-wiki/wiki/这种缺少大局的细节上的重视.md",
+    "self-wiki/wiki/活得轻松点，不要担心自己控制不了的事情.md",
+    "self-wiki/wiki/遇到不一样的，先问why这样.md",
+    "self-wiki/wiki/Mentor.md",
+    "self-wiki/wiki/个人复杂技能.md",
+    "self-wiki/wiki/研究 idea.md",
+    "self-wiki/wiki/LTvisitor3Cube4a82.md",
+    "self-wiki/wiki/礼貌：请与感谢 (Please Thank You).md",
+    "self-wiki/wiki/信教 seon3 gaau3.md",
+    "self-wiki/wiki/time.md",
+    "self-wiki/wiki/深圳市南山区西丽街道留仙居北区11栋303.md",
+    "self-wiki/wiki/你交的朋友必须是：1）正直的；2）比你更有智慧的；3）比你更有钱的。否则就是浪费时间。.md",
+    "self-wiki/wiki/Cross-Cultural Operating Parameters East vs. West (跨文化操作参数：东西方比较).md",
+    "self-wiki/raw/origin-apple-notes/Drawing.png",
+    "self-wiki/raw/origin-apple-notes/1f64f.svg"
   ]
 }
