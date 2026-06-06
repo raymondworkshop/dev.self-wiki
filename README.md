@@ -1,6 +1,9 @@
 # dev.self-wiki
 
-Personal **compile-first** wiki + digital twin workspace. Raw notes → structured wiki → query / audit.
+Personal AI-powered wiki + Second Brain. Raw notes → structured wiki → query / audit.
+
+
+This wiki is a **Reasoning Engine** and a **Socratic Mirror**. We treat LLMs as the "OS" and the wiki as the "Context Window" for high-resolution self-reflection.
 
 # privacy
 
