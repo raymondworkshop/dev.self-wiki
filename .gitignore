@@ -1,9 +1,9 @@
 .git/
 .selfwikienv/
-self-wiki/.obsidian
-scripts/__pycache__
+self-wiki/.obsidian/
+scripts/__pycache__/
 .env
-.obsidian
+.obsidian/
 _self-wiki/
 self-wiki/
 twin/
