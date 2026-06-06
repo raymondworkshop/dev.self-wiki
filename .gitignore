@@ -5,5 +5,5 @@ scripts/__pycache__
 .env
 .obsidian
 _self-wiki/
-self-wiki/*
+self-wiki/
 twin/*
