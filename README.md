@@ -35,7 +35,7 @@ make query-web          # browser UI (same query pipeline)
 
 Advanced (Cursor mode, promote, twin, …): `python scripts/cli.py --help`
 
-Override provider: 
+Override provider:  
 `LLM_PROVIDER=gemini make query`  
 `LLM_PROVIDER=openai make query`  
 
