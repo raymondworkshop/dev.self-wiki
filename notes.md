@@ -20,6 +20,45 @@
 - docs
     > [README.md](README.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [GEMINI.md](GEMINI.md)
 
+
+## Project structure
+
+```
+skills/           Prompts (ingest, query, lint) + query profiles
+scripts/          Harness (cli, run_skill) + deterministic tooling
+self-wiki/
+  raw/            Input — never modified by automation
+  wiki/           Compiled second brain
+  outputs/        Query answers & reports
+  log/pending/    Skill input packages (JSON)
+  log/INDEX.json  Machine topic index
+GEMINI.md         Philosophy, wiki standards, skill resolver
+twin/             Digital twin PROFILE (post-ingest)
+archive/          Legacy archive notes (_self-wiki removed from repo)
+```
+
+## Skills (where intelligence lives)
+
+| Skill | Makefile | Output |
+|-------|----------|--------|
+| [skills/ingest.md](skills/ingest.md) | `make sync` | JSON `actions[]` → wiki pages |
+| [skills/query.md](skills/query.md) | `make query`, `query-web` | Markdown answer + provenance |
+| [skills/lint.md](skills/lint.md) | `make lint` | Cognitive lint section |
+
+Retrieval profiles: [skills/query-profiles.yaml](skills/query-profiles.yaml)
+
+## Interactive (Cursor) workflow
+
+```bash
+python scripts/cli.py prepare-ingest          # or prepare-query "…"
+# Open self-wiki/log/pending/*.json + matching skills/*.md in chat
+python scripts/cli.py apply-ingest --file …
+python scripts/cli.py post-ingest
+```
+
+See `python scripts/cli.py --help` for promote, twin, lint, etc.
+
+
 ##### the architecture
 * Push intelligence up into skills, and push execution down into deterministic tooling. keep the harness thin.  
     - Fast skills sit on top
