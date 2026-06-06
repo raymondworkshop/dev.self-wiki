@@ -7,3 +7,4 @@ scripts/__pycache__
 _self-wiki/
 self-wiki/
 twin/
+.gitignore
