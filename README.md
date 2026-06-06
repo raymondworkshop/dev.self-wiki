@@ -1,15 +1,15 @@
 # dev.self-wiki
 
-Personal AI-powered wiki + Second Brain. 
+Personal AI-powered wiki + Second Brain.  
 Raw notes → structured wiki → query / audit.
 
 
-This wiki is a **Reasoning Engine** and a **Socratic Mirror**. 
+This wiki is a **Reasoning Engine** and a **Socratic Mirror**.  
 We treat LLMs as the "OS" and the wiki as the "Context Window" for high-resolution self-reflection.
 
 # privacy
 
-Local-first by default (`LLM_PROVIDER=mlx`). 
+Local-first by default (`LLM_PROVIDER=mlx`).  
 Raw and wiki stay on disk under `self-wiki/`.
 
 
