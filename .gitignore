@@ -1,10 +1,9 @@
 .git/
 .selfwikienv/
-self-wiki/.obsidian/
-scripts/__pycache__/
-.env
-.obsidian/
-_self-wiki/
 self-wiki/
+scripts/__pycache__
+.env
+.obsidian
+_self-wiki/
+archive/
 twin/
-.gitignore
