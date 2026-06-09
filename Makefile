@@ -7,7 +7,7 @@ QUERY_LLM_PROVIDER ?= $(LLM_PROVIDER)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help sync query audit query-web test all
+.PHONY: help sync query audit query-web test all 
 
 help:
 	@echo "  make sync              raw → wiki"
@@ -15,6 +15,7 @@ help:
 	@echo "  make audit [LINT=1]    test wiki + report (+ optional lint)"
 	@echo ""
 	@echo "  make query-web         browser UI"
+	@echo "  make extract-twitter   Twitter .js → raw markdown"
 	@echo "  python scripts/cli.py --help   advanced / Cursor mode"
 
 sync:
@@ -38,11 +39,14 @@ ifdef LINT
 	LLM_PROVIDER=$(LLM_PROVIDER) $(CLI) lint
 endif
 
+extract-twitter:
+	$(PYTHON) scripts/extract_twitter_raw.py
+
 test:
 	$(PYTHON) scripts/test_wiki_compliance.py
 	$(PYTHON) scripts/test_query_server.py
-	$(PYTHON) scripts/test_build_twin_profile.py
 	$(PYTHON) scripts/test_promote_output.py
 	$(PYTHON) scripts/test_audit_wiki.py
+	$(PYTHON) scripts/test_extract_twitter_raw.py
 
 all: sync audit

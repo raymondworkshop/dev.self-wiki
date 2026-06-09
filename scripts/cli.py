@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.resolve()))
 from apply_ingest import apply_from_file
 from build_twin_profile import build_twin_profile
 from config import LOG_DIR, WORKSPACE_PATH
+from llm_provider import fallback_provider_chain, model_name, normalize_provider
 from log_utils import append_log
 from orchestrator import SocraticOrchestrator
 from prepare_ingest import prepare_for_file
@@ -153,6 +154,12 @@ def cmd_sync(args: argparse.Namespace) -> int:
     if not changed:
         logger.info("Nothing to sync.")
         return 0
+
+    primary = normalize_provider(args.provider)
+    logger.info("Sync LLM: provider=%s model=%s", primary, model_name(primary))
+    providers = fallback_provider_chain(args.provider)
+    if len(providers) > 1:
+        logger.info("Sync fallback chain: %s", " → ".join(providers))
 
     ingested: list[str] = []
     total_pages = 0

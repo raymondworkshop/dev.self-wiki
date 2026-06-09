@@ -16,6 +16,7 @@ from llm_provider import (
     default_output_tokens,
     extract_json_object,
     fallback_provider_chain,
+    model_name,
     provider_name,
 )
 
@@ -180,6 +181,12 @@ def run_skill_from_pending(
                 subject,
                 providers[index - 1],
             )
+        logger.info(
+            "LLM call: provider=%s model=%s for %s",
+            active_provider,
+            model_name(active_provider),
+            subject,
+        )
         try:
             response_text, data = _run_llm_with_retries(
                 kind=kind,
