@@ -26,7 +26,17 @@ INGEST_SKILL = SKILLS_DIR / "ingest.md"
 QUERY_SKILL = SKILLS_DIR / "query.md"
 LINT_SKILL = SKILLS_DIR / "lint.md"
 QUERY_PROFILES = SKILLS_DIR / "query-profiles.yaml"
-GEMINI_CONF = WORKSPACE_PATH / "GEMINI.md"
+def _resolve_operating_manual() -> Path:
+    for name in ("AGENTS.md", "GEMINI.md"):
+        path = WORKSPACE_PATH / name
+        if path.exists():
+            return path
+    raise FileNotFoundError(
+        f"No operating manual found (expected AGENTS.md or GEMINI.md in {WORKSPACE_PATH})"
+    )
+
+
+GEMINI_CONF = _resolve_operating_manual()
 LOG_MD = LOG_DIR / "log.md"
 INDEX_MD = LOG_DIR / "index.md"
 INDEX_JSON = LOG_DIR / "INDEX.json"

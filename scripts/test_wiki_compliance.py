@@ -123,6 +123,56 @@ class TestLLMProvider(unittest.TestCase):
         self.assertEqual(normalize_provider("openai"), "openai")
         self.assertEqual(normalize_provider("unknown-vendor"), "mlx")
 
+    def test_provider_for_role_uses_query_and_lint_overrides(self):
+        from llm_provider import provider_for_role
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "mlx",
+                "QUERY_LLM_PROVIDER": "gemini",
+                "LINT_LLM_PROVIDER": "",
+                "GEMINI_API_KEY": "test-key",
+            },
+            clear=False,
+        ):
+            self.assertEqual(provider_for_role("query", None), "gemini")
+            self.assertEqual(provider_for_role("lint", None), "gemini")
+            self.assertEqual(provider_for_role(None, None), "mlx")
+
+    def test_fallback_chain_sync_mlx_then_gemini(self):
+        from llm_provider import fallback_provider_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "mlx",
+                "LLM_FALLBACK_ENABLED": "1",
+                "LLM_FALLBACK_PROVIDERS": "gemini",
+                "GEMINI_API_KEY": "test-key",
+            },
+            clear=False,
+        ):
+            self.assertEqual(fallback_provider_chain(None, role="sync"), ["mlx", "gemini"])
+
+    def test_fallback_chain_query_gemini_then_mlx(self):
+        from llm_provider import fallback_provider_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "mlx",
+                "QUERY_LLM_PROVIDER": "gemini",
+                "QUERY_FALLBACK_PROVIDERS": "mlx",
+                "LLM_FALLBACK_ENABLED": "1",
+                "GEMINI_API_KEY": "test-key",
+            },
+            clear=False,
+        ):
+            self.assertEqual(
+                fallback_provider_chain(None, role="query"), ["gemini", "mlx"]
+            )
+
     def test_context_limits_are_provider_aware(self):
         gemini_context, gemini_reserved, _ = context_limits("gemini")
         mlx_context, mlx_reserved, _ = context_limits("mlx")
@@ -159,6 +209,7 @@ class TestLLMProvider(unittest.TestCase):
             {
                 "LLM_PROVIDER": "mlx",
                 "LLM_FALLBACK_ENABLED": "1",
+                "LLM_FALLBACK_PROVIDERS": "",
                 "GEMINI_API_KEY": "test-key",
                 "OPENAI_API_KEY": "",
             },

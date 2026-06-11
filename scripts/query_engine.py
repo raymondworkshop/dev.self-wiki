@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List
 
-from llm_provider import model_name, normalize_provider
+from llm_provider import model_name, provider_for_role
 from prepare_query import prepare_query
 from query_retrieval import load_index, print_retrieval_debug
 from run_skill import run_skill_from_pending
@@ -23,7 +23,7 @@ def generate_query_answer(
     provider: str | None = None,
     debug_retrieval: bool = False,
 ) -> dict:
-    llm_provider = normalize_provider(provider)
+    llm_provider = provider_for_role("query", provider)
     index = index if index is not None else load_index(required=False)
     messages = messages if messages is not None else []
 

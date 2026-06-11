@@ -10,7 +10,7 @@ from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from config import OUTPUTS_DIR, RAW_DIR, TWIN_PROFILE, WIKI_DIR, WORKSPACE_PATH
-from llm_provider import model_name, normalize_provider
+from llm_provider import model_name, normalize_provider, provider_for_role
 from query_engine import generate_query_answer
 from query_retrieval import load_index
 from save_query_output import save_output
@@ -156,9 +156,9 @@ def page_shell(
     *,
     query: str = "",
     session_id: str = "",
-    provider: str = "mlx",
+    provider: str | None = None,
 ) -> str:
-    selected_provider = normalize_provider(provider)
+    selected_provider = provider_for_role("query", provider)
     model = model_name(selected_provider)
     query_value = html.escape(query, quote=True)
     session_input = (
@@ -403,10 +403,10 @@ def home() -> HTMLResponse:
 def query_page(
     question: str = Form(...),
     session_id: str = Form(""),
-    provider: str = Form("mlx"),
+    provider: str = Form(""),
 ) -> HTMLResponse:
     clean_question = question.strip()
-    llm_provider = normalize_provider(provider)
+    llm_provider = provider_for_role("query", provider or None)
     if not clean_question:
         return HTMLResponse(
             page_shell(
@@ -492,7 +492,7 @@ def query_api(payload: dict) -> JSONResponse:
     session = get_or_create_session(
         str(payload.get("session_id", "")),
         question,
-        provider=str(payload.get("provider", "mlx")),
+        provider=payload.get("provider") or None,
     )
     result = generate_query_answer(
         question,
@@ -634,18 +634,19 @@ def raw_page(raw_path: str) -> HTMLResponse:
 
 
 def get_or_create_session(
-    session_id: str, title: str, *, provider: str = "mlx"
+    session_id: str, title: str, *, provider: str | None = None
 ) -> dict[str, Any]:
+    resolved = provider_for_role("query", provider)
     if session_id and session_id in SESSIONS:
         session = SESSIONS[session_id]
-        session["provider"] = normalize_provider(provider)
+        session["provider"] = resolved
         return session
 
     new_id = uuid.uuid4().hex
     session = {
         "id": new_id,
         "title": title,
-        "provider": normalize_provider(provider),
+        "provider": resolved,
         "messages": [],
         "turns": [],
         "output_path": "",

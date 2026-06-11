@@ -160,7 +160,8 @@ def run_skill_from_pending(
         raise ValueError(f"pending file missing user_message: {pending_path}")
 
     subject = pending.get("raw_path") or pending.get("query") or pending_path.name
-    providers = fallback_provider_chain(provider)
+    skill_role = "query" if kind == "query" else "lint" if kind == "lint" else "sync"
+    providers = fallback_provider_chain(provider, role=skill_role)
     logger.info(
         "Running skill %s (%s) via %s for %s",
         skill_rel,

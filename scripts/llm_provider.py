@@ -49,6 +49,26 @@ def normalize_provider(raw: str | None = None) -> str:
     return value if value in VALID_PROVIDERS else "mlx"
 
 
+def provider_for_role(role: str | None = None, explicit: str | None = None) -> str:
+    """Resolve provider for sync (default), query, or lint."""
+
+    if explicit:
+        return normalize_provider(explicit)
+
+    load_env()
+    if role == "query":
+        return normalize_provider(
+            os.environ.get("QUERY_LLM_PROVIDER") or os.environ.get("LLM_PROVIDER")
+        )
+    if role == "lint":
+        return normalize_provider(
+            os.environ.get("LINT_LLM_PROVIDER")
+            or os.environ.get("QUERY_LLM_PROVIDER")
+            or os.environ.get("LLM_PROVIDER")
+        )
+    return normalize_provider(None)
+
+
 def is_provider_configured(provider: str) -> bool:
     """Whether a provider can be called (API key or local endpoint)."""
 
@@ -72,25 +92,44 @@ def fallback_enabled() -> bool:
     }
 
 
-def fallback_provider_chain(primary: str | None = None) -> list[str]:
-    """Primary provider first, then configured fallbacks (deduped)."""
+def fallback_provider_chain(
+    primary: str | None = None,
+    *,
+    role: str | None = None,
+) -> list[str]:
+    """Primary provider first, then configured fallbacks (deduped).
+
+    Roles:
+    - sync / ingest: ``LLM_FALLBACK_PROVIDERS`` (default cloud after mlx)
+    - query / lint: ``QUERY_FALLBACK_PROVIDERS`` / ``LINT_FALLBACK_PROVIDERS`` (default mlx)
+    """
 
     load_env()
-    primary = normalize_provider(primary)
+    if role in ("query", "lint"):
+        primary = provider_for_role(role, primary)
+    else:
+        primary = normalize_provider(primary)
+
     if not fallback_enabled():
         return [primary]
 
-    explicit = os.environ.get("LLM_FALLBACK_PROVIDERS", "").strip()
+    if role in ("query", "lint"):
+        explicit = os.environ.get("QUERY_FALLBACK_PROVIDERS", "").strip()
+        if role == "lint":
+            explicit = os.environ.get("LINT_FALLBACK_PROVIDERS", "").strip() or explicit
+        default_candidates = ["mlx"]
+    else:
+        explicit = os.environ.get("LLM_FALLBACK_PROVIDERS", "").strip()
+        default_candidates = ["gemini", "openai"] if primary == "mlx" else []
+
     if explicit:
         candidates = [
             normalize_provider(part)
             for part in explicit.split(",")
             if part.strip()
         ]
-    elif primary == "mlx":
-        candidates = ["gemini", "openai"]
     else:
-        candidates = []
+        candidates = default_candidates
 
     chain = [primary]
     for candidate in candidates:
@@ -178,7 +217,7 @@ def resolve_openai_compatible_model(provider: str | None = None) -> str:
 def model_name(provider: str | None = None) -> str:
     current = provider_name(provider)
     if current == "gemini":
-        return os.environ.get("GEMINI_MODEL", "gemini-1.5-pro")
+        return os.environ.get("GEMINI_MODEL", "gemini-2.0-flash-lite")
     return resolve_openai_compatible_model(provider)
 
 
@@ -205,7 +244,7 @@ def get_gemini_response(
 
     load_env()
     api_key = os.environ.get("GEMINI_API_KEY", "")
-    model = os.environ.get("GEMINI_MODEL", "gemini-1.5-pro")
+    model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash-lite")
     if not api_key:
         logger.error("GEMINI_API_KEY not set.")
         return None

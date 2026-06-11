@@ -15,7 +15,12 @@ sys.path.insert(0, str(Path(__file__).parent.resolve()))
 from apply_ingest import apply_from_file
 from build_twin_profile import build_twin_profile
 from config import LOG_DIR, WORKSPACE_PATH
-from llm_provider import fallback_provider_chain, model_name, normalize_provider
+from llm_provider import (
+    fallback_provider_chain,
+    model_name,
+    normalize_provider,
+    provider_for_role,
+)
 from log_utils import append_log
 from orchestrator import SocraticOrchestrator
 from prepare_ingest import prepare_for_file
@@ -95,6 +100,8 @@ def cmd_prepare_query(args: argparse.Namespace) -> int:
 
 
 def cmd_query(args: argparse.Namespace) -> int:
+    llm_provider = provider_for_role("query", args.provider)
+    logger.info("Query LLM: provider=%s model=%s", llm_provider, model_name(llm_provider))
     result = run_query(
         args.query,
         provider=args.provider,
@@ -114,8 +121,10 @@ def cmd_prepare_lint(args: argparse.Namespace) -> int:
 
 
 def cmd_lint(args: argparse.Namespace) -> int:
+    llm_provider = provider_for_role("lint", args.provider)
+    logger.info("Lint LLM: provider=%s model=%s", llm_provider, model_name(llm_provider))
     pending_path = write_lint_pending()
-    result = run_skill_from_pending(pending_path, provider=args.provider)
+    result = run_skill_from_pending(pending_path, provider=llm_provider)
     merge_lint_into_audit(result["text"])
     append_log("lint", "Global cognitive lint merged into audit.md")
     logger.info("Lint complete; audit.md updated")
@@ -157,7 +166,7 @@ def cmd_sync(args: argparse.Namespace) -> int:
 
     primary = normalize_provider(args.provider)
     logger.info("Sync LLM: provider=%s model=%s", primary, model_name(primary))
-    providers = fallback_provider_chain(args.provider)
+    providers = fallback_provider_chain(args.provider, role="sync")
     if len(providers) > 1:
         logger.info("Sync fallback chain: %s", " → ".join(providers))
 
