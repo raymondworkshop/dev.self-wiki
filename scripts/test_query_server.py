@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -78,6 +79,23 @@ class QueryServerTests(unittest.TestCase):
         self.assertIn("Retrieved Evidence", response.text)
         self.assertIn("self-wiki/wiki/note.md", response.text)
         self.assertIn('href="/wiki/note.md"', response.text)
+
+    def test_output_page_resolves_symlinked_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            real_root = Path(tmp) / "real"
+            link_root = Path(tmp) / "link"
+            real_root.mkdir()
+            link_root.symlink_to(real_root)
+            note = real_root / "test-note.md"
+            note.write_text("# Symlink test\n", encoding="utf-8")
+
+            resolved = query_server.resolve_markdown_path(link_root, "test-note.md")
+            self.assertEqual(resolved, note.resolve())
+
+            with patch.object(query_server, "OUTPUT_ROOT", link_root):
+                response = self.client.get("/outputs/test-note.md")
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("Symlink test", response.text)
 
 
 if __name__ == "__main__":

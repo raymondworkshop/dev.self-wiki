@@ -770,20 +770,19 @@ def resolve_markdown_path(root: Path, requested_path: str) -> Path:
         raise HTTPException(status_code=404, detail="File not found")
 
     root_resolved = root.resolve()
-    candidate = (root / clean).absolute()
+    candidate = (root / clean).resolve()
     try:
         candidate.relative_to(root_resolved)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid path") from exc
 
-    resolved = candidate.resolve()
-    if resolved.is_dir():
+    if candidate.is_dir():
         raise HTTPException(status_code=404, detail="File not found")
-    if not resolved.exists() and resolved.suffix.lower() != ".md":
-        resolved = resolved.with_suffix(".md")
-    if not resolved.exists() or resolved.suffix.lower() != ".md":
+    if not candidate.exists() and candidate.suffix.lower() != ".md":
+        candidate = candidate.with_suffix(".md")
+    if not candidate.exists() or candidate.suffix.lower() != ".md":
         raise HTTPException(status_code=404, detail="File not found")
-    return resolved
+    return candidate
 
 
 def read_private_file(path: Path) -> str:
