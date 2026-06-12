@@ -8,23 +8,15 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from config import PENDING_DIR, QUERY_SKILL, TWIN_PROFILE, WORKSPACE_PATH
+from config import PENDING_DIR, QUERY_SKILL, WORKSPACE_PATH
 from query_retrieval import build_retrieval_pack, load_index
+from build_twin_profile import profile_excerpt_for_query
 
 
 def _slug(query: str, max_len: int = 48) -> str:
     safe = re.sub(r"[^a-zA-Z0-9\u4e00-\u9fff]+", "-", query).strip("-")
     safe = re.sub(r"-+", "-", safe)
     return (safe[:max_len] or "query").lower()
-
-
-def _profile_excerpt(max_chars: int = 2400) -> str:
-    if not TWIN_PROFILE.exists():
-        return "_twin/PROFILE.md not built yet — run make sync or python scripts/cli.py twin._"
-    text = TWIN_PROFILE.read_text(encoding="utf-8", errors="ignore")
-    if len(text) <= max_chars:
-        return text
-    return text[:max_chars] + "\n… [PROFILE truncated]"
 
 
 def build_user_message(pack: dict) -> str:
@@ -35,7 +27,8 @@ def build_user_message(pack: dict) -> str:
         f"Detected profile: {pack['profile']} (strong: {strong_label})\n"
         f"Language: {pack['language']}\n"
         f"Retrieval terms: {terms}\n\n"
-        f"Digital Twin Profile (deterministic snapshot):\n{_profile_excerpt()}\n\n"
+        "Digital Twin Profile (deterministic snapshot):\n"
+        f"{profile_excerpt_for_query(pack['query'], pack['query_terms'])}\n\n"
         f"Profile instruction:\n{pack['profile_instruction']}\n\n"
         f"Evidence Pack:\n{pack['evidence_block']}\n"
     )

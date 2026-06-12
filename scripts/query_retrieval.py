@@ -40,8 +40,13 @@ def flexible_instruction() -> str:
 def profile_instruction(profile: str, *, strict: bool) -> str:
     cfg = load_profiles_config()
     profiles = cfg.get("profiles", {})
-    if strict and profile in profiles:
-        return profiles[profile].get("strict_instruction", "")
+    if profile in profiles and profile != "general":
+        if strict:
+            return profiles[profile].get("strict_instruction", "")
+        strict_text = profiles[profile].get("strict_instruction", "")
+        if strict_text:
+            flexible = cfg.get("flexible_instruction", "")
+            return f"{flexible}\n\nProfile guidance ({profile}):\n{strict_text}"
     return cfg.get("flexible_instruction", "")
 
 

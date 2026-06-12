@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import logging
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -23,6 +24,7 @@ from llm_provider import (
 )
 from log_utils import append_log
 from orchestrator import SocraticOrchestrator
+from pending_cleanup import cleanup_pending_pair, json_actions_path, prune_old_pending
 from prepare_ingest import prepare_for_file
 from prepare_lint import merge_lint_into_audit, write_pending as write_lint_pending
 from prepare_query import prepare_query
@@ -52,6 +54,11 @@ def post_ingest(summary: str = "post-ingest complete") -> None:
     refresh_index()
     build_twin_profile()
     append_log("ingest", summary)
+    retain_days = int(os.environ.get("PENDING_RETAIN_DAYS", "7"))
+    if retain_days >= 0:
+        pruned = prune_old_pending(retain_days, keep_failed=True, dry_run=False)
+        if pruned:
+            logger.info("Pruned %d stale pending file(s) older than %d days", len(pruned), retain_days)
 
 
 def cmd_prepare_ingest(args: argparse.Namespace) -> int:
@@ -75,6 +82,12 @@ def cmd_run_skill(args: argparse.Namespace) -> int:
     if not pending.is_absolute():
         pending = WORKSPACE_PATH / pending
     run_skill_from_pending(pending, provider=args.provider)
+    if args.apply:
+        actions_path = json_actions_path(pending)
+        count = apply_from_file(actions_path, rel_path=args.raw)
+        logger.info("Applied %d page update(s)", count)
+        if count >= 0 and os.environ.get("PENDING_RETAIN_ON_SUCCESS", "0") != "1":
+            cleanup_pending_pair(pending)
     return 0
 
 
@@ -84,6 +97,12 @@ def cmd_apply_ingest(args: argparse.Namespace) -> int:
         actions = WORKSPACE_PATH / actions
     count = apply_from_file(actions, rel_path=args.raw)
     logger.info("Applied %d page update(s)", count)
+    if count >= 0 and args.pending:
+        pending = Path(args.pending)
+        if not pending.is_absolute():
+            pending = WORKSPACE_PATH / pending
+        if os.environ.get("PENDING_RETAIN_ON_SUCCESS", "0") != "1":
+            cleanup_pending_pair(pending)
     return 0
 
 
@@ -188,6 +207,8 @@ def cmd_sync(args: argparse.Namespace) -> int:
                 total_pages += pages
                 if pages == 0 and not data.get("actions"):
                     logger.warning("No actions applied for %s", pending_path.name)
+                elif os.environ.get("PENDING_RETAIN_ON_SUCCESS", "0") != "1":
+                    cleanup_pending_pair(pending_path)
             except Exception as exc:
                 logger.error("Failed ingest for %s: %s", rel, exc)
                 file_ok = False
@@ -204,22 +225,6 @@ def cmd_sync(args: argparse.Namespace) -> int:
         summary = f"{len(ingested)} raw file(s), {total_pages} page update(s)"
         post_ingest(summary)
     return 0
-
-
-def json_actions_path(pending_path: Path) -> Path:
-    import json
-
-    pending = json.loads(pending_path.read_text(encoding="utf-8"))
-    name = pending.get("actions_output")
-    if name:
-        path = pending_path.parent / name
-    else:
-        path = pending_path.with_name(
-            pending_path.name.replace("ingest-", "ingest-actions-", 1)
-        )
-    if not path.is_absolute():
-        path = WORKSPACE_PATH / path
-    return path
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -261,11 +266,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_run = sub.add_parser("run-skill", help="Execute skill for one pending package")
     p_run.add_argument("pending", help="Path to pending JSON")
     p_run.add_argument("--provider", default=None)
+    p_run.add_argument("--apply", action="store_true", help="Apply actions and cleanup pair")
+    p_run.add_argument("--raw", default=None, help="Raw rel path when using --apply")
     p_run.set_defaults(func=cmd_run_skill)
 
     p_apply = sub.add_parser("apply-ingest", help="Apply actions JSON to wiki")
     p_apply.add_argument("--file", required=True, help="Path to actions JSON")
     p_apply.add_argument("--raw", default=None, help="Raw rel path for provenance")
+    p_apply.add_argument("--pending", default=None, help="Pending JSON path for cleanup after apply")
     p_apply.set_defaults(func=cmd_apply_ingest)
 
     p_post = sub.add_parser("post-ingest", help="Run backliner, refresh index, twin, append log")

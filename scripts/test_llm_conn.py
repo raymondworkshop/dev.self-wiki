@@ -1,27 +1,11 @@
 import logging
 import os
-from pathlib import Path
 
+import config  # noqa: F401 — loads .env via config.load_env
 from llm_provider import get_llm_response, model_name, provider_name
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
-
-# Project root is one level up
-WORKSPACE_PATH = Path(__file__).parent.parent
-
-
-def load_env():
-    env_path = WORKSPACE_PATH / ".env"
-    if env_path.exists():
-        for line in env_path.read_text().splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                key, value = line.split("=", 1)
-                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
-
-
-load_env()
 
 
 def test_connection():

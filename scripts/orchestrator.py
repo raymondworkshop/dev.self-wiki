@@ -41,20 +41,13 @@ class SocraticOrchestrator:
                 logger.info(f"Skipping unchanged file: {rel}")
         return changed
 
-    def run(self):
-        changed = self.get_changed_files()
-        if not changed:
-            logger.info("Wiki is up to date.")
-            return
-
-        logger.info(f"Found {len(changed)} changed files.")
-        # In a real run, this would loop and call the distillation skill.
-        # For now, we just log.
-        for rel, abs_p, h in changed:
-            logger.info(f"Ready to distill: {rel}")
-
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     orchestrator = SocraticOrchestrator()
-    orchestrator.run()
+    changed = orchestrator.get_changed_files()
+    if not changed:
+        logger.info("Wiki is up to date.")
+    else:
+        logger.info("Found %d changed raw file(s):", len(changed))
+        for rel, _abs_p, _h in changed:
+            logger.info("  %s", rel)

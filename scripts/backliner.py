@@ -1,25 +1,10 @@
 import logging
-import os
 import re
-from pathlib import Path
+
+from config import WORKSPACE_PATH
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
-
-
-def load_env(env_path):
-    if env_path.exists():
-        for line in env_path.read_text().splitlines():
-            if line.strip() and not line.startswith("#"):
-                key, value = line.split("=", 1)
-                os.environ[key.strip()] = value.strip().strip('"').strip("'")
-
-
-# Load .env
-load_env(Path(__file__).parent.parent / ".env")
-WORKSPACE_PATH = Path(
-    os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
-)
 
 
 def update_backlinks():
@@ -111,7 +96,7 @@ def update_backlinks():
         stem = f.stem
 
         backlink_lines = []
-        # Ordered as per GEMINI.md
+        # Ordered as per AGENTS.md
         for rel_type in ["Evolved from", "Mentioned in", "Contradicts"]:
             topics = file_data[stem][rel_type]
             if topics:

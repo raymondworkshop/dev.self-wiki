@@ -7,30 +7,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from config import AUDIT_MD, LINT_SKILL, PENDING_DIR, TWIN_PROFILE, WIKI_DIR, WORKSPACE_PATH
-
-
-def get_yaml_meta(content: str) -> dict:
-    if not content.startswith("---"):
-        return {}
-    parts = content.split("---", 2)
-    if len(parts) < 3:
-        return {}
-    import yaml
-
-    return yaml.safe_load(parts[1]) or {}
-
-
-def get_yaml_field(content: str, field: str) -> str | None:
-    val = get_yaml_meta(content).get(field)
-    return str(val) if val is not None else None
-
-
-def get_yaml_tags(content: str) -> str:
-    tags = get_yaml_meta(content).get("tags") or []
-    if isinstance(tags, list):
-        return " ".join(str(t) for t in tags)
-    return str(tags)
+from config import AUDIT_MD, LINT_SKILL, PENDING_DIR, WIKI_DIR, WORKSPACE_PATH
+from build_twin_profile import lint_principle_excerpts, lint_profile_summary
 
 
 def _truncate(text: str, limit: int = 1200) -> str:
@@ -38,37 +16,6 @@ def _truncate(text: str, limit: int = 1200) -> str:
     if len(text) <= limit:
         return text
     return text[:limit] + "\n… [truncated]"
-
-
-def collect_principle_excerpts(max_pages: int = 15) -> list[str]:
-    excerpts: list[str] = []
-    if not WIKI_DIR.exists():
-        return excerpts
-
-    candidates: list[tuple[int, Path]] = []
-    for path in sorted(WIKI_DIR.rglob("*.md")):
-        if not path.is_file():
-            continue
-        try:
-            content = path.read_text(encoding="utf-8", errors="ignore")
-        except OSError:
-            continue
-        level = int(get_yaml_field(content, "level") or 0)
-        tags = get_yaml_tags(content)
-        score = level * 10
-        if "type/principle" in tags:
-            score += 20
-        if "type/shift" in tags:
-            score += 8
-        if level >= 2 or score >= 20:
-            candidates.append((score, path))
-
-    candidates.sort(key=lambda x: x[0], reverse=True)
-    for _, path in candidates[:max_pages]:
-        content = path.read_text(encoding="utf-8", errors="ignore")
-        rel = path.relative_to(WORKSPACE_PATH)
-        excerpts.append(f"### [[{rel}]]\n{_truncate(content)}\n")
-    return excerpts
 
 
 def collect_backlink_contradicts() -> list[str]:
@@ -96,26 +43,19 @@ def collect_backlink_contradicts() -> list[str]:
     return items[:30]
 
 
-def _profile_excerpt(max_chars: int = 2000) -> str:
-    if not TWIN_PROFILE.exists():
-        return "_twin/PROFILE.md not built — run make sync or python scripts/cli.py twin._"
-    text = TWIN_PROFILE.read_text(encoding="utf-8", errors="ignore")
-    return _truncate(text, limit=max_chars)
-
-
 def build_user_message() -> str:
     audit_summary = ""
     if AUDIT_MD.exists():
         audit_summary = _truncate(AUDIT_MD.read_text(encoding="utf-8"), limit=4000)
 
-    excerpts = collect_principle_excerpts()
+    excerpts = lint_principle_excerpts()
     contradicts = collect_backlink_contradicts()
 
     parts = [
         "Perform global cognitive lint on this personal wiki.",
         "",
         "## Digital Twin Profile (deterministic snapshot)",
-        _profile_excerpt(),
+        lint_profile_summary(),
         "",
         "## Deterministic audit report (recent run)",
         audit_summary or "_No audit.md yet — run `make audit` first._",

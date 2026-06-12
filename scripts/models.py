@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class WikiPage:
-    """Model representing a single wiki page following GEMINI.md standards."""
+    """Model representing a single wiki page following AGENTS.md standards."""
 
     def __init__(self, file_path: Path):
         self.file_path = file_path

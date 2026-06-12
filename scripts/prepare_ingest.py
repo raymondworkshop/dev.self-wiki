@@ -9,8 +9,34 @@ from datetime import datetime
 from pathlib import Path
 
 from config import INGEST_SKILL, PENDING_DIR, WORKSPACE_PATH
-from ingest_helpers import detect_language
+from llm_provider import provider_name
 from wiki_themes import load_existing_themes
+
+
+def detect_language(text: str) -> str:
+    if re.search(r"[\u4e00-\u9fff]", text):
+        return "Chinese"
+    return "English"
+
+
+def chunk_text(text: str, max_lines: int = 500, overlap: int = 50):
+    lines = text.splitlines()
+    if not lines:
+        return
+
+    start = 0
+    while start < len(lines):
+        end = start + max_lines
+        yield "\n".join(lines[start:end])
+        if end >= len(lines):
+            break
+        start += max_lines - overlap
+
+
+def chunk_params(provider: str | None = None) -> tuple[int, int, int]:
+    if provider_name(provider) == "gemini":
+        return 8000, 10000, 500
+    return 220, 500, 50
 
 
 def _sanitize_slug(rel_path: str) -> str:
@@ -106,9 +132,6 @@ def write_pending(pending: dict) -> Path:
 
 
 def prepare_for_file(rel_path: str, abs_path: Path, file_hash: str) -> list[Path]:
-    from ingest_helpers import chunk_params, chunk_text
-    from llm_provider import provider_name
-
     content = abs_path.read_text(encoding="utf-8")
     line_count = len(content.splitlines())
     threshold, chunk_size, overlap = chunk_params(provider_name())

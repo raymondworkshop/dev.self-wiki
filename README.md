@@ -1,11 +1,7 @@
 # dev.self-wiki
 
-Personal AI-powered wiki + Second Brain.  
-Raw notes → structured wiki → query / audit.
-
-
-This wiki is a **Reasoning Engine** and a **Socratic Mirror**.  
-We treat LLMs as the "OS" and the wiki as the "Context Window" for high-resolution self-reflection.
+Personal AI-powered wiki + Second Brain — raw notes → structured wiki → query / audit.  
+Operating philosophy and agent rules: [AGENTS.md](AGENTS.md).
 
 # privacy
 
@@ -33,7 +29,8 @@ make query-web          # browser UI (same query pipeline)
 | `make audit LINT=1` | Above + one global cognitive lint (LLM) |
 | `make query-web` | Web UI: ask + browse Wiki / Outputs / Profile |
 
-Advanced (Cursor mode, promote, twin, …): `python scripts/cli.py --help`
+Advanced (Cursor mode, promote, twin, …): `python scripts/cli.py --help`  
+Technical reference: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Override provider:  
 `LLM_PROVIDER=gemini make query`  

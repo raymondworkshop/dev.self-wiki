@@ -178,4 +178,5 @@ profiles:
 flexible_instruction: >-
   Answer naturally based on evidence, using a professional, report-like structure.
   Apply the most relevant Interaction Protocol (Deep Analysis, Comparison, or Recommendation) if applicable.
-  Include a Mermaid diagram to visualize complex relationships and always provide 'Next Steps'.
+  Include a dedicated **Mermaid Structure Map** section (`## Structure Map`) with a `graph TD` diagram
+  visualizing complex relationships, tensions, or operating logic, and always provide 'Next Steps'.

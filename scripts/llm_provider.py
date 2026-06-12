@@ -15,23 +15,12 @@ from typing import Dict, List
 
 import requests
 
+from config import load_env
+
 logger = logging.getLogger(__name__)
 LAST_LLM_ERROR: str | None = None
 DEFAULT_MLX_MODEL = "mlx-community/gemma-4-e4b-it-4bit"
 PLACEHOLDER_MODELS = {"", "mlx-model", "local-model"}
-
-
-def load_env(env_path: Path | None = None) -> None:
-    """Load key=value pairs from .env into os.environ."""
-
-    path = env_path or Path(__file__).resolve().parent.parent / ".env"
-    if not path.exists():
-        return
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            key, value = line.split("=", 1)
-            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
 def provider_name(provider: str | None = None) -> str:

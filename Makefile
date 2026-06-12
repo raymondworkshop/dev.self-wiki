@@ -48,5 +48,7 @@ test:
 	$(PYTHON) scripts/test_promote_output.py
 	$(PYTHON) scripts/test_audit_wiki.py
 	$(PYTHON) scripts/test_extract_twitter_raw.py
+	$(PYTHON) scripts/test_build_twin_profile.py
+	$(PYTHON) scripts/test_twin_profile_excerpt.py
 
 all: sync audit

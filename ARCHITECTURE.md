@@ -39,6 +39,8 @@ flowchart TB
   Apply --> Wiki[self-wiki/wiki]
   CLI --> Back --> Index --> Twin[build_twin_profile.py]
   Twin --> Profile[twin/PROFILE.md]
+  CLI --> Pending[pending_cleanup.py]
+  Pending --> PendingDir[log/pending]
   Web --> QueryEngine[query_engine.py] --> RunSkill
   QueryEngine --> Profile
   Promote[promote_output.py] --> Wiki
@@ -61,7 +63,7 @@ dev.self-wiki/
 │   ├── prepare_ingest.py      # Raw → pending JSON (no LLM)
 │   ├── apply_ingest.py        # actions[] → wiki (WikiPage)
 │   ├── orchestrator.py        # Raw file hash cache
-│   ├── ingest_helpers.py
+│   ├── pending_cleanup.py     # Pending JSON pair cleanup + prune
 │   ├── wiki_themes.py
 │   ├── refresh_index.py       # INDEX.json + log/index.md
 │   ├── log_utils.py
@@ -69,19 +71,17 @@ dev.self-wiki/
 │   │
 │   ├── prepare_query.py       # Retrieval pack → pending JSON
 │   ├── query_retrieval.py     # Profile detect, rank, evidence
-│   ├── query_engine.py        # prepare → run-skill(query) → save
-│   ├── save_query_output.py
-│   ├── query_wiki.py          # Interactive CLI wrapper
+│   ├── query_engine.py        # Query pipeline + save + interactive CLI
 │   ├── query_server.py        # FastAPI: ask + browse
 │   │
 │   ├── audit_wiki.py          # Deterministic audit report
 │   ├── prepare_lint.py        # Context for global lint
-│   ├── build_twin_profile.py  # Deterministic twin/PROFILE.md
+│   ├── build_twin_profile.py  # Twin snapshot + query/lint excerpts
 │   ├── promote_output.py      # Query output → wiki (compound loop)
 │   │
 │   ├── models.py              # WikiPage schema
 │   ├── llm_provider.py
-│   ├── sync_wiki.py           # Deprecated → cli.py sync
+│   ├── extract_twitter_raw.py # Twitter .js → raw markdown
 │   └── test_*.py
 │
 ├── self-wiki/                 # Knowledge store
@@ -96,10 +96,12 @@ dev.self-wiki/
 │   ├── INDEX.md               # Human Obsidian hub (hand-maintained)
 │   └── audit.md               # make audit + make lint output
 │
-├── twin/                      # Iter 3: PROFILE.md (digital twin snapshot)
-├── archive/                   # Legacy archive notes (_self-wiki removed)
-├── GEMINI.md                  # Operating manual + resolver hints
-├── Makefile                   # make sync | query | audit
+├── twin/                      # PROFILE.md + principles.json (post-ingest)
+├── archive/plans/             # Archived design plans (historical)
+├── README.md                  # Quick start + command table
+├── AGENTS.md                  # LLM operating manual (canonical for agents)
+├── .env.example               # LLM + retention knobs
+├── Makefile                   # make sync | query | audit | query-web | test
 ```
 
 ## Pipelines
@@ -107,23 +109,33 @@ dev.self-wiki/
 ### Ingest (`make sync`)
 
 ```
-orchestrator (hash) → prepare_ingest → run_skill(ingest) → apply_ingest → post_ingest
-post_ingest = backliner → refresh_index → build_twin_profile → append log.md
+orchestrator (hash) → prepare_ingest → run_skill(ingest) → apply_ingest → [cleanup pair] → post_ingest
+post_ingest = backliner → refresh_index → build_twin_profile → append log.md → prune stale pending
 ```
 
 One LLM call per changed raw file (per skill unit). Prompt: [skills/ingest.md](skills/ingest.md).
 
-After ingest, `twin/PROFILE.md` aggregates Level-2 / `type/principle` pages (confidence ≥ 0.7), backlink **Contradicts** edges, and recent `type/shift` pages. Query and lint read this snapshot deterministically in `prepare_query` / `prepare_lint`.
+**Pending JSON lifecycle** ([scripts/pending_cleanup.py](scripts/pending_cleanup.py)):
+
+- After each successful `apply_ingest` in `cli.py sync`, the matching `ingest-*.json` + `ingest-actions-*.json` pair is deleted (unless `PENDING_RETAIN_ON_SUCCESS=1`).
+- After `post_ingest`, pairs older than `PENDING_RETAIN_DAYS` (default 7) are pruned; failed pairs (missing actions file) are kept for debug.
+
+After ingest, `build_twin_profile.py` writes:
+
+- **`twin/PROFILE.md`** — compact human snapshot: top N Level-2 principles (default 80, `confidence ≥ 0.7`), **Recent evolution** (dated `## Evolution` lines from L2 / `type/shift` / high-signal entries), all **Contradicts** tensions, and recent `type/shift` pages
+- **`twin/principles.json`** — full machine catalog of qualifying Level-2 principles
+
+Query selects query-relevant principles from `principles.json` (term scoring + shifts/tensions from PROFILE) in `prepare_query`. Lint uses the JSON catalog for principle excerpts in `prepare_lint`.
 
 ### Query (`make query` / `make query-web`)
 
 ```
-prepare_query (deterministic retrieval) → run_skill(query) → save_query_output
+prepare_query (deterministic retrieval) → run_skill(query) → query_engine.save_output
 ```
 
 One LLM call per question. Prompt: [skills/query.md](skills/query.md). Profiles: [skills/query-profiles.yaml](skills/query-profiles.yaml).
 
-`prepare_query` injects an excerpt of `twin/PROFILE.md` into the pending JSON user message (twin context, no extra LLM).
+`prepare_query` injects query-aware twin context (top-K principles from `twin/principles.json` + shifts/tensions from PROFILE) into the pending JSON user message (deterministic, no extra LLM). Knobs: `TWIN_QUERY_PRINCIPLES_K`, `TWIN_PROFILE_EXCERPT_CHARS`.
 
 ### Compound loop (`make promote`)
 
@@ -146,10 +158,14 @@ Dry-run by default; pass `--confirm` (or `CONFIRM=1` via Makefile) to merge. Pro
 | You want… | Use |
 |-----------|-----|
 | Full automation | `make sync`, `make query`, `make audit` |
-| Cursor interactive | `python scripts/cli.py prepare-ingest` / `prepare-query` |
+| Cursor step-by-step | `cli.py prepare-ingest` → `run-skill` → `apply-ingest --pending …` → `post-ingest` |
 | Web browse + ask | `make query-web` |
+| Promote query → wiki | `cli.py promote --file … --target …` (`--confirm` to apply) |
+| Rebuild twin only | `cli.py twin` |
+| Twitter export → raw | `make extract-twitter` |
 | Unit tests (dev) | `make test` |
-| Legacy sync alias | `python scripts/sync_wiki.py` → `cli.py sync` |
+| Interactive query CLI | `python scripts/query_engine.py --list` |
+| Manual pending prune (rare) | `python scripts/pending_cleanup.py --prune --days N --confirm` |
 
 ## LLM discipline
 
@@ -173,6 +189,16 @@ Wiki pages enforced via `WikiPage` ([scripts/models.py](scripts/models.py)): YAM
 
 | Test | Command |
 |------|---------|
-| All unit tests | `make test` |
+| All unit tests | `make test` (compliance, query-server, promote, audit, twitter, twin) |
 | Wiki + audit (CI-style) | `make audit` |
 | LLM connectivity | `python scripts/test_llm_conn.py` |
+
+## Removed / consolidated (sprawl reduction)
+
+| Was | Now |
+|-----|-----|
+| `sync_wiki.py` | `make sync` / `cli.py sync` |
+| `query_wiki.py`, `save_query_output.py` | `query_engine.py` |
+| `twin_context.py` | `build_twin_profile.py` (excerpt helpers) |
+| `ingest_helpers.py` | `prepare_ingest.py` |
+| `GEMINI.md` | `AGENTS.md` |

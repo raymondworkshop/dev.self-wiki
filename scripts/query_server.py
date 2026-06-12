@@ -13,7 +13,7 @@ from config import OUTPUTS_DIR, RAW_DIR, TWIN_PROFILE, WIKI_DIR, WORKSPACE_PATH
 from llm_provider import model_name, normalize_provider, provider_for_role
 from query_engine import generate_query_answer
 from query_retrieval import load_index
-from save_query_output import save_output
+from query_engine import save_output
 
 HOST = os.environ.get("QUERY_WEB_HOST", "127.0.0.1")
 PORT = int(os.environ.get("QUERY_WEB_PORT", "5050"))
@@ -616,6 +616,7 @@ def profile_page() -> HTMLResponse:
     body = f"""<section class="card answer">
       <div class="eyebrow">Digital Twin</div>
       <h2>Profile</h2>
+      <p class="hint">Compact snapshot (top principles by level and confidence). Full catalog: <code>twin/principles.json</code>. Query uses query-relevant selection from the JSON index.</p>
       {markdown_to_html(strip_frontmatter(text), base='wiki')}
     </section>"""
     return HTMLResponse(page_shell(body))

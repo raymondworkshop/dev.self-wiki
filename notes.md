@@ -18,7 +18,7 @@
     > python scripts/cli.py --help
 
 - docs
-    > [README.md](README.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [GEMINI.md](GEMINI.md)
+    > [README.md](README.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [AGENTS.md](AGENTS.md)
 
 
 ## Project structure
@@ -32,7 +32,7 @@ self-wiki/
   outputs/        Query answers & reports
   log/pending/    Skill input packages (JSON)
   log/INDEX.json  Machine topic index
-GEMINI.md         Philosophy, wiki standards, skill resolver
+AGENTS.md         Philosophy, wiki standards, agent mandates
 twin/             Digital twin PROFILE (post-ingest)
 archive/          Legacy archive notes (_self-wiki removed from repo)
 ```
