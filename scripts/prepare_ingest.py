@@ -13,10 +13,7 @@ from llm_provider import provider_name
 from wiki_themes import load_existing_themes
 
 
-def detect_language(text: str) -> str:
-    if re.search(r"[\u4e00-\u9fff]", text):
-        return "Chinese"
-    return "English"
+from lang_utils import detect_language
 
 
 def chunk_text(text: str, max_lines: int = 500, overlap: int = 50):

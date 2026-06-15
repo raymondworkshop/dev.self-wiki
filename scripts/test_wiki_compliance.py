@@ -217,6 +217,35 @@ class TestLLMProvider(unittest.TestCase):
         ):
             self.assertEqual(fallback_provider_chain(None), ["mlx", "gemini"])
 
+    def test_fallback_chain_gemini_primary_includes_mlx_last_resort(self):
+        from llm_provider import fallback_provider_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "INGEST_LLM_PROVIDER": "gemini",
+                "LLM_FALLBACK_ENABLED": "1",
+                "GEMINI_API_KEY": "test-key",
+                "OPENAI_API_KEY": "",
+                "LLM_MLX_LAST_RESORT": "1",
+            },
+            clear=False,
+        ):
+            self.assertEqual(
+                fallback_provider_chain("gemini", role="sync"), ["gemini", "mlx"]
+            )
+
+    def test_mlx_blocked_as_primary_without_allow(self):
+        from composer_policy import reject_local_mlx
+
+        with self.assertRaises(RuntimeError):
+            reject_local_mlx("mlx", context="test", as_last_resort=False)
+
+    def test_mlx_allowed_as_last_resort(self):
+        from composer_policy import reject_local_mlx
+
+        reject_local_mlx("mlx", context="test", as_last_resort=True)
+
 
 if __name__ == "__main__":
     unittest.main()

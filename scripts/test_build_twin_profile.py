@@ -21,7 +21,7 @@ last_updated: 2026-01-01
 
 ## Evolution
 
-- 2026-01-01: Distilled from raw source [[raw/test.md]].
+- 2026-01-01: Distilled from raw source [[raw/origin-apple-notes/test.md]].
 - init
 
 ## Backlinks
@@ -30,7 +30,7 @@ last_updated: 2026-01-01
 
 ## Sources
 
-- [[raw/test.md]]
+- [[raw/origin-apple-notes/test.md]]
 """
 
 L1_PRINCIPLE_PAGE = """---
@@ -84,6 +84,8 @@ tags: [type/principle]
 - **Contradicts**: [[other-page.md]] — speed vs depth
 
 ## Sources
+
+- [[raw/origin-apple-notes/tension.md]]
 """
 
 

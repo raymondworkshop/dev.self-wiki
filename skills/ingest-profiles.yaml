@@ -1,0 +1,48 @@
+# Source-type routing for compression ingest (three folders only).
+profiles:
+  memex:
+    match: "raw/_posts/memex/**"
+    voice: own
+    mode: reference
+    skill: null
+    twin_eligible: false
+
+  posts_origin_apple_notes:
+    match: "raw/_posts/origin-apple-notes/**"
+    voice: own
+    mode: reference
+    skill: null
+    twin_eligible: false
+
+  posts:
+    match: "raw/_posts/**"
+    voice: own
+    mode: summarize
+    skill: skills/ingest-summary.md
+    max_theme_updates: 0
+    twin_eligible: false
+    max_compression_lines: 80
+    split_strategy: semantic_then_chunk
+    chunk_lines: 400
+    batch_eligible: true
+    batch_max_lines: 400
+
+  apple_notes:
+    match: "raw/origin-apple-notes/**"
+    voice: own
+    mode: distill-lite
+    skill: skills/ingest-thoughts.md
+    max_theme_updates: 2
+    twin_eligible: true
+    max_compression_lines: 80
+
+  twitter:
+    match: "raw/twitter/**"
+    voice: external
+    mode: summarize
+    skill: skills/ingest-external.md
+    max_theme_updates: 0
+    twin_eligible: false
+    max_compression_lines: 80
+    chunk_lines: 400
+    batch_eligible: true

@@ -1,9 +1,11 @@
 ---
 name: ingest-wiki
-description: Compile new raw notes into the self-wiki; diarize themes, match existing pages, merge with provenance.
+description: "[LEGACY] Compile raw into wiki/ via JSON actions. Default ingest uses ingest-summary / ingest-thoughts → compression/."
 inputs: raw source path, content, existing wiki themes
 outputs: JSON object with actions[] for apply-ingest
 ---
+
+> **Deprecated as default ingest.** Use [ingest-summary.md](ingest-summary.md) / [ingest-thoughts.md](ingest-thoughts.md) with `make compress` or Composer digest. Retained for optional legacy `make sync`.
 
 # Ingest Wiki Skill
 

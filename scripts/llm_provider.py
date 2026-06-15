@@ -1,7 +1,8 @@
 """Shared LLM provider adapter for self-wiki scripts.
 
-Local MLX/OpenAI-compatible endpoints are the default because this repo may
-contain private personal notes. Cloud providers should be explicit opt-ins.
+Composer-first: ingest/discovery prefer Composer or cloud; local MLX is last-resort fallback.
+Query/lint use cloud API (gemini/openai) when configured.
+Local MLX as primary: ALLOW_LOCAL_LLM=1. As fallback when cloud fails: LLM_MLX_LAST_RESORT=1 (default).
 """
 
 from __future__ import annotations
@@ -15,12 +16,31 @@ from typing import Dict, List
 
 import requests
 
+from composer_policy import mlx_last_resort_allowed, reject_local_mlx
 from config import load_env
 
 logger = logging.getLogger(__name__)
 LAST_LLM_ERROR: str | None = None
 DEFAULT_MLX_MODEL = "mlx-community/gemma-4-e4b-it-4bit"
 PLACEHOLDER_MODELS = {"", "mlx-model", "local-model"}
+
+
+def is_rate_limited(error: str | None = None) -> bool:
+    text = (error if error is not None else LAST_LLM_ERROR) or ""
+    lowered = text.lower()
+    return (
+        "429" in text
+        or "too many requests" in lowered
+        or "resource exhausted" in lowered
+        or "rate limit" in lowered
+    )
+
+
+def _parse_retry_after(response: requests.Response, default: int) -> int:
+    raw = response.headers.get("Retry-After", "").strip()
+    if raw.isdigit():
+        return max(1, int(raw))
+    return max(1, default)
 
 
 def provider_name(provider: str | None = None) -> str:
@@ -49,11 +69,23 @@ def provider_for_role(role: str | None = None, explicit: str | None = None) -> s
         return normalize_provider(
             os.environ.get("QUERY_LLM_PROVIDER") or os.environ.get("LLM_PROVIDER")
         )
+    if role in ("discover", "discovery", "gap", "evolution"):
+        key = "discover" if role == "discovery" else role
+        env_key = f"{key.upper()}_LLM_PROVIDER"
+        return normalize_provider(
+            os.environ.get(env_key)
+            or os.environ.get("QUERY_LLM_PROVIDER")
+            or os.environ.get("LLM_PROVIDER")
+        )
     if role == "lint":
         return normalize_provider(
             os.environ.get("LINT_LLM_PROVIDER")
             or os.environ.get("QUERY_LLM_PROVIDER")
             or os.environ.get("LLM_PROVIDER")
+        )
+    if role in ("sync", "ingest", "compression"):
+        return normalize_provider(
+            os.environ.get("INGEST_LLM_PROVIDER") or os.environ.get("LLM_PROVIDER")
         )
     return normalize_provider(None)
 
@@ -106,7 +138,7 @@ def fallback_provider_chain(
         explicit = os.environ.get("QUERY_FALLBACK_PROVIDERS", "").strip()
         if role == "lint":
             explicit = os.environ.get("LINT_FALLBACK_PROVIDERS", "").strip() or explicit
-        default_candidates = ["mlx"]
+        default_candidates = ["gemini", "openai"] if primary != "mlx" else []
     else:
         explicit = os.environ.get("LLM_FALLBACK_PROVIDERS", "").strip()
         default_candidates = ["gemini", "openai"] if primary == "mlx" else []
@@ -127,6 +159,10 @@ def fallback_provider_chain(
             and is_provider_configured(candidate)
         ):
             chain.append(candidate)
+
+    if mlx_last_resort_allowed() and "mlx" not in chain:
+        chain.append("mlx")
+
     return chain
 
 
@@ -267,20 +303,58 @@ def get_gemini_response(
     if system_instruction:
         payload["system_instruction"] = system_instruction
 
-    try:
-        response = requests.post(url, json=payload, timeout=300)
-        response.raise_for_status()
-        data = response.json()
-        if "candidates" not in data or not data["candidates"]:
-            logger.error("Gemini API returned no candidates.")
+    global LAST_LLM_ERROR
+    attempts = max(1, int(os.environ.get("GEMINI_RETRY_ATTEMPTS", "4")))
+    base_backoff = max(1, int(os.environ.get("GEMINI_RETRY_BACKOFF_SECONDS", "20")))
+
+    for attempt in range(1, attempts + 1):
+        try:
+            response = requests.post(url, json=payload, timeout=300)
+            if response.status_code == 429:
+                wait = _parse_retry_after(response, base_backoff * attempt)
+                LAST_LLM_ERROR = f"429 Too Many Requests (attempt {attempt}/{attempts})"
+                if attempt >= attempts:
+                    logger.error("Gemini rate limited after %d attempts", attempts)
+                    return None
+                logger.warning(
+                    "Gemini 429 rate limit; sleeping %ss before retry %d/%d",
+                    wait,
+                    attempt + 1,
+                    attempts,
+                )
+                time.sleep(wait)
+                continue
+            response.raise_for_status()
+            data = response.json()
+            if "candidates" not in data or not data["candidates"]:
+                logger.error("Gemini API returned no candidates.")
+                LAST_LLM_ERROR = "Gemini API returned no candidates"
+                return None
+            candidate = data["candidates"][0]
+            if candidate.get("finishReason") == "SAFETY":
+                return "Error: Response blocked by Gemini safety filters."
+            LAST_LLM_ERROR = None
+            return candidate["content"]["parts"][0]["text"]
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            LAST_LLM_ERROR = format_request_error(exc, url=url)
+            if status == 429 and attempt < attempts:
+                wait = _parse_retry_after(exc.response, base_backoff * attempt)
+                logger.warning(
+                    "Gemini 429 rate limit; sleeping %ss before retry %d/%d",
+                    wait,
+                    attempt + 1,
+                    attempts,
+                )
+                time.sleep(wait)
+                continue
+            logger.error("Gemini API Error: %s", LAST_LLM_ERROR)
             return None
-        candidate = data["candidates"][0]
-        if candidate.get("finishReason") == "SAFETY":
-            return "Error: Response blocked by Gemini safety filters."
-        return candidate["content"]["parts"][0]["text"]
-    except Exception as exc:
-        logger.error(f"Gemini API Error: {exc}")
-        return None
+        except Exception as exc:
+            LAST_LLM_ERROR = format_request_error(exc, url=url)
+            logger.error("Gemini API Error: %s", LAST_LLM_ERROR)
+            return None
+    return None
 
 
 def get_openai_compatible_response(
@@ -357,8 +431,10 @@ def get_llm_response(
     provider: str | None = None,
     *,
     max_tokens: int | None = None,
+    as_last_resort: bool = False,
 ) -> str | None:
-    current = provider_name(provider)
+    current = normalize_provider(provider)
+    reject_local_mlx(current, context="LLM call", as_last_resort=as_last_resort)
     if current == "gemini":
         return get_gemini_response(messages, max_output_tokens=max_tokens)
     return get_openai_compatible_response(
@@ -372,6 +448,7 @@ def call_llm(
     *,
     provider: str | None = None,
     max_tokens: int | None = None,
+    as_last_resort: bool = False,
 ) -> str | None:
     messages = [
         {"role": "system", "content": system_instruction},
@@ -379,7 +456,12 @@ def call_llm(
     ]
     if max_tokens is None:
         max_tokens = default_output_tokens(provider)
-    return get_llm_response(messages, provider=provider, max_tokens=max_tokens)
+    return get_llm_response(
+        messages,
+        provider=provider,
+        max_tokens=max_tokens,
+        as_last_resort=as_last_resort,
+    )
 
 
 def extract_json_object(text: str) -> dict | None:

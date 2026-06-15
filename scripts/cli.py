@@ -14,8 +14,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
 from apply_ingest import apply_from_file
+from apply_compression import apply_from_file as apply_compression_from_file  # noqa: F401
 from build_twin_profile import build_twin_profile
-from config import LOG_DIR, WORKSPACE_PATH
+from compress_raw import compress_file, compress_all
+from config import LOG_DIR, RAW_DIR, WORKSPACE_PATH
 from llm_provider import (
     fallback_provider_chain,
     model_name,
@@ -25,12 +27,25 @@ from llm_provider import (
 from log_utils import append_log
 from orchestrator import SocraticOrchestrator
 from pending_cleanup import cleanup_pending_pair, json_actions_path, prune_old_pending
+from prepare_discover import write_pending as write_discover_pending
+from prepare_evolution import write_pending as write_evolution_pending
+from prepare_gap import write_pending as write_gap_pending
 from prepare_ingest import prepare_for_file
 from prepare_lint import merge_lint_into_audit, write_pending as write_lint_pending
 from prepare_query import prepare_query
 from promote_output import promote_output
 from query_engine import run_query
+from composer_policy import reject_python_llm_ingest
+from compression_manifest import print_status as print_compression_status
+from pipeline_progress import (
+    mark_stage_done,
+    mark_stage_failed,
+    mark_stage_in_progress,
+    print_status as print_pipeline_status,
+    refresh_all,
+)
 from refresh_index import refresh_index
+from register_reference import register_references
 from run_skill import run_skill_from_pending
 
 logging.basicConfig(
@@ -54,6 +69,7 @@ def post_ingest(summary: str = "post-ingest complete") -> None:
     refresh_index()
     build_twin_profile()
     append_log("ingest", summary)
+    mark_stage_done("post_ingest")
     retain_days = int(os.environ.get("PENDING_RETAIN_DAYS", "7"))
     if retain_days >= 0:
         pruned = prune_old_pending(retain_days, keep_failed=True, dry_run=False)
@@ -108,6 +124,59 @@ def cmd_apply_ingest(args: argparse.Namespace) -> int:
 
 def cmd_post_ingest(args: argparse.Namespace) -> int:
     post_ingest(args.summary)
+    return 0
+
+
+def cmd_register_reference(args: argparse.Namespace) -> int:
+    path = register_references(dry_run=args.dry_run)
+    if not args.dry_run:
+        import json
+
+        catalog = json.loads(path.read_text(encoding="utf-8"))
+        logger.info(
+            "Registered %d twitter entries → %s",
+            catalog["count"],
+            path.relative_to(WORKSPACE_PATH),
+        )
+        mark_stage_done(
+            "register_reference",
+            output=str(path.relative_to(WORKSPACE_PATH)),
+            detail={"count": catalog["count"]},
+        )
+    return 0
+
+
+def cmd_compress(args: argparse.Namespace) -> int:
+    provider = provider_for_role("sync", args.provider)
+    reject_python_llm_ingest(context="compress", provider=provider)
+    if args.file:
+        rel = args.file
+        if rel.startswith("raw/"):
+            rel = rel[len("raw/") :]
+        abs_p = RAW_DIR / rel
+        if not abs_p.exists():
+            logger.error("Raw file not found: %s", rel)
+            return 1
+        out = compress_file(rel, abs_p, provider=args.provider)
+        if out:
+            logger.info("Wrote %s", out.relative_to(WORKSPACE_PATH))
+        return 0
+
+    compressed = compress_all(
+        provider=args.provider,
+        limit=args.limit,
+        force=args.force,
+        folder=args.folder,
+    )
+    refresh_all()
+    if compressed:
+        summary = f"compressed {len(compressed)} raw file(s)"
+        if args.post_ingest:
+            post_ingest(summary)
+        else:
+            logger.info("Done: %s (run post-ingest to refresh index/twin)", summary)
+    else:
+        logger.info("No files compressed.")
     return 0
 
 
@@ -171,7 +240,70 @@ def cmd_promote(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_progress(args: argparse.Namespace) -> int:
+    if args.compression_only:
+        print_compression_status(folder=args.folder)
+    else:
+        print_pipeline_status()
+    return 0
+
+
+def cmd_discover(args: argparse.Namespace) -> int:
+    provider = provider_for_role("discovery", args.provider)
+    reject_python_llm_ingest(context="discover", provider=provider)
+    mark_stage_in_progress("discovery")
+    try:
+        pending = write_discover_pending(provider=args.provider)
+        result = run_skill_from_pending(pending, provider=args.provider)
+        append_log("discover", f"discovery report via {pending.name}")
+        mark_stage_done("discovery", output=result.get("output_path"))
+        refresh_all()
+    except Exception as exc:
+        mark_stage_failed("discovery", str(exc))
+        raise
+    return 0
+
+
+def cmd_gap(args: argparse.Namespace) -> int:
+    provider = provider_for_role("gap", args.provider)
+    reject_python_llm_ingest(context="gap", provider=provider)
+    mark_stage_in_progress("gap")
+    try:
+        pending = write_gap_pending(provider=args.provider)
+        result = run_skill_from_pending(pending, provider=args.provider)
+        append_log("gap", f"gap report via {pending.name}")
+        mark_stage_done("gap", output=result.get("output_path"))
+        refresh_all()
+    except Exception as exc:
+        mark_stage_failed("gap", str(exc))
+        raise
+    return 0
+
+
+def cmd_evolution(args: argparse.Namespace) -> int:
+    provider = provider_for_role("evolution", args.provider)
+    reject_python_llm_ingest(context="evolution", provider=provider)
+    mark_stage_in_progress("evolution")
+    try:
+        pending = write_evolution_pending(provider=args.provider)
+        result = run_skill_from_pending(pending, provider=args.provider)
+        append_log("evolution", f"evolution report via {pending.name}")
+        mark_stage_done("evolution", output=result.get("output_path"))
+        refresh_all()
+    except Exception as exc:
+        mark_stage_failed("evolution", str(exc))
+        raise
+    return 0
+
+
 def cmd_sync(args: argparse.Namespace) -> int:
+    import sys
+
+    print(
+        "Warning: legacy sync writes wiki/ via ingest.md. "
+        "Prefer: cli.py compress → post-ingest",
+        file=sys.stderr,
+    )
     orchestrator = SocraticOrchestrator()
     changed = orchestrator.get_changed_files()
     if args.file:
@@ -279,6 +411,36 @@ def build_parser() -> argparse.ArgumentParser:
     p_post = sub.add_parser("post-ingest", help="Run backliner, refresh index, twin, append log")
     p_post.add_argument("--summary", default="post-ingest complete")
     p_post.set_defaults(func=cmd_post_ingest)
+
+    p_reg = sub.add_parser("register-reference", help="Catalog twitter raw → log/sources.json (no LLM)")
+    p_reg.add_argument("--dry-run", action="store_true")
+    p_reg.set_defaults(func=cmd_register_reference)
+
+    p_compress = sub.add_parser("compress", help="Compress raw → compression/ via ingest skills")
+    p_compress.add_argument("--file", help="Single raw rel path under self-wiki/raw/")
+    p_compress.add_argument("--provider", default=None)
+    p_compress.add_argument("--limit", type=int, default=None, help="Max files per run")
+    p_compress.add_argument("--force", action="store_true", help="Recompress even if up to date")
+    p_compress.add_argument("--folder", default=None, help="Only under raw/<folder>/ e.g. origin-apple-notes")
+    p_compress.add_argument("--post-ingest", action="store_true", help="Run post-ingest after batch")
+    p_compress.set_defaults(func=cmd_compress)
+
+    p_progress = sub.add_parser("progress", help="Show pipeline progress + resume hints")
+    p_progress.add_argument("--compression-only", action="store_true", help="Compression file checklist only")
+    p_progress.add_argument("--folder", default=None, help="Filter compression status by folder")
+    p_progress.set_defaults(func=cmd_progress)
+
+    p_discover = sub.add_parser("discover", help="Unknown-known pattern report → discovery/")
+    p_discover.add_argument("--provider", default=None)
+    p_discover.set_defaults(func=cmd_discover)
+
+    p_gap = sub.add_parser("gap", help="Knowledge gap report → gap/")
+    p_gap.add_argument("--provider", default=None)
+    p_gap.set_defaults(func=cmd_gap)
+
+    p_evolution = sub.add_parser("evolution", help="Knowledge evolution report → evolution/")
+    p_evolution.add_argument("--provider", default=None)
+    p_evolution.set_defaults(func=cmd_evolution)
 
     p_sync = sub.add_parser("sync", help="Full ingest pipeline")
     p_sync.add_argument("--provider", default=None)

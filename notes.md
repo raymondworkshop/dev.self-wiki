@@ -1,6 +1,10 @@
 
 #### self-wiki  
 
+##### ideas  
+- the result is not practical, especially when I build memex in blog  
+  
+
 ##### tasks  
 
 - make    
@@ -24,39 +28,40 @@
 ## Project structure
 
 ```
-skills/           Prompts (ingest, query, lint) + query profiles
+skills/           Prompts (ingest-summary, ingest-thoughts, query, lint) + profiles
 scripts/          Harness (cli, run_skill) + deterministic tooling
 self-wiki/
-  raw/            Input — never modified by automation
-  wiki/           Compiled second brain
+  raw/            Input — never modified (_posts, origin-apple-notes, twitter)
+  compression/    L0.5 digests (path mirrors raw/)
+  wiki/           Compiled second brain (L1–L2)
+  discovery/      Unknown-known reports
+  gap/            Knowledge gap reports
+  evolution/      Knowledge-state over time
   outputs/        Query answers & reports
   log/pending/    Skill input packages (JSON)
-  log/INDEX.json  Machine topic index
+  log/sources.json  Twitter catalog
 AGENTS.md         Philosophy, wiki standards, agent mandates
 twin/             Digital twin PROFILE (post-ingest)
-archive/          Legacy archive notes (_self-wiki removed from repo)
 ```
 
-## Skills (where intelligence lives)
+## Skills
 
-| Skill | Makefile | Output |
-|-------|----------|--------|
-| [skills/ingest.md](skills/ingest.md) | `make sync` | JSON `actions[]` → wiki pages |
-| [skills/query.md](skills/query.md) | `make query`, `query-web` | Markdown answer + provenance |
-| [skills/lint.md](skills/lint.md) | `make lint` | Cognitive lint section |
+| Skill | Command | Output |
+|-------|---------|--------|
+| [ingest-summary.md](skills/ingest-summary.md) | `make compress` | `compression/_posts/…` |
+| [ingest-thoughts.md](skills/ingest-thoughts.md) | `make compress` | `compression/origin-apple-notes/…` |
+| [ingest.md](skills/ingest.md) | legacy `make sync` | wiki pages |
+| [query.md](skills/query.md) | `make query` | Markdown + provenance |
 
-Retrieval profiles: [skills/query-profiles.yaml](skills/query-profiles.yaml)
-
-## Interactive (Cursor) workflow
+## Workflow (Composer-first)
 
 ```bash
-python scripts/cli.py prepare-ingest          # or prepare-query "…"
-# Open self-wiki/log/pending/*.json + matching skills/*.md in chat
-python scripts/cli.py apply-ingest --file …
-python scripts/cli.py post-ingest
+make register-reference
+# In Composer: digest raw → compression/ (skills/ingest-thoughts.md | ingest-summary.md)
+# Provenance: (Source: [[raw/origin-apple-notes/foo.md]])
+make post-ingest
+make audit
 ```
-
-See `python scripts/cli.py --help` for promote, twin, lint, etc.
 
 
 ##### the architecture

@@ -4,7 +4,7 @@ self-wiki/
 scripts/__pycache__/
 .env
 .obsidian
-_self-wiki/
+self-wiki/
 archive/
 !archive/plans/
 !archive/plans/**

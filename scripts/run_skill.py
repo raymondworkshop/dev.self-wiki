@@ -16,13 +16,14 @@ from llm_provider import (
     default_output_tokens,
     extract_json_object,
     fallback_provider_chain,
+    is_rate_limited,
     model_name,
     provider_name,
 )
 
 logger = logging.getLogger(__name__)
 
-TEXT_KINDS = frozenset({"query", "lint"})
+TEXT_KINDS = frozenset({"query", "lint", "compression", "discovery", "gap", "evolution"})
 
 INGEST_COMPACT_RETRY_SUFFIX = """
 
@@ -53,6 +54,7 @@ def _run_llm_with_retries(
     user_message: str,
     system_instruction: str,
     provider: str,
+    as_last_resort: bool = False,
 ) -> tuple[str, dict | None]:
     """Call LLM with per-provider parse/empty retries; returns (text, parsed ingest data)."""
 
@@ -73,8 +75,12 @@ def _run_llm_with_retries(
             system_instruction,
             provider=provider,
             max_tokens=max_tokens,
+            as_last_resort=as_last_resort,
         )
         if not response_text:
+            if is_rate_limited():
+                detail = f": {LAST_LLM_ERROR}" if LAST_LLM_ERROR else ""
+                raise RuntimeError(f"LLM rate limited{detail}")
             if attempt >= parse_attempts:
                 detail = f": {LAST_LLM_ERROR}" if LAST_LLM_ERROR else ""
                 raise RuntimeError(f"LLM returned empty response{detail}")
@@ -129,11 +135,32 @@ def _write_text_output(pending: dict, pending_path: Path, response_text: str) ->
     out_name = pending.get("answer_output") or pending.get("output_file")
     if not out_name:
         kind = pending.get("kind", "ingest")
-        prefix = "query-answer-" if kind == "query" else "lint-output-"
+        prefix = (
+            "query-answer-"
+            if kind == "query"
+            else "lint-output-"
+            if kind == "lint"
+            else "compress-output-"
+            if kind == "compression"
+            else f"{kind}-output-"
+        )
         out_name = pending_path.name.replace(f"{kind}-", prefix, 1).replace(".json", ".md")
     out_path = Path(out_name)
     if not out_path.is_absolute():
         out_path = WORKSPACE_PATH / out_path
+
+    if pending.get("kind") == "compression" and pending.get("raw_path"):
+        from apply_compression import apply_compression_text
+
+        raw_rel = pending["raw_path"]
+        if not raw_rel.startswith("raw/"):
+            raw_rel = f"raw/{raw_rel}"
+        return apply_compression_text(
+            response_text,
+            rel_path=raw_rel,
+            out_rel=pending.get("output_file"),
+        )
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(response_text, encoding="utf-8")
     logger.info("Wrote %s output to %s", pending.get("kind"), out_path.relative_to(WORKSPACE_PATH))
@@ -160,7 +187,19 @@ def run_skill_from_pending(
         raise ValueError(f"pending file missing user_message: {pending_path}")
 
     subject = pending.get("raw_path") or pending.get("query") or pending_path.name
-    skill_role = "query" if kind == "query" else "lint" if kind == "lint" else "sync"
+    skill_role = (
+        "query"
+        if kind == "query"
+        else "lint"
+        if kind == "lint"
+        else "discovery"
+        if kind == "discovery"
+        else kind
+        if kind in ("gap", "evolution")
+        else "sync"
+        if kind in ("ingest", "compression")
+        else "sync"
+    )
     providers = fallback_provider_chain(provider, role=skill_role)
     logger.info(
         "Running skill %s (%s) via %s for %s",
@@ -189,12 +228,14 @@ def run_skill_from_pending(
             subject,
         )
         try:
+            as_last_resort = active_provider == "mlx" and index > 0
             response_text, data = _run_llm_with_retries(
                 kind=kind,
                 subject=subject,
                 user_message=user_message,
                 system_instruction=system_instruction,
                 provider=active_provider,
+                as_last_resort=as_last_resort,
             )
             if index > 0:
                 logger.info("Recovered %s using fallback provider %s", subject, active_provider)

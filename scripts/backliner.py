@@ -111,22 +111,21 @@ def update_backlinks():
             flags=re.DOTALL,
         )
 
+        backlink_section = "\n## Backlinks\n<!-- BEGIN BACKLINKS -->\n"
         if backlink_lines:
-            backlink_section = "\n## Backlinks\n<!-- BEGIN BACKLINKS -->\n"
             backlink_section += "\n".join(backlink_lines) + "\n"
-            backlink_section += "<!-- END BACKLINKS -->\n"
+        backlink_section += "<!-- END BACKLINKS -->\n"
 
-            # Find insertion point: before ## Sources (case insensitive)
-            sources_match = re.search(
-                r"^##\s+sources", new_content, re.IGNORECASE | re.MULTILINE
+        sources_match = re.search(
+            r"^##\s+sources", new_content, re.IGNORECASE | re.MULTILINE
+        )
+        if sources_match:
+            idx = sources_match.start()
+            new_content = (
+                new_content[:idx] + backlink_section + "\n" + new_content[idx:]
             )
-            if sources_match:
-                idx = sources_match.start()
-                new_content = (
-                    new_content[:idx] + backlink_section + "\n" + new_content[idx:]
-                )
-            else:
-                new_content = new_content.rstrip() + "\n" + backlink_section
+        else:
+            new_content = new_content.rstrip() + "\n" + backlink_section
 
         if new_content.strip() != content.strip():
             f.write_text(new_content, encoding="utf-8")

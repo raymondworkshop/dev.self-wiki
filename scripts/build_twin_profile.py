@@ -74,12 +74,19 @@ def _wiki_rel(path: Path) -> str:
     return str(path.relative_to(WORKSPACE_PATH))
 
 
-def _qualifies_principle(meta: dict) -> bool:
+def _grounded_in_apple_notes(content: str) -> bool:
+    """P1 twin filter: only principles traced to origin-apple-notes raw sources."""
+    return "raw/origin-apple-notes" in content
+
+
+def _qualifies_principle(meta: dict, content: str = "") -> bool:
     level = int(meta.get("level", 0) or 0)
     confidence = _confidence(meta)
     if confidence <= 0 and level >= 2:
         confidence = 0.85
     if level < 2:
+        return False
+    if content and not _grounded_in_apple_notes(content):
         return False
     return confidence >= CONFIDENCE_FLOOR
 
@@ -102,7 +109,7 @@ def _collect_principles() -> list[dict]:
         except OSError:
             continue
         meta = _parse_front_matter(content)
-        if not _qualifies_principle(meta):
+        if not _qualifies_principle(meta, content):
             continue
         conf = _confidence(meta) or 0.85
         items.append(

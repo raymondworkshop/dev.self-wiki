@@ -85,12 +85,17 @@ dev.self-wiki/
 │   └── test_*.py
 │
 ├── self-wiki/                 # Knowledge store
-│   ├── raw/                   # Level 0 — read-only input
-│   ├── wiki/                  # Level 1–2 — compiled notes
+│   ├── raw/                   # Level 0 — read-only input (_posts, origin-apple-notes, twitter)
+│   ├── compression/           # Level 0.5 — per-source digests (path mirrors raw/)
+│   ├── wiki/                  # Level 1–2 — compiled themes
+│   ├── discovery/             # Unknown-known reports (P3)
+│   ├── gap/                   # Unknown-unknown reports (P3)
+│   ├── evolution/             # Knowledge-state metrics (P3)
 │   ├── outputs/               # Query snapshots, reports
 │   ├── log/
 │   │   ├── pending/           # Pending JSON for skills
 │   │   ├── INDEX.json         # Machine index (topics)
+│   │   ├── sources.json       # Twitter catalog (type/external)
 │   │   ├── index.md           # Karpathy-style directory
 │   │   └── log.md             # Append-only run log
 │   ├── INDEX.md               # Human Obsidian hub (hand-maintained)
@@ -106,7 +111,17 @@ dev.self-wiki/
 
 ## Pipelines
 
-### Ingest (`make sync`)
+### Ingest — compression path (default)
+
+```
+orchestrator / mtime check → prepare_compress → run_skill(compression) → compression/*.md
+post_ingest = backliner → refresh_index → build_twin_profile → append log.md
+```
+
+Skills: [skills/ingest-summary.md](skills/ingest-summary.md), [skills/ingest-thoughts.md](skills/ingest-thoughts.md).  
+Twitter: [scripts/register_reference.py](scripts/register_reference.py) → `log/sources.json` (no LLM).
+
+### Ingest — legacy (`make sync`)
 
 ```
 orchestrator (hash) → prepare_ingest → run_skill(ingest) → apply_ingest → [cleanup pair] → post_ingest
