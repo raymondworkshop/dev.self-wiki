@@ -26,7 +26,6 @@ OUTPUTS_DIR = WORKSPACE_PATH / "self-wiki" / "outputs"
 LOG_DIR = WORKSPACE_PATH / "self-wiki" / "log"
 PENDING_DIR = LOG_DIR / "pending"
 SKILLS_DIR = WORKSPACE_PATH / "skills"
-INGEST_SKILL = SKILLS_DIR / "ingest.md"
 QUERY_SKILL = SKILLS_DIR / "query.md"
 LINT_SKILL = SKILLS_DIR / "lint.md"
 QUERY_PROFILES = SKILLS_DIR / "query-profiles.yaml"
@@ -48,6 +47,21 @@ AUDIT_MD = WORKSPACE_PATH / "self-wiki" / "audit.md"
 TWIN_PROFILE = WORKSPACE_PATH / "twin" / "PROFILE.md"
 TWIN_PRINCIPLES_JSON = WORKSPACE_PATH / "twin" / "principles.json"
 TWIN_DIR = TWIN_PROFILE.parent
+
+
+def workspace_relpath(path: Path) -> str:
+    """Path relative to WORKSPACE_PATH (works when self-wiki is an iCloud symlink)."""
+    p = Path(path)
+    try:
+        return str(p.relative_to(WORKSPACE_PATH)).replace("\\", "/")
+    except ValueError:
+        pass
+    vault = (WORKSPACE_PATH / "self-wiki").resolve()
+    resolved = p.resolve()
+    if resolved == vault or vault in resolved.parents:
+        suffix = resolved.relative_to(vault)
+        return f"self-wiki/{suffix}".replace("\\", "/")
+    return str(resolved.relative_to(WORKSPACE_PATH.resolve())).replace("\\", "/")
 
 
 def twin_profile_max_principles() -> int:

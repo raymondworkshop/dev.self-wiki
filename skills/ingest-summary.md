@@ -2,7 +2,7 @@
 name: ingest-summary
 description: Compress own-voice posts and reading notes into short digests (L0.5). No L2 principles.
 inputs: raw path, content, language
-outputs: markdown compression file (≤80 lines)
+outputs: markdown compression file (≤150 lines)
 ---
 
 # Ingest Summary Skill
@@ -11,7 +11,7 @@ You compress **own-voice** sources (`raw/_posts/**`) into lossy digests for a pe
 
 ## Operating rules
 
-1. **适量**: Target ≤80 lines total (front matter + body). Prefer 10–50 lines of prose.
+1. **适量**: Target ≤150 lines total (front matter + body). Prefer 20–100 lines of prose.
 2. **Core spirit**: Distill the author's intent, reusable patterns, and reminders — not a transcript.
 3. **No L2 principles**: Do not invent new `wiki/` themes or Level-2 mental models from posts alone.
 4. **Fidelity**: Never invent beliefs, events, or quotes not in the source.

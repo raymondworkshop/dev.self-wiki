@@ -2,87 +2,36 @@
 
 .DEFAULT_GOAL := help
 
-PY  := .selfwikienv/bin/python3
-CLI := $(PY) scripts/cli.py
-API := QUERY_LLM_PROVIDER=$(or $(QUERY_LLM_PROVIDER),gemini)
-LLM := ALLOW_PYTHON_LLM=1
+include make/common.mk
+include make/pipeline.mk
+include make/analysis.mk
+include make/query.mk
 
-COMPRESS_OPTS := $(if $(LIMIT),--limit $(LIMIT)) $(if $(FORCE),--force) \
-	$(if $(FOLDER),--folder $(FOLDER)) $(if $(POST_INGEST),--post-ingest)
-
-.PHONY: help post-ingest audit progress all \
-	register-reference compress compress-status build extract-twitter \
-	discover gap evolution agents query query-web test
-
-post-ingest:
-	$(CLI) post-ingest
-
-audit:
-	$(PY) scripts/test_wiki_compliance.py
-	$(PY) scripts/audit_wiki.py
-ifdef LINT
-	$(API) $(CLI) lint
-endif
-
-progress:
-	$(CLI) progress
-
-all: post-ingest audit
-
-register-reference:
-	$(CLI) register-reference
-
-compress:
-	$(LLM) INGEST_LLM_PROVIDER=$(or $(INGEST_LLM_PROVIDER),$(QUERY_LLM_PROVIDER),gemini) \
-		$(CLI) compress $(COMPRESS_OPTS)
-
-compress-status:
-	$(CLI) progress --compression-only $(if $(FOLDER),--folder $(FOLDER),)
-
-build: register-reference
-	$(LLM) INGEST_LLM_PROVIDER=gemini $(CLI) compress --provider gemini --post-ingest
-	$(MAKE) audit
-
-extract-twitter:
-	$(PY) scripts/extract_twitter_raw.py
-
-discover gap evolution:
-	$(LLM) $(CLI) $@
-
-agents: discover gap evolution
-
-query:
-ifdef Q
-	$(API) $(CLI) query "$(Q)"
-else
-	@read -p "Query: " q; $(API) $(CLI) query "$$q"
-endif
-
-query-web:
-	$(PY) scripts/query_server.py
-
-test:
-	@for f in scripts/test_*.py; do $(PY) "$$f" || exit 1; done
+.PHONY: help post-ingest audit progress \
+	register-reference compress sync \
+	wiki-synthesize wiki-synthesize-apple-notes wiki-synth-status \
+	discover gap evolution agents cycle \
+	promote query query-web test doctor-config
 
 help:
-	@echo "make post-ingest          backlinks, INDEX, twin"
-	@echo "make audit [LINT=1]       compliance (+ optional lint)"
-	@echo "make progress             pipeline status"
-	@echo "make all                  post-ingest + audit"
+	@echo "Essential (daily):"
+	@echo "  make sync                 changed raw → compression → wiki + post-ingest"
+	@echo "  make query [Q=\"...\"]      ask wiki"
+	@echo "  make audit [LINT=1]       compliance (+ optional cognitive lint)"
+	@echo "  make cycle                weekly: agents + post-ingest + audit LINT=1"
 	@echo ""
-	@echo "make register-reference   twitter catalog"
-	@echo "make compress             raw → compression  (LIMIT FOLDER FORCE POST_INGEST)"
-	@echo "make compress-status      compression checklist"
-	@echo "make build                register + compress + post-ingest + audit"
-	@echo "make extract-twitter      twitter .js → raw/"
+	@echo "Advanced:"
+	@echo "  make post-ingest          backlinks, INDEX, twin"
+	@echo "  make progress             pipeline status"
+	@echo "  make wiki-synth-status    wiki-synthesize backfill manifest"
+	@echo "  make register-reference   twitter catalog (no LLM)"
+	@echo "  make compress             raw → compression  (LIMIT FOLDER FORCE POST_INGEST)"
+	@echo "  make wiki-synthesize      compression → wiki  (LIMIT FOLDER WAVE POST_INGEST)"
+	@echo "  make wiki-synthesize-apple-notes   origin-apple-notes shorthand"
+	@echo "  make discover | gap | evolution | agents"
+	@echo "  make promote FILE=… TARGET=… [CONFIRM=1]"
+	@echo "  make query-web            browser UI"
+	@echo "  make doctor-config        resolved provider/model/skill"
+	@echo "  make test"
 	@echo ""
-	@echo "make discover             discovery/{date}.md"
-	@echo "make gap                  gap/{date}.md"
-	@echo "make evolution            evolution/{date}.md"
-	@echo "make agents               discover → gap → evolution"
-	@echo ""
-	@echo "make query [Q=\"...\"]      ask wiki (gemini)"
-	@echo "make query-web            browser UI"
-	@echo "make test                 unit tests"
-	@echo ""
-	@echo "Docs: docs/PIPELINE.md  CLI: $(CLI) --help"
+	@echo "Docs: README.md · design.md · CLI: $(CLI) --help"

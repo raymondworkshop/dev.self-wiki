@@ -9,7 +9,7 @@ from pathlib import Path
 
 import yaml
 
-from config import WORKSPACE_PATH
+from config import WORKSPACE_PATH, workspace_relpath
 from llm_provider import (
     LAST_LLM_ERROR,
     call_llm,
@@ -163,7 +163,7 @@ def _write_text_output(pending: dict, pending_path: Path, response_text: str) ->
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(response_text, encoding="utf-8")
-    logger.info("Wrote %s output to %s", pending.get("kind"), out_path.relative_to(WORKSPACE_PATH))
+    logger.info("Wrote %s output to %s", pending.get("kind"), workspace_relpath(out_path))
     return out_path
 
 
@@ -176,7 +176,7 @@ def run_skill_from_pending(
 ) -> dict:
     pending = json.loads(pending_path.read_text(encoding="utf-8"))
     kind = pending.get("kind", "ingest")
-    skill_rel = pending.get("skill", "skills/ingest.md")
+    skill_rel = pending.get("skill", "skills/wiki-synthesize.md")
     skill_path = WORKSPACE_PATH / skill_rel
     if not skill_path.exists():
         raise FileNotFoundError(f"Skill not found: {skill_path}")
@@ -257,6 +257,26 @@ def run_skill_from_pending(
 
     should_write = write_output if write_output is not None else write_actions
 
+    if kind == "compression" and pending.get("batch"):
+        if not data or "digests" not in data:
+            batch_data = extract_json_object(response_text)
+        else:
+            batch_data = data
+        out_path = None
+        batch_paths: list[str] = []
+        if should_write and batch_data:
+            from apply_compression import apply_batch_digests
+
+            paths = apply_batch_digests(batch_data)
+            batch_paths = [workspace_relpath(p) for p in paths]
+            out_path = paths[0] if paths else None
+        return {
+            "text": response_text,
+            "kind": kind,
+            "batch_paths": batch_paths,
+            "output_path": workspace_relpath(out_path) if out_path else None,
+        }
+
     if kind in TEXT_KINDS:
         out_path = None
         if should_write:
@@ -264,7 +284,7 @@ def run_skill_from_pending(
         return {
             "text": response_text,
             "kind": kind,
-            "output_path": str(out_path.relative_to(WORKSPACE_PATH)) if out_path else None,
+            "output_path": workspace_relpath(out_path) if out_path else None,
         }
 
     if kind != "ingest":
@@ -284,6 +304,6 @@ def run_skill_from_pending(
         actions_path.write_text(
             json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
         )
-        logger.info("Wrote actions to %s", actions_path.relative_to(WORKSPACE_PATH))
+        logger.info("Wrote actions to %s", workspace_relpath(actions_path))
 
     return data

@@ -10,6 +10,7 @@ from pathlib import Path
 from config import COMPRESSION_DIR, PENDING_DIR, WORKSPACE_PATH
 from ingest_profiles import resolve_profile
 from lang_utils import detect_language, epistemic_label_instruction, language_output_instruction
+from skill_registry import resolve_skill
 from wiki_themes import load_existing_themes
 
 
@@ -67,7 +68,13 @@ def prepare_for_unit(
     if profile is None or profile.get("mode") == "reference":
         return []
 
-    skill_rel = profile.get("skill")
+    profile_skill = profile.get("skill")
+    skill_rel = resolve_skill(
+        "compression",
+        profile_skill or "",
+        raw_rel=raw_rel,
+        current_skill=profile_skill,
+    )
     if not skill_rel:
         return []
 

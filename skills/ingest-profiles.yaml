@@ -5,6 +5,7 @@ profiles:
     voice: own
     mode: reference
     skill: null
+    wiki_skill: null
     twin_eligible: false
 
   posts_origin_apple_notes:
@@ -12,6 +13,7 @@ profiles:
     voice: own
     mode: reference
     skill: null
+    wiki_skill: null
     twin_eligible: false
 
   posts:
@@ -19,7 +21,8 @@ profiles:
     voice: own
     mode: summarize
     skill: skills/ingest-summary.md
-    max_theme_updates: 0
+    wiki_skill: skills/wiki-synthesize.md
+    max_theme_updates: 2
     twin_eligible: false
     max_compression_lines: 80
     split_strategy: semantic_then_chunk
@@ -32,6 +35,7 @@ profiles:
     voice: own
     mode: distill-lite
     skill: skills/ingest-thoughts.md
+    wiki_skill: skills/wiki-synthesize.md
     max_theme_updates: 2
     twin_eligible: true
     max_compression_lines: 80
@@ -41,6 +45,7 @@ profiles:
     voice: external
     mode: summarize
     skill: skills/ingest-external.md
+    wiki_skill: null
     max_theme_updates: 0
     twin_eligible: false
     max_compression_lines: 80

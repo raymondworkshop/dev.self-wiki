@@ -9,7 +9,7 @@ import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from config import PENDING_DIR, WORKSPACE_PATH
+from config import PENDING_DIR, WORKSPACE_PATH, workspace_relpath
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ def cleanup_pending_pair(pending_path: Path) -> list[Path]:
         if path and path.exists():
             path.unlink()
             removed.append(path)
-            logger.debug("Deleted %s", path.relative_to(WORKSPACE_PATH))
+            logger.debug("Deleted %s", workspace_relpath(path))
 
     return removed
 
@@ -103,13 +103,13 @@ def prune_old_pending(
 
     if dry_run:
         for path in to_delete:
-            logger.info("[dry-run] would delete %s", path.relative_to(WORKSPACE_PATH))
+            logger.info("[dry-run] would delete %s", workspace_relpath(path))
         return to_delete
 
     for path in to_delete:
         if path.exists():
             path.unlink()
-            logger.info("Deleted %s", path.relative_to(WORKSPACE_PATH))
+            logger.info("Deleted %s", workspace_relpath(path))
     return to_delete
 
 
@@ -146,9 +146,9 @@ def main(argv: list[str] | None = None) -> int:
         else:
             try:
                 actions = json_actions_path(path)
-                logger.info("[dry-run] would delete %s", path.relative_to(WORKSPACE_PATH))
+                logger.info("[dry-run] would delete %s", workspace_relpath(path))
                 if actions.exists():
-                    logger.info("[dry-run] would delete %s", actions.relative_to(WORKSPACE_PATH))
+                    logger.info("[dry-run] would delete %s", workspace_relpath(actions))
             except (json.JSONDecodeError, OSError) as exc:
                 logger.warning("Could not resolve pair: %s", exc)
         return 0

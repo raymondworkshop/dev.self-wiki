@@ -86,9 +86,16 @@ def _qualifies_principle(meta: dict, content: str = "") -> bool:
         confidence = 0.85
     if level < 2:
         return False
-    if content and not _grounded_in_apple_notes(content):
+    if confidence < CONFIDENCE_FLOOR:
         return False
-    return confidence >= CONFIDENCE_FLOOR
+    tags = _tags_list(meta)
+    if "type/principle" not in tags:
+        return False
+    if content and _grounded_in_apple_notes(content):
+        return True
+    if content and "discovery/" in content:
+        return True
+    return False
 
 
 def _principle_sort_key(item: dict) -> tuple:

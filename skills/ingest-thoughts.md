@@ -11,7 +11,7 @@ You compress **personal thoughts** (`raw/origin-apple-notes/**`) into lossy dige
 
 ## Operating rules
 
-1. **适量**: Target ≤80 lines total. Prefer 10–50 lines.
+1. **适量**: Target ≤60 lines total. Prefer 10–40 lines.
 2. **Distill-lite**: Capture explicit beliefs, values, and insights — the note's core spirit.
 3. **Epistemic labels**: Grounded paraphrase needs **no tag**. Use tags only when you go beyond the source:
    - **[AI Synthesis]** — inference, pattern, or implication not explicit in source.

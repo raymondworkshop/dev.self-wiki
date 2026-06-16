@@ -11,6 +11,7 @@ from pathlib import Path
 from config import PENDING_DIR, QUERY_SKILL, WORKSPACE_PATH
 from query_retrieval import build_retrieval_pack, load_index
 from build_twin_profile import profile_excerpt_for_query
+from skill_registry import resolve_skill
 
 
 def _slug(query: str, max_len: int = 48) -> str:
@@ -49,7 +50,7 @@ def build_pending(
 
     pending = {
         "kind": "query",
-        "skill": str(QUERY_SKILL.relative_to(WORKSPACE_PATH)),
+        "skill": resolve_skill("query", str(QUERY_SKILL.relative_to(WORKSPACE_PATH))),
         "query": query,
         "profile": pack["profile"],
         "strong_profile": pack["strong_profile"],

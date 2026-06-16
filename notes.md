@@ -7,22 +7,22 @@
 
 ##### tasks  
 
-- make    
+- daily
     > make sync
-    > make query
-    > make audit
+    > make query Q="..."
     > make audit LINT=1
-    > LLM_PROVIDER=gemini make query
+    > make cycle                    # weekly
 
 - site
     > make query-web
     > http://100.90.225.26:5050/
 
 - advanced
+    > make help
     > python scripts/cli.py --help
 
 - docs
-    > [README.md](README.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [AGENTS.md](AGENTS.md)
+    > [README.md](README.md) · [design.md](design.md) · [AGENTS.md](AGENTS.md)
 
 
 ## Project structure
@@ -48,9 +48,9 @@ twin/             Digital twin PROFILE (post-ingest)
 
 | Skill | Command | Output |
 |-------|---------|--------|
-| [ingest-summary.md](skills/ingest-summary.md) | `make compress` | `compression/_posts/…` |
-| [ingest-thoughts.md](skills/ingest-thoughts.md) | `make compress` | `compression/origin-apple-notes/…` |
-| [ingest.md](skills/ingest.md) | legacy `make sync` | wiki pages |
+| [ingest-summary.md](skills/ingest-summary.md) | `make compress` / `make sync` | `compression/_posts/…` |
+| [ingest-thoughts.md](skills/ingest-thoughts.md) | `make compress` / `make sync` | `compression/origin-apple-notes/…` |
+| [wiki-synthesize.md](skills/wiki-synthesize.md) | `make wiki-synthesize` | `wiki/` updates |
 | [query.md](skills/query.md) | `make query` | Markdown + provenance |
 
 ## Workflow (Composer-first)

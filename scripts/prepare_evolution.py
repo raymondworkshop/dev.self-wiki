@@ -12,6 +12,7 @@ import yaml
 from compression_manifest import load_manifest, summarize_files
 from config import COMPRESSION_DIR, PENDING_DIR, TWIN_PROFILE, WIKI_DIR, WORKSPACE_PATH
 from llm_provider import provider_name
+from skill_registry import resolve_skill
 
 EVOLUTION_DIR = WORKSPACE_PATH / "self-wiki" / "evolution"
 GAP_DIR = WORKSPACE_PATH / "self-wiki" / "gap"
@@ -144,7 +145,7 @@ def write_pending(*, provider: str | None = None) -> Path:
     out_name = f"self-wiki/evolution/{metrics['date']}.md"
     payload = {
         "kind": "evolution",
-        "skill": "skills/evolution.md",
+        "skill": resolve_skill("evolution", "skills/evolution.md"),
         "user_message": user_message,
         "output_file": out_name,
         "created_at": datetime.now().isoformat(),

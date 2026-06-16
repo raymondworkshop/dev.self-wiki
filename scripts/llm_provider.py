@@ -59,7 +59,7 @@ def normalize_provider(raw: str | None = None) -> str:
 
 
 def provider_for_role(role: str | None = None, explicit: str | None = None) -> str:
-    """Resolve provider for sync (default), query, or lint."""
+    """Resolve provider for pipeline role (compress/wiki/query/lint/etc.)."""
 
     if explicit:
         return normalize_provider(explicit)
@@ -83,9 +83,17 @@ def provider_for_role(role: str | None = None, explicit: str | None = None) -> s
             or os.environ.get("QUERY_LLM_PROVIDER")
             or os.environ.get("LLM_PROVIDER")
         )
-    if role in ("sync", "ingest", "compression"):
+    if role in ("compress", "sync", "ingest", "compression"):
         return normalize_provider(
-            os.environ.get("INGEST_LLM_PROVIDER") or os.environ.get("LLM_PROVIDER")
+            os.environ.get("COMPRESS_LLM_PROVIDER")
+            or os.environ.get("INGEST_LLM_PROVIDER")
+            or os.environ.get("LLM_PROVIDER")
+        )
+    if role in ("wiki_synthesize", "wiki-synthesize", "synthesize"):
+        return normalize_provider(
+            os.environ.get("WIKI_SYNTH_LLM_PROVIDER")
+            or os.environ.get("INGEST_LLM_PROVIDER")
+            or os.environ.get("LLM_PROVIDER")
         )
     return normalize_provider(None)
 

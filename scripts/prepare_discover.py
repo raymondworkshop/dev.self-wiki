@@ -7,7 +7,15 @@ from datetime import datetime
 from pathlib import Path
 
 from config import COMPRESSION_DIR, PENDING_DIR, WIKI_DIR, WORKSPACE_PATH
+from discover_provenance import (
+    collect_raw_links,
+    enrich_compression_samples,
+    format_raw_snippets_section,
+    resolve_raw_snippets,
+    wiki_query_terms,
+)
 from llm_provider import provider_name
+from skill_registry import resolve_skill
 
 
 def _sample_from_dir(directory: Path, limit: int) -> list[dict]:
@@ -57,25 +65,44 @@ def _sample_files(directory: Path, limit: int = 40) -> list[dict]:
 
 
 def write_pending(*, provider: str | None = None) -> Path:
-    compression_samples = _stratified_compression_samples(total_limit=50)
+    compression_samples = enrich_compression_samples(
+        _stratified_compression_samples(total_limit=50)
+    )
     wiki_samples = _sample_files(WIKI_DIR, limit=20)
+    query_terms = wiki_query_terms(wiki_samples)
+    raw_links = collect_raw_links(compression_samples)
+    raw_snippets = resolve_raw_snippets(
+        raw_links,
+        query_terms=query_terms,
+        max_lines=15,
+        max_files=20,
+    )
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     pending_path = PENDING_DIR / f"discover-{ts}.json"
     user_message = (
         f"Discovery run {datetime.now().date().isoformat()}\n"
         f"Provider hint: {provider_name(provider)}\n\n"
         "## Compression samples\n"
-        + "\n\n".join(f"### {s['path']}\n{s['excerpt']}" for s in compression_samples)
+        + "\n\n".join(
+            f"### {s['path']}\n"
+            + (f"raw_links: {', '.join(s['raw_links'])}\n" if s.get("raw_links") else "")
+            + s["excerpt"]
+            for s in compression_samples
+        )
         + "\n\n## Wiki samples\n"
         + "\n\n".join(f"### {s['path']}\n{s['excerpt']}" for s in wiki_samples)
+        + "\n\n"
+        + format_raw_snippets_section(raw_snippets)
     )
     out_name = f"self-wiki/discovery/{datetime.now().date().isoformat()}.md"
     payload = {
         "kind": "discovery",
-        "skill": "skills/discovery.md",
+        "skill": resolve_skill("discovery", "skills/discovery.md"),
         "user_message": user_message,
         "output_file": out_name,
         "created_at": datetime.now().isoformat(),
+        "resolved_raw": raw_snippets,
+        "raw_link_count": len(raw_links),
     }
     pending_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return pending_path

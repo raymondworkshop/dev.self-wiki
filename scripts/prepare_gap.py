@@ -11,6 +11,7 @@ import yaml
 
 from compression_manifest import load_manifest, summarize_files
 from config import PENDING_DIR, TWIN_PROFILE, WIKI_DIR, WORKSPACE_PATH
+from skill_registry import resolve_skill
 
 DISCOVERY_DIR = WORKSPACE_PATH / "self-wiki" / "discovery"
 
@@ -89,7 +90,7 @@ def write_pending(*, provider: str | None = None) -> Path:
     out_name = f"self-wiki/gap/{context['date']}.md"
     payload = {
         "kind": "gap",
-        "skill": "skills/gap.md",
+        "skill": resolve_skill("gap", "skills/gap.md"),
         "user_message": user_message,
         "output_file": out_name,
         "created_at": datetime.now().isoformat(),

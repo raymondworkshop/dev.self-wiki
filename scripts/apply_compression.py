@@ -48,3 +48,20 @@ def apply_from_file(actions_path: Path) -> Path:
     if not text or not rel:
         raise ValueError(f"Invalid compression actions: {actions_path}")
     return apply_compression_text(text, rel_path=rel)
+
+
+def apply_batch_digests(data: dict) -> list[Path]:
+    """Write one compression file per digest in batch JSON."""
+
+    paths: list[Path] = []
+    for digest in data.get("digests", []):
+        raw_path = digest.get("raw_path", "")
+        body = digest.get("body") or digest.get("compression_markdown") or ""
+        if not raw_path or not body:
+            continue
+        if not raw_path.startswith("raw/"):
+            raw_path = f"raw/{raw_path.lstrip('/')}"
+        paths.append(apply_compression_text(body, rel_path=raw_path))
+    if not paths:
+        raise ValueError("Batch response missing digests[] with raw_path + body")
+    return paths

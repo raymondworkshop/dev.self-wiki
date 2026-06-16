@@ -50,13 +50,22 @@ def apply_actions(data: dict, *, rel_path: str | None = None) -> int:
             page.front_matter["description"] = action["description"]
 
         if action.get("level") is not None:
-            page.front_matter["level"] = int(action["level"])
+            existing_level = int(page.front_matter.get("level", 1) or 1)
+            new_level = int(action["level"])
+            page.front_matter["level"] = max(existing_level, new_level)
+            tags = page.front_matter.get("tags", [])
+            if not isinstance(tags, list):
+                tags = [str(tags)]
+            if existing_level >= 2 and "type/principle" in tags:
+                page.front_matter["level"] = existing_level
 
         body_content = action.get("new_body_content", "")
         cleaned_body = "\n".join(
             re.sub(r"^>\s*", "", line) for line in body_content.splitlines()
         )
         source_rel = rel_path or data.get("raw_path") or "unknown"
+        if source_rel.startswith("raw/"):
+            source_rel = source_rel[len("raw/") :]
         if cleaned_body.strip() and cleaned_body.strip() not in page.body:
             page.body += (
                 f"\n\n### Distillation ({datetime.now().strftime('%Y-%m-%d')})"

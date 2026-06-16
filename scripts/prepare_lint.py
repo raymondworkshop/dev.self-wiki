@@ -9,6 +9,7 @@ from pathlib import Path
 
 from config import AUDIT_MD, LINT_SKILL, PENDING_DIR, WIKI_DIR, WORKSPACE_PATH
 from build_twin_profile import lint_principle_excerpts, lint_profile_summary
+from skill_registry import resolve_skill
 
 
 def _truncate(text: str, limit: int = 1200) -> str:
@@ -83,7 +84,7 @@ def write_pending() -> Path:
 
     pending = {
         "kind": "lint",
-        "skill": str(LINT_SKILL.relative_to(WORKSPACE_PATH)),
+        "skill": resolve_skill("lint", str(LINT_SKILL.relative_to(WORKSPACE_PATH))),
         "user_message": build_user_message(),
         "output_file": str((PENDING_DIR / output_name).relative_to(WORKSPACE_PATH)),
     }

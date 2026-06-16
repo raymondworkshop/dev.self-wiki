@@ -1,0 +1,26 @@
+# Skill routing registry (optional overrides).
+# Keep paths relative to workspace root.
+
+compression:
+  by_raw_prefix:
+    "_posts/": "skills/ingest-summary.md"
+    "origin-apple-notes/": "skills/ingest-thoughts.md"
+  default: "skills/ingest-summary.md"
+
+wiki_synthesize:
+  default: "skills/wiki-synthesize.md"
+
+query:
+  default: "skills/query.md"
+
+lint:
+  default: "skills/lint.md"
+
+discovery:
+  default: "skills/discovery.md"
+
+gap:
+  default: "skills/gap.md"
+
+evolution:
+  default: "skills/evolution.md"
