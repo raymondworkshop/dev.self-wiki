@@ -62,3 +62,6 @@ Use provider overrides only when needed: `COMPRESS_LLM_PROVIDER`, `WIKI_SYNTH_LL
 - Do not edit `raw/` via automation.
 
 Standards: [AGENTS.md](AGENTS.md) · design: [design.md](design.md)
+
+## License  
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
