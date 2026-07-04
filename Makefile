@@ -8,17 +8,18 @@ include make/analysis.mk
 include make/query.mk
 
 .PHONY: help post-ingest audit progress \
-	register-reference compress sync \
+	register-reference compress sync fix-provenance \
 	wiki-synthesize wiki-synthesize-apple-notes wiki-synth-status \
-	discover gap evolution agents cycle \
+	discover gap evolution agents reflect \
 	promote query query-web test doctor-config
 
 help:
 	@echo "Essential (daily):"
 	@echo "  make sync                 changed raw → compression → wiki + post-ingest"
+	@echo "  make fix-provenance       repair malformed wiki source links"
 	@echo "  make query [Q=\"...\"]      ask wiki"
 	@echo "  make audit [LINT=1]       compliance (+ optional cognitive lint)"
-	@echo "  make cycle                weekly: agents + post-ingest + audit LINT=1"
+	@echo "  make reflect              periodic: patterns, gaps, belief evolution + audit"
 	@echo ""
 	@echo "Advanced:"
 	@echo "  make post-ingest          backlinks, INDEX, twin"

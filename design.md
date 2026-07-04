@@ -60,7 +60,7 @@ Harness pattern: `prepare_*.py` → `log/pending/*.json` → `run_skill` → `ap
 | 2b | compression → wiki | Links digest → 1–3 wiki pages | `make wiki-synthesize` |
 | 3 | Trust layer | Backlinks · INDEX · twin · log | `make post-ingest` |
 | 4 | L1/L2 pages | From discovery or red links; L2 needs `confidence ≥ 0.7` for twin | Composer + post-ingest |
-| 5 | Agents | Pattern → gap → state reports | `make agents` / `make cycle` |
+| 5 | Agents | Pattern → gap → state reports | `make agents` / `make reflect` |
 | 6 | Audit | Compliance; `LINT=1` adds cognitive lint | `make audit` |
 
 **Provenance** — end every compression digest with:
@@ -77,7 +77,7 @@ Harness pattern: `prepare_*.py` → `log/pending/*.json` → `run_skill` → `ap
 | W2 posts | `make wiki-synthesize FOLDER=_posts LIMIT=50` |
 | W3 rest | incremental batches |
 
-Skip `compression/twitter/**`. Providers: `COMPRESS_LLM_PROVIDER`, `WIKI_SYNTH_LLM_PROVIDER`.
+Skip `compression/twitter/**`. Provider: `LLM_PROVIDER` (default `mlx`).
 
 **Internal flows**
 
@@ -86,7 +86,7 @@ raw → compression:  orchestrator → prepare_compress → run_skill → compre
 compression → wiki:  prepare_wiki_synthesize → run_skill → apply_ingest → wiki/
 trust:              backliner → refresh_index → build_twin_profile → log.md
 query:              prepare_query → run_skill → save output
-cycle:              discover → gap → evolution → post-ingest → audit LINT=1
+reflect:            discover → gap → evolution → post-ingest → audit LINT=1
 ```
 
 **LLM calls:** 1× compression skill per raw file · 1× wiki-synthesize per digest · 1× query per question · optional 1× lint.
@@ -98,9 +98,10 @@ cycle:              discover → gap → evolution → post-ingest → audit LIN
 | Goal | Command |
 |------|---------|
 | New/changed raw (batch) | `make sync` |
+| Repair malformed wiki links | `make fix-provenance` |
 | Composer path | digest in Cursor → `make post-ingest` → `make audit` |
 | Ask wiki | `make query Q="…"` / `make query-web` |
-| Weekly | `make cycle` |
+| Periodic review | `make reflect` |
 | Backfill wiki | `make wiki-synthesize … POST_INGEST=1` |
 | Promote query → wiki | `make promote FILE=… TARGET=… CONFIRM=1` |
 | Status | `make progress` / `make wiki-synth-status` |

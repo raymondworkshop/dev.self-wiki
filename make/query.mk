@@ -7,16 +7,16 @@ promote:
 
 query:
 ifdef Q
-	$(QUERY_ENV) $(CLI) query "$(Q)"
+	$(LLM_ENV) $(CLI) query "$(Q)" $(CLI_PROVIDER_ARG)
 else
-	@read -p "Query: " q; $(QUERY_ENV) $(CLI) query "$$q"
+	@read -p "Query: " q; $(LLM_ENV) $(CLI) query "$$q" $(CLI_PROVIDER_ARG)
 endif
 
 query-web:
 	$(PY) scripts/query_server.py
 
 doctor-config:
-	$(CLI) doctor-config $(DOCTOR_ARGS)
+	$(LLM_ENV) $(CLI) doctor-config $(DOCTOR_ARGS)
 
 test:
 	@set -- scripts/test_*.py; \

@@ -19,6 +19,7 @@ from llm_provider import (
     provider_name,
 )
 from prepare_query import prepare_query
+from query_promote import format_promote_suggestion
 from query_retrieval import iter_wiki_files, load_index, print_retrieval_debug
 from run_skill import run_skill_from_pending
 
@@ -141,7 +142,17 @@ def run_query(
     provider: str | None = None,
     debug_retrieval: bool = False,
     save: bool = True,
+    promote_suggest: bool | None = None,
 ) -> dict:
+    import os
+
+    if promote_suggest is None:
+        promote_suggest = os.environ.get("PROMOTE_SUGGEST", "1").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+
     result = generate_query_answer(
         query, provider=provider, debug_retrieval=debug_retrieval
     )
@@ -149,6 +160,17 @@ def run_query(
         out_path = save_output(result["query"], result["messages"])
         result["output_path"] = str(out_path.relative_to(out_path.parent.parent.parent))
         logger.info("Saved query output to %s", out_path)
+
+    if promote_suggest and save:
+        suggestion = format_promote_suggestion(
+            answer=result["answer"],
+            output_path=result.get("output_path"),
+            candidates=result.get("candidates"),
+            query=result.get("query"),
+        )
+        if suggestion:
+            result["promote_suggestion"] = suggestion
+            print(suggestion, file=sys.stderr)
     return result
 
 

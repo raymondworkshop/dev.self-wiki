@@ -1,10 +1,10 @@
 # Higher-level analysis and reporting flows
 
-.PHONY: discover gap evolution agents cycle
+.PHONY: discover gap evolution agents reflect
 
 discover gap evolution:
-	$(LLM_ENV) $(CLI) $@
+	$(LLM_ENV) $(CLI) $@ $(CLI_PROVIDER_ARG)
 
 agents: discover gap evolution
 
-cycle: agents post-ingest audit LINT=1
+reflect: agents post-ingest audit LINT=1

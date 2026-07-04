@@ -45,6 +45,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_query.add_argument("--provider", default=None)
     p_query.add_argument("--debug-retrieval", action="store_true")
     p_query.add_argument("--no-save", action="store_true")
+    p_query.add_argument(
+        "--no-promote-suggest",
+        action="store_true",
+        help="Do not print make promote suggestion after Cognitive Shift answers",
+    )
     p_query.set_defaults(func=cmd_query)
 
     p_plint = sub.add_parser("prepare-lint", help="Build pending JSON for global cognitive lint")

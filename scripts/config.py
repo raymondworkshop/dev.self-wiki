@@ -5,13 +5,20 @@ from pathlib import Path
 _DEFAULT_ENV = Path(__file__).parent.parent / ".env"
 
 
+def _parse_env_value(raw: str) -> str:
+    value = raw.strip().strip('"').strip("'")
+    if "#" in value:
+        value = value.split("#", 1)[0].strip()
+    return value
+
+
 def load_env(env_path: Path | None = None) -> None:
     path = env_path or _DEFAULT_ENV
     if path.exists():
         for line in path.read_text().splitlines():
             if line.strip() and not line.startswith("#"):
                 key, value = line.split("=", 1)
-                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+                os.environ.setdefault(key.strip(), _parse_env_value(value))
 
 
 load_env()

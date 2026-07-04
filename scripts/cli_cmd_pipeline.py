@@ -136,7 +136,7 @@ def cmd_apply_compression(args: argparse.Namespace) -> int:
 def cmd_sync(args: argparse.Namespace) -> int:
     provider = provider_for_role("compress", args.provider)
     reject_python_llm_ingest(context="sync", provider=provider)
-    compressed = sync_changed_files(provider=args.provider, file_filter=args.file)
+    compressed = sync_changed_files(provider=provider, file_filter=args.file)
     if compressed:
         if os.environ.get("SYNC_SKIP_POST_INGEST", "0").strip().lower() in ("1", "true", "yes"):
             logger.info(

@@ -18,10 +18,15 @@ import requests
 
 from composer_policy import mlx_last_resort_allowed, reject_local_mlx
 from config import load_env
+from provider_circuit import (
+    apply_circuit_breaker,
+    is_non_retryable_cloud_error,
+    record_provider_failure,
+)
 
 logger = logging.getLogger(__name__)
 LAST_LLM_ERROR: str | None = None
-DEFAULT_MLX_MODEL = "mlx-community/gemma-4-e4b-it-4bit"
+DEFAULT_MLX_MODEL = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
 PLACEHOLDER_MODELS = {"", "mlx-model", "local-model"}
 
 
@@ -58,44 +63,56 @@ def normalize_provider(raw: str | None = None) -> str:
     return value if value in VALID_PROVIDERS else "mlx"
 
 
+AGENT_ROLES = frozenset({"discover", "discovery", "gap", "evolution"})
+
+
+def _role_env_key(role: str) -> str | None:
+    """Map pipeline role to ``{ROLE}_LLM_PROVIDER`` env var name."""
+
+    mapping = {
+        "query": "QUERY_LLM_PROVIDER",
+        "lint": "LINT_LLM_PROVIDER",
+        "discovery": "DISCOVERY_LLM_PROVIDER",
+        "discover": "DISCOVERY_LLM_PROVIDER",
+        "gap": "GAP_LLM_PROVIDER",
+        "evolution": "EVOLUTION_LLM_PROVIDER",
+        "compress": "COMPRESS_LLM_PROVIDER",
+        "compression": "COMPRESS_LLM_PROVIDER",
+        "ingest": "COMPRESS_LLM_PROVIDER",
+        "sync": "COMPRESS_LLM_PROVIDER",
+        "wiki_synthesize": "WIKI_LLM_PROVIDER",
+        "wiki-synthesize": "WIKI_LLM_PROVIDER",
+        "synthesize": "WIKI_LLM_PROVIDER",
+    }
+    return mapping.get(role or "")
+
+
 def provider_for_role(role: str | None = None, explicit: str | None = None) -> str:
-    """Resolve provider for pipeline role (compress/wiki/query/lint/etc.)."""
+    """Resolve provider for pipeline role (compress/wiki/query/lint/etc.).
+
+    Priority: explicit CLI arg → ``{ROLE}_LLM_PROVIDER`` → ``AGENT_LLM_PROVIDER``
+    (agent roles) → ``QUERY_LLM_PROVIDER`` / ``LINT_LLM_PROVIDER`` → ``LLM_PROVIDER``.
+    Agent roles default to ``gemini`` when ``GEMINI_API_KEY`` is set.
+    """
 
     if explicit:
         return normalize_provider(explicit)
 
     load_env()
-    if role == "query":
-        return normalize_provider(
-            os.environ.get("QUERY_LLM_PROVIDER") or os.environ.get("LLM_PROVIDER")
-        )
-    if role in ("discover", "discovery", "gap", "evolution"):
-        key = "discover" if role == "discovery" else role
-        env_key = f"{key.upper()}_LLM_PROVIDER"
-        return normalize_provider(
-            os.environ.get(env_key)
-            or os.environ.get("QUERY_LLM_PROVIDER")
-            or os.environ.get("LLM_PROVIDER")
-        )
-    if role == "lint":
-        return normalize_provider(
-            os.environ.get("LINT_LLM_PROVIDER")
-            or os.environ.get("QUERY_LLM_PROVIDER")
-            or os.environ.get("LLM_PROVIDER")
-        )
-    if role in ("compress", "sync", "ingest", "compression"):
-        return normalize_provider(
-            os.environ.get("COMPRESS_LLM_PROVIDER")
-            or os.environ.get("INGEST_LLM_PROVIDER")
-            or os.environ.get("LLM_PROVIDER")
-        )
-    if role in ("wiki_synthesize", "wiki-synthesize", "synthesize"):
-        return normalize_provider(
-            os.environ.get("WIKI_SYNTH_LLM_PROVIDER")
-            or os.environ.get("INGEST_LLM_PROVIDER")
-            or os.environ.get("LLM_PROVIDER")
-        )
-    return normalize_provider(None)
+    role_key = _role_env_key(role or "")
+    if role_key:
+        override = os.environ.get(role_key, "").strip()
+        if override:
+            return normalize_provider(override)
+
+    if role in AGENT_ROLES:
+        agent_override = os.environ.get("AGENT_LLM_PROVIDER", "").strip()
+        if agent_override:
+            return normalize_provider(agent_override)
+        if is_provider_configured("gemini"):
+            return "gemini"
+
+    return normalize_provider(os.environ.get("LLM_PROVIDER") or "mlx")
 
 
 def is_provider_configured(provider: str) -> bool:
@@ -134,7 +151,19 @@ def fallback_provider_chain(
     """
 
     load_env()
-    if role in ("query", "lint"):
+    role_aware = (
+        "query",
+        "lint",
+        *AGENT_ROLES,
+        "compress",
+        "sync",
+        "ingest",
+        "compression",
+        "wiki_synthesize",
+        "wiki-synthesize",
+        "synthesize",
+    )
+    if role in role_aware:
         primary = provider_for_role(role, primary)
     else:
         primary = normalize_provider(primary)
@@ -147,6 +176,19 @@ def fallback_provider_chain(
         if role == "lint":
             explicit = os.environ.get("LINT_FALLBACK_PROVIDERS", "").strip() or explicit
         default_candidates = ["gemini", "openai"] if primary != "mlx" else []
+    elif role in AGENT_ROLES:
+        if primary == "mlx":
+            explicit = (
+                os.environ.get("AGENT_FALLBACK_PROVIDERS", "").strip()
+                or os.environ.get("LLM_FALLBACK_PROVIDERS", "").strip()
+            )
+            default_candidates = ["gemini", "openai"]
+        else:
+            explicit = (
+                os.environ.get("AGENT_FALLBACK_PROVIDERS", "").strip()
+                or os.environ.get("QUERY_FALLBACK_PROVIDERS", "").strip()
+            )
+            default_candidates = ["gemini", "openai"] if primary != "mlx" else []
     else:
         explicit = os.environ.get("LLM_FALLBACK_PROVIDERS", "").strip()
         default_candidates = ["gemini", "openai"] if primary == "mlx" else []
@@ -171,7 +213,7 @@ def fallback_provider_chain(
     if mlx_last_resort_allowed() and "mlx" not in chain:
         chain.append("mlx")
 
-    return chain
+    return apply_circuit_breaker(chain)
 
 
 def context_limits(provider: str | None = None) -> tuple[int, int, int]:
@@ -254,18 +296,22 @@ def model_name(provider: str | None = None) -> str:
     return resolve_openai_compatible_model(provider)
 
 
-def format_request_error(exc: Exception, *, url: str) -> str:
+def format_request_error(
+    exc: Exception, *, url: str, provider: str | None = None
+) -> str:
+    name = provider_name(provider)
+    safe_url = url.split("?key=", 1)[0] + "?key=…" if "?key=" in url else url
     if isinstance(exc, requests.HTTPError) and exc.response is not None:
         try:
             payload = exc.response.json()
             if isinstance(payload, dict) and payload.get("detail"):
-                return f"{provider_name()} at {url}: {payload['detail']}"
+                return f"{name} at {safe_url}: {payload['detail']}"
         except Exception:
             pass
         body = (exc.response.text or "").strip()
         if body:
-            return f"{provider_name()} at {url}: {body[:500]}"
-    return f"{provider_name()} at {url}: {exc}"
+            return f"{name} at {safe_url}: {body[:500]}"
+    return f"{name} at {safe_url}: {exc}"
 
 
 def get_gemini_response(
@@ -345,7 +391,11 @@ def get_gemini_response(
             return candidate["content"]["parts"][0]["text"]
         except requests.HTTPError as exc:
             status = exc.response.status_code if exc.response is not None else None
-            LAST_LLM_ERROR = format_request_error(exc, url=url)
+            LAST_LLM_ERROR = format_request_error(exc, url=url, provider="gemini")
+            record_provider_failure("gemini", LAST_LLM_ERROR)
+            if is_non_retryable_cloud_error(LAST_LLM_ERROR):
+                logger.error("Gemini API Error: %s", LAST_LLM_ERROR)
+                return None
             if status == 429 and attempt < attempts:
                 wait = _parse_retry_after(exc.response, base_backoff * attempt)
                 logger.warning(
@@ -359,7 +409,8 @@ def get_gemini_response(
             logger.error("Gemini API Error: %s", LAST_LLM_ERROR)
             return None
         except Exception as exc:
-            LAST_LLM_ERROR = format_request_error(exc, url=url)
+            LAST_LLM_ERROR = format_request_error(exc, url=url, provider="gemini")
+            record_provider_failure("gemini", LAST_LLM_ERROR)
             logger.error("Gemini API Error: %s", LAST_LLM_ERROR)
             return None
     return None
@@ -429,7 +480,9 @@ def get_openai_compatible_response(
                 )
                 time.sleep(backoff_seconds)
     except Exception as exc:
-        LAST_LLM_ERROR = format_request_error(exc, url=url)
+        LAST_LLM_ERROR = format_request_error(exc, url=url, provider=current)
+        if current in ("gemini", "openai"):
+            record_provider_failure(current, LAST_LLM_ERROR)
         logger.error("LLM Error: %s", LAST_LLM_ERROR)
         return None
 

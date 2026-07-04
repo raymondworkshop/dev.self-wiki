@@ -20,6 +20,7 @@ from llm_provider import (
     model_name,
     provider_name,
 )
+from provider_circuit import is_circuit_open, record_provider_failure
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +79,13 @@ def _run_llm_with_retries(
             as_last_resort=as_last_resort,
         )
         if not response_text:
+            record_provider_failure(provider, LAST_LLM_ERROR)
             if is_rate_limited():
                 detail = f": {LAST_LLM_ERROR}" if LAST_LLM_ERROR else ""
                 raise RuntimeError(f"LLM rate limited{detail}")
+            if is_circuit_open(provider):
+                detail = f": {LAST_LLM_ERROR}" if LAST_LLM_ERROR else ""
+                raise RuntimeError(f"LLM returned empty response{detail}")
             if attempt >= parse_attempts:
                 detail = f": {LAST_LLM_ERROR}" if LAST_LLM_ERROR else ""
                 raise RuntimeError(f"LLM returned empty response{detail}")
@@ -242,6 +247,7 @@ def run_skill_from_pending(
             break
         except Exception as exc:
             last_exc = exc
+            record_provider_failure(active_provider, LAST_LLM_ERROR or str(exc))
             if index >= len(providers) - 1:
                 raise
             logger.warning(

@@ -28,13 +28,21 @@ def cmd_prepare_query(args: argparse.Namespace) -> int:
 
 
 def cmd_query(args: argparse.Namespace) -> int:
+    import os
+
     llm_provider = provider_for_role("query", args.provider)
     logger.info("Query LLM: provider=%s model=%s", llm_provider, model_name(llm_provider))
+    promote_suggest = None
+    if getattr(args, "no_promote_suggest", False):
+        promote_suggest = False
+    elif os.environ.get("PROMOTE_SUGGEST", "").strip().lower() in ("0", "false", "no"):
+        promote_suggest = False
     result = run_query(
         args.query,
         provider=args.provider,
         debug_retrieval=args.debug_retrieval,
         save=not args.no_save,
+        promote_suggest=promote_suggest,
     )
     print(result["answer"])
     if result.get("output_path"):

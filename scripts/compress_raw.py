@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 from apply_compression import apply_compression_text
-from compression_manifest import mark_done, mark_failed, list_resume_targets, scan_all
+from compression_manifest import classify_file, load_manifest, mark_done, mark_failed, list_resume_targets, scan_all
 from config import RAW_DIR, WORKSPACE_PATH
 from ingest_profiles import is_compressible, resolve_profile
 from llm_provider import model_name, provider_for_role
@@ -189,11 +189,29 @@ def sync_changed_files(
         return []
 
     needs_register = any(rel.startswith("twitter/") for rel, _, _ in changed)
+    manifest = load_manifest()
+    manifest_files = manifest.get("files", {})
     to_compress: list[tuple[str, Path]] = []
-    for rel, abs_path, _file_hash in changed:
+    skipped_existing = 0
+    for rel, abs_path, file_hash in changed:
         if not is_compressible(rel):
             continue
+        entry = classify_file(rel, abs_path, manifest_files.get(rel))
+        has_digest = compression_output_path(f"raw/{rel}").exists()
+        if entry.get("status") == "done" or (
+            has_digest and entry.get("status") != "stale"
+        ):
+            orchestrator.cache[rel] = file_hash
+            skipped_existing += 1
+            continue
         to_compress.append((rel, abs_path))
+
+    if skipped_existing:
+        orchestrator.save_cache()
+        logger.info(
+            "Skipping %d file(s) with existing compression/ digest (Composer or prior run)",
+            skipped_existing,
+        )
 
     active = provider_for_role("sync", provider)
     logger.info(

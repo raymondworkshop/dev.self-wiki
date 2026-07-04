@@ -10,7 +10,7 @@
 |------|------|----------|
 | **Composer (default)** | Digest → `compression/`, `discovery/`, `gap/`, `evolution/` via `skills/` | — |
 | **Python** | `register-reference`, `post-ingest`, `audit` — deterministic | LLM |
-| **Cloud API (optional)** | `make query`, `make audit LINT=1` (`QUERY_LLM_PROVIDER=gemini`) | Primary path |
+| **Cloud API (optional)** | `make query`, `make audit LINT=1` (`LLM_PROVIDER=gemini`) | Primary path |
 | **Local MLX** | Only with `ALLOW_LOCAL_LLM=1`; last resort via `LLM_MLX_LAST_RESORT=1` (default) | Primary |
 
 `make compress` / `make sync` LLM batch: opt-in only (`ALLOW_PYTHON_LLM=1`). Prefer Composer for quality.

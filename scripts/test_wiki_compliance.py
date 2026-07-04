@@ -84,6 +84,18 @@ class TestWikiCompliance(unittest.TestCase):
                     # but typically we want at least the markers or a comment.
                     # For this test, we just check if it's there.
 
+    def test_no_malformed_nested_source_links(self):
+        """Reject [[(Source: [[path]])]] double-wrapped provenance links."""
+        bad = re.compile(r"\[\[\(Source:\s*\[\[")
+        for f in self.wiki_files:
+            with self.subTest(file=f.name):
+                content = f.read_text(encoding="utf-8")
+                self.assertIsNone(
+                    bad.search(content),
+                    f"Malformed nested source link in {f.name}. "
+                    "Run: python scripts/fix_provenance_links.py",
+                )
+
     def test_level2_soft_guidance(self):
         """Advisory only — surfaces Level-2 gaps without failing the corpus."""
         issues: list[str] = []
@@ -115,6 +127,11 @@ class TestWikiCompliance(unittest.TestCase):
 
 
 class TestLLMProvider(unittest.TestCase):
+    def setUp(self):
+        from provider_circuit import reset_provider_circuits
+
+        reset_provider_circuits()
+
     def test_provider_name_accepts_explicit_override(self):
         self.assertEqual(provider_name("gemini"), "gemini")
         self.assertEqual(provider_name("openai"), "openai")
@@ -123,22 +140,29 @@ class TestLLMProvider(unittest.TestCase):
         self.assertEqual(normalize_provider("openai"), "openai")
         self.assertEqual(normalize_provider("unknown-vendor"), "mlx")
 
-    def test_provider_for_role_uses_query_and_lint_overrides(self):
+    def test_provider_for_role_uses_llm_provider(self):
         from llm_provider import provider_for_role
 
         with mock.patch.dict(
             "os.environ",
             {
-                "LLM_PROVIDER": "mlx",
-                "QUERY_LLM_PROVIDER": "gemini",
-                "LINT_LLM_PROVIDER": "",
+                "LLM_PROVIDER": "gemini",
                 "GEMINI_API_KEY": "test-key",
             },
             clear=False,
         ):
             self.assertEqual(provider_for_role("query", None), "gemini")
             self.assertEqual(provider_for_role("lint", None), "gemini")
-            self.assertEqual(provider_for_role(None, None), "mlx")
+            self.assertEqual(provider_for_role("compress", None), "gemini")
+            self.assertEqual(provider_for_role("discovery", None), "gemini")
+
+        self.assertEqual(provider_for_role("query", "mlx"), "mlx")
+
+    def test_provider_for_role_defaults_to_mlx(self):
+        from llm_provider import provider_for_role
+
+        with mock.patch.dict("os.environ", {}, clear=True):
+            self.assertEqual(provider_for_role("compress", None), "mlx")
 
     def test_fallback_chain_sync_mlx_then_gemini(self):
         from llm_provider import fallback_provider_chain
@@ -161,8 +185,7 @@ class TestLLMProvider(unittest.TestCase):
         with mock.patch.dict(
             "os.environ",
             {
-                "LLM_PROVIDER": "mlx",
-                "QUERY_LLM_PROVIDER": "gemini",
+                "LLM_PROVIDER": "gemini",
                 "QUERY_FALLBACK_PROVIDERS": "mlx",
                 "LLM_FALLBACK_ENABLED": "1",
                 "GEMINI_API_KEY": "test-key",
@@ -171,6 +194,92 @@ class TestLLMProvider(unittest.TestCase):
         ):
             self.assertEqual(
                 fallback_provider_chain(None, role="query"), ["gemini", "mlx"]
+            )
+
+    def test_provider_for_role_honors_role_env_overrides(self):
+        from llm_provider import provider_for_role
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "mlx",
+                "QUERY_LLM_PROVIDER": "gemini",
+                "LINT_LLM_PROVIDER": "gemini",
+                "AGENT_LLM_PROVIDER": "gemini",
+                "GEMINI_API_KEY": "test-key",
+            },
+            clear=False,
+        ):
+            self.assertEqual(provider_for_role("query", None), "gemini")
+            self.assertEqual(provider_for_role("lint", None), "gemini")
+            self.assertEqual(provider_for_role("discovery", None), "gemini")
+            self.assertEqual(provider_for_role("gap", None), "gemini")
+            self.assertEqual(provider_for_role("evolution", None), "gemini")
+            self.assertEqual(provider_for_role("compress", None), "mlx")
+
+    def test_provider_for_role_agent_defaults_to_gemini_when_key_set(self):
+        from llm_provider import provider_for_role
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "mlx",
+                "GEMINI_API_KEY": "test-key",
+            },
+            clear=False,
+        ):
+            self.assertEqual(provider_for_role("discovery", None), "gemini")
+            self.assertEqual(provider_for_role("gap", None), "gemini")
+            self.assertEqual(provider_for_role("compress", None), "mlx")
+
+    def test_fallback_chain_discovery_mlx_then_gemini(self):
+        from llm_provider import fallback_provider_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "mlx",
+                "LLM_FALLBACK_ENABLED": "1",
+                "GEMINI_API_KEY": "test-key",
+                "OPENAI_API_KEY": "",
+            },
+            clear=False,
+        ):
+            self.assertEqual(
+                fallback_provider_chain("mlx", role="discovery"), ["mlx", "gemini"]
+            )
+
+    def test_fallback_chain_discovery_gemini_primary_with_mlx_last_resort(self):
+        from llm_provider import fallback_provider_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "AGENT_LLM_PROVIDER": "gemini",
+                "LLM_FALLBACK_ENABLED": "1",
+                "GEMINI_API_KEY": "test-key",
+                "LLM_MLX_LAST_RESORT": "1",
+            },
+            clear=False,
+        ):
+            self.assertEqual(
+                fallback_provider_chain(None, role="discovery"), ["gemini", "mlx"]
+            )
+
+    def test_provider_for_role_discovery_uses_llm_provider(self):
+        from llm_provider import fallback_provider_chain, provider_for_role
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "gemini",
+                "GEMINI_API_KEY": "test-key",
+            },
+            clear=False,
+        ):
+            self.assertEqual(provider_for_role("discovery", None), "gemini")
+            self.assertEqual(
+                fallback_provider_chain(None, role="discovery"), ["gemini", "mlx"]
             )
 
     def test_context_limits_are_provider_aware(self):
@@ -223,7 +332,7 @@ class TestLLMProvider(unittest.TestCase):
         with mock.patch.dict(
             "os.environ",
             {
-                "INGEST_LLM_PROVIDER": "gemini",
+                "LLM_PROVIDER": "gemini",
                 "LLM_FALLBACK_ENABLED": "1",
                 "GEMINI_API_KEY": "test-key",
                 "OPENAI_API_KEY": "",
@@ -233,6 +342,24 @@ class TestLLMProvider(unittest.TestCase):
         ):
             self.assertEqual(
                 fallback_provider_chain("gemini", role="sync"), ["gemini", "mlx"]
+            )
+
+    def test_fallback_chain_sync_honors_llm_provider(self):
+        from llm_provider import fallback_provider_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "gemini",
+                "LLM_FALLBACK_ENABLED": "1",
+                "GEMINI_API_KEY": "test-key",
+                "OPENAI_API_KEY": "",
+                "LLM_MLX_LAST_RESORT": "1",
+            },
+            clear=False,
+        ):
+            self.assertEqual(
+                fallback_provider_chain(None, role="sync"), ["gemini", "mlx"]
             )
 
     def test_mlx_blocked_as_primary_without_allow(self):
@@ -245,6 +372,26 @@ class TestLLMProvider(unittest.TestCase):
         from composer_policy import reject_local_mlx
 
         reject_local_mlx("mlx", context="test", as_last_resort=True)
+
+    def test_provider_circuit_skips_gemini_after_geo_error(self):
+        from llm_provider import fallback_provider_chain
+        from provider_circuit import open_provider_circuit
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "gemini",
+                "GEMINI_API_KEY": "test-key",
+                "LLM_MLX_LAST_RESORT": "1",
+            },
+            clear=False,
+        ):
+            open_provider_circuit(
+                "gemini", "User location is not supported for the API use."
+            )
+            self.assertEqual(
+                fallback_provider_chain(None, role="sync"), ["mlx"]
+            )
 
 
 if __name__ == "__main__":

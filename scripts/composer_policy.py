@@ -31,7 +31,7 @@ def reject_local_mlx(provider: str, *, context: str, as_last_resort: bool = Fals
     raise RuntimeError(
         f"{context}: local MLX is disabled. "
         "Use Cursor Composer (see AGENTS.md + skills/ingest-*.md), "
-        "or cloud API (QUERY_LLM_PROVIDER=gemini). "
+        "or cloud API (LLM_PROVIDER=gemini). "
         "Override: ALLOW_LOCAL_LLM=1 or LLM_MLX_LAST_RESORT=1"
     )
 

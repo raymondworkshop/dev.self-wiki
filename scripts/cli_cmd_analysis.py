@@ -27,8 +27,8 @@ def cmd_discover(args: argparse.Namespace) -> int:
     reject_python_llm_ingest(context="discover", provider=provider)
     mark_stage_in_progress("discovery")
     try:
-        pending = write_discover_pending(provider=args.provider)
-        result = run_skill_from_pending(pending, provider=args.provider)
+        pending = write_discover_pending(provider=provider)
+        result = run_skill_from_pending(pending, provider=provider)
         append_log("discover", f"discovery report via {pending.name}")
         mark_stage_done("discovery", output=result.get("output_path"))
         refresh_all()
@@ -43,8 +43,8 @@ def cmd_gap(args: argparse.Namespace) -> int:
     reject_python_llm_ingest(context="gap", provider=provider)
     mark_stage_in_progress("gap")
     try:
-        pending = write_gap_pending(provider=args.provider)
-        result = run_skill_from_pending(pending, provider=args.provider)
+        pending = write_gap_pending(provider=provider)
+        result = run_skill_from_pending(pending, provider=provider)
         append_log("gap", f"gap report via {pending.name}")
         mark_stage_done("gap", output=result.get("output_path"))
         refresh_all()
@@ -59,8 +59,8 @@ def cmd_evolution(args: argparse.Namespace) -> int:
     reject_python_llm_ingest(context="evolution", provider=provider)
     mark_stage_in_progress("evolution")
     try:
-        pending = write_evolution_pending(provider=args.provider)
-        result = run_skill_from_pending(pending, provider=args.provider)
+        pending = write_evolution_pending(provider=provider)
+        result = run_skill_from_pending(pending, provider=provider)
         append_log("evolution", f"evolution report via {pending.name}")
         mark_stage_done("evolution", output=result.get("output_path"))
         refresh_all()

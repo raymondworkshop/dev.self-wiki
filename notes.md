@@ -11,7 +11,7 @@
     > make sync
     > make query Q="..."
     > make audit LINT=1
-    > make cycle                    # weekly
+    > make reflect                  # periodic review
 
 - site
     > make query-web
