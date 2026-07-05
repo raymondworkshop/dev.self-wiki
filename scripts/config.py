@@ -51,8 +51,8 @@ LOG_MD = LOG_DIR / "log.md"
 INDEX_MD = LOG_DIR / "index.md"
 INDEX_JSON = LOG_DIR / "INDEX.json"
 AUDIT_MD = WORKSPACE_PATH / "self-wiki" / "audit.md"
-TWIN_PROFILE = WORKSPACE_PATH / "twin" / "PROFILE.md"
-TWIN_PRINCIPLES_JSON = WORKSPACE_PATH / "twin" / "principles.json"
+TWIN_PROFILE = WORKSPACE_PATH / "self-wiki" / "twin" / "PROFILE.md"
+TWIN_PRINCIPLES_JSON = WORKSPACE_PATH / "self-wiki" / "twin" / "principles.json"
 TWIN_DIR = TWIN_PROFILE.parent
 
 

@@ -9,7 +9,7 @@ from urllib.parse import quote, unquote
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
-from config import OUTPUTS_DIR, RAW_DIR, TWIN_PROFILE, WIKI_DIR, WORKSPACE_PATH
+from config import OUTPUTS_DIR, RAW_DIR, TWIN_PRINCIPLES_JSON, TWIN_PROFILE, WIKI_DIR, WORKSPACE_PATH, workspace_relpath
 from llm_provider import model_name, normalize_provider, provider_for_role
 from query_engine import generate_query_answer
 from query_retrieval import load_index
@@ -605,10 +605,12 @@ def output_page(output_path: str) -> HTMLResponse:
 
 @app.get("/profile", response_class=HTMLResponse)
 def profile_page() -> HTMLResponse:
+    profile_rel = workspace_relpath(TWIN_PROFILE)
+    json_rel = workspace_relpath(TWIN_PRINCIPLES_JSON)
     if not TWIN_PROFILE.exists():
-        body = """<section class="card answer">
+        body = f"""<section class="card answer">
       <h2>Digital Twin Profile</h2>
-      <p><code>twin/PROFILE.md</code> is not generated yet. It will appear after Iter 3 (<code>build_twin_profile</code> in post-ingest).</p>
+      <p><code>{html.escape(profile_rel)}</code> is not generated yet. It will appear after post-ingest (<code>build_twin_profile</code>).</p>
     </section>"""
         return HTMLResponse(page_shell(body))
 
@@ -616,7 +618,7 @@ def profile_page() -> HTMLResponse:
     body = f"""<section class="card answer">
       <div class="eyebrow">Digital Twin</div>
       <h2>Profile</h2>
-      <p class="hint">Compact snapshot (top principles by level and confidence). Full catalog: <code>twin/principles.json</code>. Query uses query-relevant selection from the JSON index.</p>
+      <p class="hint">Compact snapshot (top principles by level and confidence). Full catalog: <code>{html.escape(json_rel)}</code>. Query uses query-relevant selection from the JSON index.</p>
       {markdown_to_html(strip_frontmatter(text), base='wiki')}
     </section>"""
     return HTMLResponse(page_shell(body))

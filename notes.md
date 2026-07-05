@@ -40,8 +40,7 @@ self-wiki/
   outputs/        Query answers & reports
   log/pending/    Skill input packages (JSON)
   log/sources.json  Twitter catalog
-AGENTS.md         Philosophy, wiki standards, agent mandates
-twin/             Digital twin PROFILE (post-ingest)
+  twin/             Digital twin PROFILE (post-ingest)
 ```
 
 ## Skills

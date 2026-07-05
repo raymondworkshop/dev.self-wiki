@@ -59,7 +59,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_lint.add_argument("--provider", default=None)
     p_lint.set_defaults(func=cmd_lint)
 
-    p_twin = sub.add_parser("twin", help="Rebuild twin/PROFILE.md from wiki (deterministic)")
+    p_twin = sub.add_parser("twin", help="Rebuild self-wiki/twin/PROFILE.md from wiki (deterministic)")
     p_twin.set_defaults(func=cmd_twin)
 
     p_promote = sub.add_parser("promote", help="Promote query output into wiki page (dry-run unless --confirm)")

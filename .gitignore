@@ -8,4 +8,5 @@ self-wiki/
 archive/
 !archive/plans/
 !archive/plans/**
-twin/
+dist/
+.wrangler/

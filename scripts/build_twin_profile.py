@@ -17,6 +17,7 @@ from config import (
     WORKSPACE_PATH,
     twin_profile_max_evolution,
     twin_profile_max_principles,
+    workspace_relpath,
 )
 
 logger = logging.getLogger(__name__)
@@ -317,10 +318,7 @@ def build_profile_markdown(*, built_at: datetime | None = None) -> str:
         "\n".join(tensions) if tensions else "_No Contradicts edges in wiki backlinks yet._"
     )
 
-    try:
-        json_rel = str(TWIN_PRINCIPLES_JSON.relative_to(WORKSPACE_PATH))
-    except ValueError:
-        json_rel = "twin/principles.json"
+    json_rel = workspace_relpath(TWIN_PRINCIPLES_JSON)
     snapshot = (
         f"Top {len(profile_principles)} of {len(principles)} Level-2 principle(s) "
         f"(confidence ≥ {CONFIDENCE_FLOOR}), {len(evolution)} recent evolution entry(ies), "
@@ -368,7 +366,7 @@ principles_index: {json_rel}
 ## Compiled
 
 - {date_str}: Regenerated from `self-wiki/wiki/` via post-ingest (`make sync` / `python scripts/cli.py twin`).
-- Query runtime reads `twin/principles.json` with query-aware selection in `prepare_query` (deterministic, not LLM-generated).
+- Query runtime reads `{json_rel}` with query-aware selection in `prepare_query` (deterministic, not LLM-generated).
 """
 
 
@@ -488,8 +486,9 @@ def profile_excerpt_for_query(
     top_k = top_k if top_k is not None else twin_query_principles_k()
 
     principles = load_principles()
+    profile_rel = workspace_relpath(TWIN_PROFILE)
     if not principles and not TWIN_PROFILE.exists():
-        return "_twin/PROFILE.md not built yet — run make sync or python scripts/cli.py twin._"
+        return f"_{profile_rel} not built yet — run make sync or python scripts/cli.py twin._"
 
     ranked = sorted(
         principles,
@@ -501,8 +500,9 @@ def profile_excerpt_for_query(
     )
     selected = ranked[:top_k] if ranked else []
 
+    json_rel = workspace_relpath(TWIN_PRINCIPLES_JSON)
     parts = [
-        "> Query-relevant twin context (deterministic; from twin/principles.json).",
+        f"> Query-relevant twin context (deterministic; from {json_rel}).",
         "",
         "## Relevant operating principles",
     ]
@@ -551,8 +551,9 @@ def lint_principle_excerpts(*, max_pages: int = 15) -> list[str]:
 
 
 def lint_profile_summary(*, max_chars: int = 2000) -> str:
+    profile_rel = workspace_relpath(TWIN_PROFILE)
     if not TWIN_PROFILE.exists():
-        return "_twin/PROFILE.md not built — run make sync or python scripts/cli.py twin._"
+        return f"_{profile_rel} not built — run make sync or python scripts/cli.py twin._"
 
     text = TWIN_PROFILE.read_text(encoding="utf-8", errors="ignore")
     principles = load_principles()
@@ -573,10 +574,7 @@ def lint_profile_summary(*, max_chars: int = 2000) -> str:
         parts.extend(_format_principle_line(p) for p in ranked[:cap])
         total = len(principles)
         if total > cap:
-            try:
-                rel_json = str(TWIN_PRINCIPLES_JSON.relative_to(WORKSPACE_PATH))
-            except ValueError:
-                rel_json = "twin/principles.json"
+            rel_json = workspace_relpath(TWIN_PRINCIPLES_JSON)
             parts.append(f"\n_… and {total - cap} more in `{rel_json}`._")
     if sections.get("tensions"):
         parts.extend(["", "## Active tensions", sections["tensions"]])

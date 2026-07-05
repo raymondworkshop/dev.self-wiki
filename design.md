@@ -30,7 +30,7 @@ raw/  ──compress──►  compression/  ──wiki-synthesize──►  wik
 | L0.5 | `self-wiki/compression/` | Per-source digests; path mirrors raw |
 | L1–L2 | `self-wiki/wiki/` | Themes & principles |
 | External | `log/sources.json` | Twitter catalog — not your beliefs |
-| Twin | `twin/PROFILE.md` | Snapshot after post-ingest |
+| Twin | `self-wiki/twin/PROFILE.md` | Snapshot after post-ingest |
 
 **No raw → wiki shortcut.** Wiki updates go through compression + [wiki-synthesize](skills/wiki-synthesize.md) → `apply_ingest.py`.
 

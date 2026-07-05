@@ -6,12 +6,13 @@ include make/common.mk
 include make/pipeline.mk
 include make/analysis.mk
 include make/query.mk
+include make/publish.mk
 
 .PHONY: help post-ingest audit progress \
 	register-reference compress sync fix-provenance \
 	wiki-synthesize wiki-synthesize-apple-notes wiki-synth-status \
 	discover gap evolution agents reflect \
-	promote query query-web test doctor-config
+	promote query query-web test doctor-config publish
 
 help:
 	@echo "Essential (daily):"
@@ -28,10 +29,10 @@ help:
 	@echo "  make register-reference   twitter catalog (no LLM)"
 	@echo "  make compress             raw → compression  (LIMIT FOLDER FORCE POST_INGEST)"
 	@echo "  make wiki-synthesize      compression → wiki  (LIMIT FOLDER WAVE POST_INGEST)"
-	@echo "  make wiki-synthesize-apple-notes   origin-apple-notes shorthand"
 	@echo "  make discover | gap | evolution | agents"
 	@echo "  make promote FILE=… TARGET=… [CONFIRM=1]"
 	@echo "  make query-web            browser UI"
+	@echo "  make publish [BUILD_ONLY=1]  static self-wiki → Cloudflare Pages"
 	@echo "  make doctor-config        resolved provider/model/skill"
 	@echo "  make test"
 	@echo ""

@@ -28,7 +28,7 @@ Pipeline detail: [design.md](design.md) · daily commands: [README.md](README.md
 | L1 | `wiki/` | Themes, patterns (`type/synthesis`) |
 | L2 | `wiki/` | Principles, mental models (`type/principle`) |
 
-Also: `discovery/`, `gap/`, `evolution/` (agent reports) · `outputs/` (query) · `log/` (index, pending, `sources.json`) · `twin/PROFILE.md` (post-ingest) · `INDEX.md` (Obsidian hub).
+Also: `discovery/`, `gap/`, `evolution/` (agent reports) · `outputs/` (query) · `log/` (index, pending, `sources.json`) · `twin/PROFILE.md` (post-ingest, under `self-wiki/`) · `INDEX.md` (Obsidian hub).
 
 `raw/` folders: `_posts/`, `origin-apple-notes/`, `twitter/`. Twitter → `register-reference` only (`sources.json` = external, not beliefs).
 

@@ -20,7 +20,34 @@ Weekly (optional):
 make reflect
 ```
 
-Also useful: `make query-web` · `make help`
+Also useful: `make query-web` · `make publish` · `make help`
+
+### Publish (Cloudflare Pages)
+
+Production URL is `https://<CLOUDFLARE_PAGES_PROJECT>.pages.dev` (default: **self-mirror.pages.dev**).
+
+One-time setup:
+
+```bash
+npm i -g wrangler && wrangler login
+wrangler pages project create self-mirror --production-branch=main
+make publish
+```
+
+Set **Production branch** to `main` in Cloudflare Pages → self-mirror → Settings if the root URL 404s after deploy.
+
+**Launchd / non-interactive deploy** — use an API token (not `wrangler login`):
+
+1. [Cloudflare dashboard](https://dash.cloudflare.com/profile/api-tokens) → **Create Token** → template **Edit Cloudflare Pages**
+2. Copy **Account ID** from any zone Overview page (right sidebar)
+3. Add to `.env`:
+
+```bash
+CLOUDFLARE_API_TOKEN=your-token-here
+CLOUDFLARE_ACCOUNT_ID=your-account-id
+```
+
+`launchd-weekly.sh` sources `.env`; `make publish` picks these up automatically. Test: `make publish` in Terminal without running `wrangler login` first.
 
 ### Weekly automation (optional)
 
@@ -30,7 +57,7 @@ cp launchd/com.zhaowenlong.self-wiki-weekly.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.zhaowenlong.self-wiki-weekly.plist
 ```
 
-Runs `make sync` then `make reflect` every **Sunday 04:00**. Logs: `self-wiki/log/launchd-weekly.log`. Requires `.env` with `GEMINI_API_KEY` and `ALLOW_PYTHON_LLM=1`.
+Runs `make sync` → `make reflect` every **Sunday 04:00**. Logs: `self-wiki/log/launchd-weekly.log`. Requires `.env` with `GEMINI_API_KEY` and `ALLOW_PYTHON_LLM=1`. Publish manually when ready: `make publish`.
 
 ## Setup (once)
 
@@ -53,7 +80,7 @@ Twitter catalog once: `make register-reference`
 
 ## Model
 
-`raw/` → `compression/` → `wiki/` → `post-ingest` → `twin/PROFILE.md`
+`raw/` → `compression/` → `wiki/` → `post-ingest` → `self-wiki/twin/PROFILE.md`
 
 - `raw/`: source truth (append only)
 - `compression/`: per-source digests
