@@ -3,81 +3,22 @@
 from __future__ import annotations
 
 import json
-import re
 from datetime import datetime
 from pathlib import Path
 
-import yaml
-
-from compression_manifest import load_manifest, summarize_files
-from config import COMPRESSION_DIR, PENDING_DIR, TWIN_PROFILE, WIKI_DIR, WORKSPACE_PATH
+from config import PENDING_DIR, RAW_DIR, WIKI_DIR, WORKSPACE_PATH
+from wiki_synth_manifest import load_manifest, summarize_files
 from llm_provider import provider_name
+from report_context import (
+    REPORT_DIRS,
+    count_md,
+    latest_report,
+    twin_principle_count,
+    wiki_summary,
+)
 from skill_registry import resolve_skill
 
-EVOLUTION_DIR = WORKSPACE_PATH / "self-wiki" / "evolution"
-GAP_DIR = WORKSPACE_PATH / "self-wiki" / "gap"
-DISCOVERY_DIR = WORKSPACE_PATH / "self-wiki" / "discovery"
-
-
-def _count_md(directory: Path) -> int:
-    if not directory.exists():
-        return 0
-    return sum(1 for p in directory.rglob("*.md") if p.is_file())
-
-
-def _latest_report(directory: Path) -> Path | None:
-    if not directory.exists():
-        return None
-    files = [
-        p
-        for p in directory.glob("*.md")
-        if p.is_file() and not p.name.startswith("_")
-    ]
-    if not files:
-        files = list(directory.glob("*.md"))
-    files = sorted(files, key=lambda p: p.stat().st_mtime, reverse=True)
-    return files[0] if files else None
-
-
-def _wiki_breakdown() -> dict:
-    l1 = l2 = shift = 0
-    pages: list[dict] = []
-    if not WIKI_DIR.exists():
-        return {"l1": 0, "l2": 0, "type_shift": 0, "pages": pages}
-    for path in sorted(WIKI_DIR.glob("*.md")):
-        text = path.read_text(encoding="utf-8", errors="replace")
-        fm: dict = {}
-        if text.startswith("---"):
-            end = text.find("---", 3)
-            if end > 0:
-                fm = yaml.safe_load(text[3:end]) or {}
-        level = int(fm.get("level", 0) or 0)
-        tags = fm.get("tags", [])
-        if not isinstance(tags, list):
-            tags = [str(tags)]
-        tag_blob = " ".join(str(t) for t in tags)
-        if level >= 2:
-            l2 += 1
-        elif level == 1:
-            l1 += 1
-        if "type/shift" in tag_blob:
-            shift += 1
-        pages.append(
-            {
-                "title": fm.get("title", path.stem),
-                "level": level,
-                "rel": str(path.relative_to(WORKSPACE_PATH)).replace("\\", "/"),
-                "tags": tags,
-            }
-        )
-    return {"l1": l1, "l2": l2, "type_shift": shift, "pages": pages}
-
-
-def _twin_principle_count() -> int:
-    if not TWIN_PROFILE.exists():
-        return 0
-    match = re.search(r"principle_count:\s*(\d+)", TWIN_PROFILE.read_text(encoding="utf-8"))
-    return int(match.group(1)) if match else 0
+EVOLUTION_DIR = REPORT_DIRS["evolution"]
 
 
 def _prior_evolution(before: str) -> Path | None:
@@ -92,22 +33,31 @@ def _prior_evolution(before: str) -> Path | None:
 
 
 def build_metrics_pack() -> dict:
-    manifest = summarize_files(load_manifest().get("files", {}))
-    wiki = _wiki_breakdown()
+    manifest_files = load_manifest().get("files", {})
+    manifest = summarize_files(manifest_files)
+    wiki = wiki_summary(detailed_pages=True)
     date = datetime.now().date().isoformat()
     prior = _prior_evolution(date)
-    latest_gap = _latest_report(GAP_DIR)
-    latest_discovery = _latest_report(DISCOVERY_DIR)
+    latest_gap = latest_report(REPORT_DIRS["gap"])
+    latest_discovery = latest_report(REPORT_DIRS["discovery"])
+    discovery_count = count_md(REPORT_DIRS["discovery"])
+    gap_count = count_md(REPORT_DIRS["gap"])
     return {
         "date": date,
-        "compression_md_files": _count_md(COMPRESSION_DIR),
+        "raw_md_files": count_md(RAW_DIR),
+        "wiki_synth_manifest": {
+            "tracked": len(manifest_files),
+            **manifest,
+        },
         "manifest": manifest,
-        "wiki_total": _count_md(WIKI_DIR),
+        "wiki_total": count_md(WIKI_DIR),
         "wiki_l1": wiki["l1"],
         "wiki_l2": wiki["l2"],
         "type_shift_pages": wiki["type_shift"],
         "wiki_pages": wiki["pages"],
-        "twin_principle_count": _twin_principle_count(),
+        "twin_principle_count": twin_principle_count(),
+        "discovery_reports": discovery_count,
+        "gap_reports": gap_count,
         "discovery_report": (
             str(latest_discovery.relative_to(WORKSPACE_PATH)).replace("\\", "/")
             if latest_discovery
@@ -122,6 +72,7 @@ def build_metrics_pack() -> dict:
             str(prior.relative_to(WORKSPACE_PATH)).replace("\\", "/") if prior else None
         ),
         "is_bootstrap": prior is None,
+        "pipeline": "raw → wiki-synthesize → wiki → discovery → gap → evolution; ingest → twin",
     }
 
 

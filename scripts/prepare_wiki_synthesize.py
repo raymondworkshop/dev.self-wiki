@@ -1,4 +1,4 @@
-"""Build pending JSON for wiki-synthesize (compression → wiki actions)."""
+"""Build pending JSON for wiki-synthesize (raw → wiki actions)."""
 
 from __future__ import annotations
 
@@ -7,11 +7,12 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from config import PENDING_DIR, WORKSPACE_PATH, workspace_relpath
+from config import PENDING_DIR, workspace_relpath
 from ingest_profiles import resolve_profile
 from lang_utils import detect_language, language_output_instruction
+from raw_chunking import iter_units
 from skill_registry import resolve_skill
-from wiki_synth_manifest import compression_to_raw_rel, _raw_rel_from_compression
+from wiki_synth_manifest import raw_rel_inner
 from wiki_themes import load_existing_themes
 
 WIKI_LINK_RE = re.compile(r"\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]")
@@ -21,9 +22,9 @@ THEME_LINKS_SECTION_RE = re.compile(
 CONFIDENCE_IN_THEME_RE = re.compile(r"\(confidence:\s*([0-9.]+)\)", re.IGNORECASE)
 
 
-def _sanitize_slug(comp_rel: str) -> str:
-    slug = re.sub(r"[^a-zA-Z0-9._-]+", "-", comp_rel).strip("-")
-    return slug[:80] or "compression"
+def _sanitize_slug(raw_rel: str) -> str:
+    slug = re.sub(r"[^a-zA-Z0-9._-]+", "-", raw_rel).strip("-")
+    return slug[:80] or "raw"
 
 
 def _parse_theme_links(content: str) -> list[tuple[str, float | None]]:
@@ -57,12 +58,13 @@ def _wiki_excerpt(title: str, title_to_path: dict, *, max_chars: int = 4000) -> 
 
 def build_user_message(
     *,
-    comp_rel: str,
+    raw_rel: str,
     content: str,
     max_theme_updates: int,
     skill_rel: str,
+    unit_id: str | None = None,
 ) -> str:
-    raw_path = compression_to_raw_rel(comp_rel)
+    inner = raw_rel_inner(raw_rel)
     source_lang = detect_language(content)
     themes, title_to_path = load_existing_themes()
     theme_titles = _parse_theme_links(content)
@@ -82,11 +84,12 @@ def build_user_message(
             matched_excerpts.append(f"### Wiki page: {title}\n{excerpt}")
             seen_titles.add(title)
 
+    provenance = f"raw/{unit_id}" if unit_id and unit_id != inner else raw_rel
     parts = [
-        "Execute the wiki-synthesize skill for this compression digest.",
+        "Execute the wiki-synthesize skill for this raw source.",
         language_output_instruction(source_lang),
-        f"Compression path: {comp_rel}",
-        f"Raw path: {raw_path}",
+        f"Raw path: {raw_rel}",
+        f"Provenance: (Source: [[{provenance}]])",
         f"max_theme_updates: {max_theme_updates}",
         f"Skill: {skill_rel}",
         "",
@@ -96,7 +99,7 @@ def build_user_message(
     ]
 
     if theme_titles:
-        parts.append("Theme links from digest (prefer these targets):")
+        parts.append("Theme links from source (prefer these targets):")
         for title, conf in theme_titles:
             conf_s = f" confidence≥{conf}" if conf is not None else ""
             parts.append(f"- [[{title}]]{conf_s}")
@@ -107,14 +110,14 @@ def build_user_message(
         parts.extend(matched_excerpts)
         parts.append("")
 
-    parts.extend(["Compression digest:", "---", content, "---"])
+    parts.extend(["Raw source:", "---", content, "---"])
     return "\n".join(parts)
 
 
-def write_pending(comp_path: Path) -> Path | None:
-    comp_rel = workspace_relpath(comp_path)
-    raw_rel = _raw_rel_from_compression(comp_rel)
-    profile = resolve_profile(raw_rel)
+def write_pending(raw_path: Path, *, unit_id: str | None = None, content: str | None = None) -> Path | None:
+    raw_rel = workspace_relpath(raw_path)
+    inner = raw_rel_inner(raw_rel)
+    profile = resolve_profile(inner)
     if not profile or not profile.get("wiki_skill"):
         return None
 
@@ -122,27 +125,30 @@ def write_pending(comp_path: Path) -> Path | None:
     if max_updates <= 0:
         return None
 
-    content = comp_path.read_text(encoding="utf-8", errors="ignore")
+    if content is None:
+        content = raw_path.read_text(encoding="utf-8", errors="ignore")
+
     skill_rel = resolve_skill(
         "wiki_synthesize",
         profile["wiki_skill"],
-        raw_rel=raw_rel,
+        raw_rel=inner,
         current_skill=profile.get("wiki_skill"),
     )
     user_message = build_user_message(
-        comp_rel=comp_rel,
+        raw_rel=raw_rel,
         content=content,
         max_theme_updates=max_updates,
         skill_rel=skill_rel,
+        unit_id=unit_id,
     )
 
-    slug = _sanitize_slug(comp_rel)
+    slug = _sanitize_slug(f"{raw_rel}-{unit_id}" if unit_id else raw_rel)
     pending_path = PENDING_DIR / f"wiki-synth-{slug}.json"
     payload = {
         "kind": "ingest",
         "skill": skill_rel,
-        "compression_path": comp_rel,
-        "raw_path": compression_to_raw_rel(comp_rel),
+        "raw_path": raw_rel,
+        "unit_id": unit_id,
         "max_theme_updates": max_updates,
         "user_message": user_message,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -150,3 +156,15 @@ def write_pending(comp_path: Path) -> Path | None:
     }
     pending_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return pending_path
+
+
+def write_pending_units(raw_path: Path) -> list[Path]:
+    """Create pending package(s) for raw file, chunking if needed."""
+    inner = raw_rel_inner(workspace_relpath(raw_path))
+    units = iter_units(inner, raw_path)
+    pending_paths: list[Path] = []
+    for unit_id, chunk_content in units:
+        p = write_pending(raw_path, unit_id=unit_id if len(units) > 1 else None, content=chunk_content)
+        if p:
+            pending_paths.append(p)
+    return pending_paths

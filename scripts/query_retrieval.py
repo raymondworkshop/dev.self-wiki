@@ -254,9 +254,9 @@ def build_evidence_snippet(
 def load_index(required: bool = True) -> dict:
     if not INDEX_PATH.exists():
         if required:
-            raise FileNotFoundError("Index not found. Run 'make post-ingest' first.")
+            raise FileNotFoundError("Index not found. Run 'make ingest' first.")
         logger.warning(
-            "Index not found. Falling back to full-text wiki scan. Run 'make post-ingest' to rebuild INDEX.json."
+            "Index not found. Falling back to full-text wiki scan. Run 'make ingest' to rebuild INDEX.json."
         )
         return {"topics": {}}
     with open(INDEX_PATH, "r", encoding="utf-8") as f:

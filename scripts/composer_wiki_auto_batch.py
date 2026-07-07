@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.resolve()))
 from composer_wiki_batch import apply_batch_file, list_next
 from config import WORKSPACE_PATH
 
-# (wiki title, trigger keywords in compression text — any hit scores)
+# (wiki title, trigger keywords in raw text — any hit scores)
 THEME_TRIGGERS: list[tuple[str, list[str]]] = [
     ("商业算盘与激励", ["市场", "激励", "交易费用", "产权", "economics", "商业", "钞票投票", "公司原理"]),
     ("公民话语与职场策略", ["中国", "社会", "职场", "政策", "民主", "宏观", "微观", "country driving", "尋路"]),
@@ -79,24 +79,26 @@ def _excerpt(body: str, max_chars: int = 600) -> str:
     return " ".join(out[:8]) or body[:max_chars]
 
 
-def _action(comp_rel: str, title: str, body: str, score: int) -> dict:
-    comp_short = comp_rel.replace("self-wiki/compression/", "")
+def _action(raw_rel: str, title: str, body: str, score: int) -> dict:
+    raw_link = raw_rel.replace("self-wiki/", "")
+    if not raw_link.startswith("raw/"):
+        raw_link = f"raw/{raw_link.lstrip('/')}"
     conf = min(0.92, 0.65 + 0.05 * score)
     excerpt = _excerpt(body)
     lang_zh = bool(re.search(r"[\u4e00-\u9fff]", body))
     if lang_zh:
-        summary = f"从该压缩摘要中提炼与「{title}」相关的模式（置信度 {conf:.2f}）。"
-        content = f"{excerpt} (Source: [[{comp_short}]])"
+        summary = f"从该 raw 笔记中提炼与「{title}」相关的模式（置信度 {conf:.2f}）。"
+        content = f"{excerpt} (Source: [[{raw_link}]])"
     else:
-        summary = f"Pattern from digest relevant to [[{title}]] (confidence {conf:.2f})."
-        content = f"{excerpt} (Source: [[{comp_short}]])"
+        summary = f"Pattern from raw note relevant to [[{title}]] (confidence {conf:.2f})."
+        content = f"{excerpt} (Source: [[{raw_link}]])"
     return {
         "target_title": title,
         "confidence_score": round(conf, 2),
-        "confidence_rationale": f"Keyword/theme match score {score} in compression digest.",
+        "confidence_rationale": f"Keyword/theme match score {score} in raw source.",
         "level": 1,
         "summary": summary,
-        "description": f"Distillation from {comp_short}",
+        "description": f"Distillation from {raw_link}",
         "new_body_content": content,
         "tags": ["type/synthesis", "agent/composer-batch"],
     }
@@ -104,26 +106,28 @@ def _action(comp_rel: str, title: str, body: str, score: int) -> dict:
 
 def build_batch(limit: int = 10, *, folder: str | None = None) -> dict:
     files: list[dict] = []
-    for comp_rel in list_next(limit, folder=folder):
-        abs_path = WORKSPACE_PATH / comp_rel
+    for raw_rel in list_next(limit, folder=folder):
+        abs_path = WORKSPACE_PATH / raw_rel
+        if not abs_path.is_file():
+            abs_path = abs_path.resolve()
         body = _text(abs_path)
         if not body:
-            files.append({"compression_path": comp_rel, "no_actions": True})
+            files.append({"raw_path": raw_rel, "no_actions": True})
             continue
         stem = abs_path.name.lower()
         if SKIP_RE.search(stem) or SKIP_RE.search(body[:800]):
-            files.append({"compression_path": comp_rel, "no_actions": True})
+            files.append({"raw_path": raw_rel, "no_actions": True})
             continue
         ranked = _score(body)
         if not ranked or ranked[0][1] < MIN_SCORE:
-            files.append({"compression_path": comp_rel, "no_actions": True})
+            files.append({"raw_path": raw_rel, "no_actions": True})
             continue
         top_title, top_score = ranked[0]
         raw_body = abs_path.read_text(encoding="utf-8", errors="replace")
         files.append(
             {
-                "compression_path": comp_rel,
-                "actions": [_action(comp_rel, top_title, raw_body, top_score)],
+                "raw_path": raw_rel,
+                "actions": [_action(raw_rel, top_title, raw_body, top_score)],
             }
         )
     return {"files": files, "generated_at": datetime.now().isoformat()}
@@ -163,11 +167,11 @@ def run_loop(
     import subprocess
 
     subprocess.run(
-        [sys.executable, str(Path(__file__).parent / "cli.py"), "post-ingest"],
+        [sys.executable, str(Path(__file__).parent / "cli.py"), "ingest"],
         check=True,
         cwd=str(WORKSPACE_PATH),
     )
-    print("Done. post-ingest complete.", flush=True)
+    print("Done. ingest complete.", flush=True)
 
 
 if __name__ == "__main__":

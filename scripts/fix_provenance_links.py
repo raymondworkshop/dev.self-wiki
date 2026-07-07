@@ -11,6 +11,8 @@ from config import WIKI_DIR, WORKSPACE_PATH
 
 logger = logging.getLogger(__name__)
 
+WIKILINK_INLINE_RE = re.compile(r"\[\[([^\]]+)\]\]")
+
 # [[(Source: [[inner/path.md]]) → [[raw/path.md]]  or  [[(Source: [[path]]) — note]]
 MALFORMED_SOURCE = re.compile(
     r"\[\[\(Source:\s*\[\[([^\]]+)\]\]\)"
@@ -20,19 +22,59 @@ MALFORMED_SOURCE = re.compile(
 )
 
 
-def fix_line(line: str) -> str:
+def canonical_wikilink_target(raw: str) -> str:
+    """Normalize wiki/raw paths: drop ../, map compression/ → raw/."""
+
+    target = raw.split("|", 1)[0].strip()
+    while True:
+        before = target
+        for prefix in ("self-wiki/", "../", "./"):
+            if target.startswith(prefix):
+                target = target[len(prefix) :]
+        if target == before:
+            break
+    if target.startswith("compression/"):
+        target = "raw/" + target[len("compression/") :]
+    elif not target.startswith(
+        ("raw/", "wiki/", "twin/", "discovery/", "gap/", "evolution/", "outputs/", "log/")
+    ):
+        if target.startswith("_posts/") or target.startswith("origin-"):
+            target = f"raw/{target}"
+    return target
+
+
+def wikilink_display_label(raw: str) -> str:
+    """Short label for path-like wikilinks (e.g. 亲密关系.md → 亲密关系)."""
+
+    path_part = raw.split("|", 1)[0].strip()
+    alias = raw.split("|", 1)[1].strip() if "|" in raw else ""
+    if alias:
+        return alias
+    canonical = canonical_wikilink_target(path_part)
+    if "/" in canonical or canonical.startswith("raw"):
+        return Path(canonical).stem
+    return path_part
+
+
+def normalize_wikilinks_in_line(line: str) -> str:
     def _replace(match: re.Match[str]) -> str:
-        inner = match.group(1).strip()
-        raw = (match.group(2) or "").strip()
+        inner = match.group(1)
+        if "|" in inner:
+            path, alias = inner.split("|", 1)
+            canon = canonical_wikilink_target(path.strip())
+            return f"[[{canon}|{alias.strip()}]]"
+        return f"[[{canonical_wikilink_target(inner)}]]"
+
+    return WIKILINK_INLINE_RE.sub(_replace, line)
+
+
+def fix_line(line: str) -> str:
+    line = normalize_wikilinks_in_line(line)
+
+    def _replace(match: re.Match[str]) -> str:
+        inner = canonical_wikilink_target(match.group(1).strip())
+        raw = canonical_wikilink_target((match.group(2) or "").strip())
         note = (match.group(3) or "").strip()
-        if not inner.startswith(("raw/", "compression/", "discovery/", "self-wiki/")):
-            if inner.startswith("_posts/") or inner.startswith("origin-"):
-                inner = f"raw/{inner}"
-            elif not inner.startswith("../"):
-                inner = f"compression/{inner}"
-        if raw and not raw.startswith("raw/"):
-            if raw.startswith("_posts/") or raw.startswith("origin-"):
-                raw = f"raw/{raw}"
         if raw:
             return f"[[{inner}]] → [[{raw}]]"
         if note:

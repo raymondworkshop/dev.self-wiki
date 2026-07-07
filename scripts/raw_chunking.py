@@ -1,4 +1,4 @@
-"""Mega-file chunking for compression ingest (todo P1)."""
+"""Split long raw files for wiki-synthesize (in-memory chunks only)."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def needs_chunking(rel: str, line_count: int) -> bool:
 
 
 def iter_units(rel: str, abs_path: Path) -> list[tuple[str, str]]:
-    """Return (compression_rel_suffix, chunk_content) units. Single unit if small."""
+    """Return (unit_id, chunk_content) units. Single unit if small."""
 
     content = abs_path.read_text(encoding="utf-8", errors="replace")
     lines = content.splitlines()
@@ -44,12 +44,12 @@ def iter_units(rel: str, abs_path: Path) -> list[tuple[str, str]]:
 
     for i in range(0, len(lines), limit):
         chunk_lines = lines[i : i + limit]
-        part = f"part-{(i // limit) + 1:03d}.md"
+        part = f"part-{(i // limit) + 1:03d}"
         if str(parent) == ".":
-            chunk_rel = f"{stem}/{part}"
+            unit_id = f"{stem}/{part}"
         else:
-            chunk_rel = f"{parent}/{stem}/{part}"
+            unit_id = f"{parent}/{stem}/{part}"
         header = f"<!-- chunk {(i // limit) + 1} of {raw_path.name} -->\n"
-        units.append((chunk_rel, header + "\n".join(chunk_lines)))
+        units.append((unit_id, header + "\n".join(chunk_lines)))
 
     return units

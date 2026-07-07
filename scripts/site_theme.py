@@ -1,115 +1,322 @@
-"""Shared static-site theme aligned with query-web (query_server.py)."""
+"""Shared static-site theme for publish_wiki.py."""
 
 from __future__ import annotations
 
 import html
 
 SITE_CSS = """
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap');
+
     :root {
       color-scheme: light;
-      --bg: #f8fafc;
-      --bg-accent-1: rgba(139, 92, 246, 0.12);
-      --bg-accent-2: rgba(6, 182, 212, 0.1);
-      --bg-gradient-start: #ffffff;
-      --bg-gradient-end: #eef2ff;
-      --panel: rgba(255, 255, 255, 0.92);
-      --text: #0f172a;
-      --muted: #64748b;
-      --line: rgba(15, 23, 42, 0.12);
+      --bg: #f4f1eb;
+      --bg-accent-1: rgba(124, 58, 237, 0.14);
+      --bg-accent-2: rgba(14, 165, 233, 0.12);
+      --bg-accent-3: rgba(245, 158, 11, 0.08);
+      --shell: rgba(255, 253, 248, 0.94);
+      --panel: #fffdf9;
+      --text: #1c1917;
+      --muted: #78716c;
+      --line: rgba(28, 25, 23, 0.1);
       --accent: #7c3aed;
-      --accent-2: #0891b2;
-      --good: #059669;
-      --link: #0369a1;
-      --heading-2: #6d28d9;
-      --body-soft: #334155;
-      --nav-bg: rgba(255, 255, 255, 0.88);
-      --blockquote-bg: rgba(8, 145, 178, 0.08);
+      --accent-soft: rgba(124, 58, 237, 0.12);
+      --accent-2: #0e7490;
+      --good: #047857;
+      --link: #2563eb;
+      --link-hover: #1d4ed8;
+      --heading-2: #5b21b6;
+      --body-soft: #44403c;
+      --nav-bg: rgba(255, 253, 248, 0.82);
+      --blockquote-bg: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(124, 58, 237, 0.06));
       --blockquote-text: #0f766e;
-      --code-text: #92400e;
-      --code-bg: rgba(245, 158, 11, 0.12);
-      --pre-bg: #f1f5f9;
-      --list-bg: rgba(255, 255, 255, 0.96);
-      --shadow: rgba(15, 23, 42, 0.08);
+      --code-text: #9a3412;
+      --code-bg: rgba(251, 191, 36, 0.16);
+      --pre-bg: #f5f5f4;
+      --list-bg: #fffdf9;
+      --shadow-sm: 0 2px 8px rgba(28, 25, 23, 0.04);
+      --shadow: 0 18px 50px rgba(28, 25, 23, 0.08);
+      --shadow-lg: 0 28px 80px rgba(28, 25, 23, 0.1);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --font-ui: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --font-body: "Source Serif 4", "Noto Serif SC", "Songti SC", Georgia, serif;
+      --measure: 42rem;
     }
+
     * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
       color: var(--text);
-      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: var(--font-ui);
+      font-size: 16px;
+      line-height: 1.6;
       background:
-        radial-gradient(circle at top left, var(--bg-accent-1), transparent 34rem),
-        radial-gradient(circle at top right, var(--bg-accent-2), transparent 32rem),
-        linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg) 54%, var(--bg-gradient-end) 100%);
+        radial-gradient(circle at 0% 0%, var(--bg-accent-1), transparent 38rem),
+        radial-gradient(circle at 100% 0%, var(--bg-accent-2), transparent 34rem),
+        radial-gradient(circle at 50% 100%, var(--bg-accent-3), transparent 42rem),
+        var(--bg);
     }
-    .wrap { width: min(1120px, calc(100vw - 32px)); margin: 0 auto; padding: 48px 0 72px; }
-    .hero { display: grid; gap: 18px; margin-bottom: 24px; }
-    .hero-compact { gap: 14px; margin-bottom: 20px; }
-    .hero-compact h1 { font-size: clamp(28px, 5vw, 42px); }
-    .eyebrow { color: var(--good); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
-    .home-link { color: inherit; text-decoration: none; }
-    .home-link:hover { text-decoration: underline; }
-    .nav { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .nav a {
-      color: var(--text);
-      text-decoration: none;
+
+    a {
+      color: var(--link);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+      transition: color 140ms ease;
+    }
+    a:hover { color: var(--link-hover); }
+
+    .wrap {
+      width: min(1080px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 20px 0 56px;
+    }
+
+    .site-shell {
+      background: var(--shell);
       border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 8px 12px;
+      border-radius: calc(var(--radius-lg) + 4px);
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(20px);
+      overflow: clip;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px 20px;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--line);
       background: var(--nav-bg);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand-block {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .brand {
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+    .brand:hover { color: var(--accent); text-decoration: none; }
+
+    .brand-sub {
+      color: var(--muted);
+      font-size: 0.82rem;
+      letter-spacing: 0;
+      text-transform: none;
+      font-weight: 500;
+    }
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .nav a {
+      color: var(--body-soft);
+      text-decoration: none;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 7px 13px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+    }
+    .nav a:hover {
+      background: rgba(255, 255, 255, 0.7);
+      border-color: var(--line);
+      color: var(--text);
+      transform: translateY(-1px);
     }
     .nav a.active {
-      border-color: rgba(139, 92, 246, 0.45);
-      background: rgba(139, 92, 246, 0.1);
+      border-color: rgba(124, 58, 237, 0.28);
+      background: var(--accent-soft);
+      color: var(--heading-2);
       font-weight: 600;
     }
-    h1 { margin: 0; font-size: clamp(36px, 7vw, 56px); line-height: .95; letter-spacing: -0.06em; }
-    .subtitle { max-width: 760px; color: var(--muted); font-size: 18px; margin: 0; }
+
+    .hero {
+      display: grid;
+      gap: 14px;
+      padding: 34px 28px 26px;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 70%);
+    }
+    .hero-compact {
+      padding: 18px 22px;
+      gap: 0;
+      border-bottom: none;
+      background: transparent;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-family: var(--font-ui);
+      font-size: clamp(2rem, 5.5vw, 3.2rem);
+      line-height: 1.02;
+      letter-spacing: -0.05em;
+      font-weight: 700;
+      background: linear-gradient(135deg, #1c1917 20%, #5b21b6 72%, #0e7490 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-compact h1 {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--good);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .home-link { color: inherit; text-decoration: none; }
+    .home-link:hover { color: var(--accent); text-decoration: none; }
+
+    .subtitle {
+      max-width: 38rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.55;
+      margin: 0;
+    }
+
     .card {
       background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 28px;
-      box-shadow: 0 24px 80px var(--shadow);
-      backdrop-filter: blur(18px);
     }
-    .answer { padding: 26px; }
+
+    .answer {
+      padding: clamp(22px, 4vw, 34px);
+      max-width: calc(var(--measure) + 8rem);
+      margin: 0 auto;
+      font-family: var(--font-body);
+      font-size: 1.02rem;
+    }
+
     .answer h1, .answer h2, .answer h3, .answer h4 {
+      font-family: var(--font-ui);
       letter-spacing: -0.03em;
-      line-height: 1.15;
+      line-height: 1.2;
       color: var(--text);
     }
-    .answer h1 { font-size: 32px; margin-top: 0; }
-    .answer h2 { margin-top: 28px; color: var(--heading-2); font-size: 24px; }
-    .answer h3 { font-size: 20px; margin-top: 22px; }
+    .answer h1 { font-size: 1.85rem; margin-top: 0; }
+    .answer h2 {
+      margin-top: 2rem;
+      color: var(--heading-2);
+      font-size: 1.35rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .answer h3 { font-size: 1.12rem; margin-top: 1.5rem; }
     .answer p, .answer li { color: var(--body-soft); }
-    .answer ul { padding-left: 1.25rem; }
+    .answer p { margin: 0 0 1rem; }
+    .answer p:last-child { margin-bottom: 0; }
+    .answer ul, .answer ol {
+      padding-left: 1.35rem;
+      margin: 0 0 1.1rem;
+    }
+    .answer li + li { margin-top: 0.45rem; }
+    .answer li::marker { color: var(--accent); }
+
+    .answer .source-line {
+      margin-top: 0.65rem;
+      padding: 8px 12px;
+      border-left: 3px solid rgba(14, 165, 233, 0.35);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      background: rgba(14, 165, 233, 0.05);
+      font-family: var(--font-ui);
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .answer h3.distillation-heading {
+      margin-top: 1.75rem;
+      padding-top: 0.35rem;
+      font-size: 1.02rem;
+      color: var(--body-soft);
+      font-weight: 600;
+    }
+    .answer h3.distillation-heading + p,
+    .answer h3.distillation-heading + ul {
+      margin-top: 0.55rem;
+    }
+
     .answer table {
       width: 100%;
       border-collapse: collapse;
-      margin: 18px 0;
-      font-size: 15px;
+      margin: 1.25rem 0;
+      font-family: var(--font-ui);
+      font-size: 0.92rem;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
     }
     .answer th, .answer td {
       border: 1px solid var(--line);
       padding: 10px 12px;
       text-align: left;
     }
-    .answer th { background: rgba(238, 242, 255, 0.8); }
-    a { color: var(--link); }
+    .answer th {
+      background: rgba(124, 58, 237, 0.06);
+      font-weight: 600;
+    }
+    .answer tr:nth-child(even) td { background: rgba(0, 0, 0, 0.015); }
+
     blockquote {
-      margin: 18px 0;
-      padding: 16px 18px;
+      margin: 1.25rem 0;
+      padding: 1rem 1.1rem;
       border-left: 4px solid var(--accent-2);
       background: var(--blockquote-bg);
-      border-radius: 16px;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
       color: var(--blockquote-text);
+      font-style: italic;
     }
-    code { color: var(--code-text); background: var(--code-bg); padding: 2px 6px; border-radius: 7px; }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--code-text);
+      background: var(--code-bg);
+      padding: 0.15em 0.45em;
+      border-radius: 6px;
+      font-size: 0.9em;
+    }
     pre {
       overflow: auto;
-      padding: 16px;
-      border-radius: 16px;
+      padding: 1rem 1.1rem;
+      border-radius: var(--radius-md);
       background: var(--pre-bg);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
     }
     pre code { background: transparent; padding: 0; color: inherit; }
     pre.mermaid {
@@ -118,41 +325,314 @@ SITE_CSS = """
       padding: 0;
       background: transparent;
       border: 0;
+      box-shadow: none;
     }
     pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+    .page-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .page-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-family: var(--font-ui);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--accent-soft);
+      color: var(--heading-2);
+      border: 1px solid rgba(124, 58, 237, 0.18);
+    }
+
     .path {
       color: var(--muted);
-      font-size: 13px;
-      margin-bottom: 12px;
+      font-size: 0.8rem;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       overflow-wrap: anywhere;
-    }
-    .list { display: grid; gap: 12px; }
-    .list-item {
-      display: block;
-      padding: 14px 16px;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      background: rgba(0, 0, 0, 0.03);
       border: 1px solid var(--line);
-      border-radius: 18px;
+    }
+
+    .list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .list-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 15px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
       background: var(--list-bg);
       color: var(--text);
       text-decoration: none;
+      box-shadow: var(--shadow-sm);
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+      min-height: 100%;
     }
-    .list-item:hover { border-color: rgba(139, 92, 246, 0.35); }
+    .list-item:hover {
+      border-color: rgba(124, 58, 237, 0.28);
+      box-shadow: 0 10px 24px rgba(124, 58, 237, 0.08);
+      transform: translateY(-2px);
+      color: var(--text);
+      text-decoration: none;
+    }
+    .list-item::after {
+      content: "→";
+      margin-top: auto;
+      padding-top: 6px;
+      color: var(--accent);
+      font-family: var(--font-ui);
+      font-size: 0.9rem;
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+    .list-item:hover::after {
+      opacity: 1;
+      transform: translateX(0);
+    }
     .list-item small {
       display: block;
       color: var(--muted);
-      margin-top: 3px;
+      font-family: var(--font-ui);
+      font-size: 0.78rem;
       overflow-wrap: anywhere;
     }
-    @media (max-width: 860px) {
-      .wrap { padding-top: 28px; }
+
+    .memex-panels {
+      margin-top: 2rem;
+      display: grid;
+      gap: 14px;
+      font-family: var(--font-ui);
+    }
+    .memex-panel {
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, #fff, #faf8f5);
+      box-shadow: var(--shadow-sm);
+    }
+    .memex-panel h3 {
+      margin: 0 0 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--heading-2);
+    }
+    .memex-panel p { margin: 0; font-family: var(--font-ui); font-size: 0.92rem; }
+    .memex-panel a { text-decoration: none; font-weight: 500; }
+    .memex-panel a:hover { text-decoration: underline; }
+
+    .wikilink-missing { border-bottom: 1px dashed var(--muted); }
+
+    .memex-search {
+      margin: 0 0 2rem;
+      padding: 18px 18px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(14, 165, 233, 0.04));
+      font-family: var(--font-ui);
+    }
+    .memex-search h2 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: var(--heading-2);
+    }
+    .memex-search-note {
+      color: var(--muted);
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+    }
+
+    .search-input {
+      display: block;
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      font: inherit;
+      background: #fff;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: rgba(124, 58, 237, 0.45);
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+    }
+
+    .search-status {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin: 10px 0 0;
+      min-height: 1.4rem;
+    }
+
+    .search-results {
+      list-style: none;
+      margin: 10px 0 0;
+      padding: 0;
+    }
+    .search-result {
+      border-top: 1px solid var(--line);
+      padding: 12px 0;
+    }
+    .search-result:first-child { border-top: none; padding-top: 0; }
+    .search-result-title {
+      color: var(--link);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .search-result-title:hover { text-decoration: underline; }
+    .search-result-meta {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .search-result-excerpt {
+      margin: 6px 0 0;
+      color: var(--body-soft);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      font-family: var(--font-body);
+    }
+
+    .wiki-panel {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--line);
+      font-family: var(--font-ui);
+    }
+    .wiki-panel h2 {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+      color: var(--heading-2);
+      letter-spacing: -0.02em;
+    }
+    .wiki-panel-note {
+      color: var(--muted);
+      margin: 0 0 16px;
+      font-size: 0.94rem;
+      max-width: 40rem;
+    }
+
+    .wiki-card-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .wiki-card {
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-md);
+      background: var(--list-bg);
+      box-shadow: var(--shadow-sm);
+      transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+    .wiki-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(28, 25, 23, 0.07);
+    }
+    .wiki-card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      line-height: 1.3;
+    }
+    .wiki-card h3 a {
+      color: var(--text);
+      text-decoration: none;
+    }
+    .wiki-card h3 a:hover { color: var(--link); }
+    .wiki-card-excerpt {
+      margin: 0 0 8px;
+      color: var(--body-soft);
+      font-size: 0.92rem;
+      line-height: 1.55;
+      font-family: var(--font-body);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .wiki-mentions {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .memex-stats-list {
+      margin: 0;
+      padding-left: 1.2rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      columns: 2;
+      column-gap: 2rem;
+    }
+
+    .memex-intro h2 {
+      margin: 0 0 6px;
+      font-family: var(--font-ui);
+      font-size: 1.2rem;
+      color: var(--heading-2);
+    }
+
+    .site-footer {
+      padding: 18px 24px 22px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.82rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.35);
+      font-family: var(--font-ui);
+    }
+    .site-footer a { color: var(--muted); text-decoration: none; }
+    .site-footer a:hover { color: var(--accent); }
+
+    @media (max-width: 720px) {
+      .wrap { width: min(100vw - 16px, 1080px); padding-top: 10px; }
+      .site-header { padding: 12px 14px; }
+      .hero { padding: 24px 18px 18px; }
+      .answer { padding: 18px 16px 24px; }
+      .memex-stats-list { columns: 1; }
+      .list { grid-template-columns: 1fr; }
+      .wiki-card-list { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .nav a, .list-item, .wiki-card { transition: none; }
     }
 """
 
 NAV_ITEMS = (
     ("home", "Home", "/index.html"),
+    ("memex", "Memex", "/memex/index.html"),
     ("raw", "Raw", "/raw/index.html"),
-    ("compression", "Compression", "/compression/index.html"),
     ("wiki", "Wiki", "/wiki/index.html"),
     ("discovery", "Discovery", "/discovery/index.html"),
     ("gap", "Gap", "/gap/index.html"),
@@ -169,7 +649,6 @@ def eyebrow_for_path(rel_path: str) -> str:
     labels = {
         "wiki": "Wiki Note",
         "raw": "Raw Source",
-        "compression": "Compression Digest",
         "twin": "Digital Twin",
         "outputs": "Query Output",
         "discovery": "Discovery Report",
@@ -183,6 +662,8 @@ def eyebrow_for_path(rel_path: str) -> str:
 def nav_active_for_path(rel_path: str) -> str:
     if rel_path in ("INDEX.md", "index.html"):
         return "home"
+    if rel_path.startswith("memex/"):
+        return "memex"
     return rel_path.split("/", 1)[0]
 
 
@@ -196,6 +677,27 @@ def render_nav(active: str) -> str:
     return "".join(parts)
 
 
+def search_panel_html() -> str:
+    return """
+<section class="memex-search" aria-label="Search vault">
+  <h2>Search</h2>
+  <p class="memex-search-note">Find pages across raw, wiki, twin, and agents.</p>
+  <input class="search-input" id="memex-search-input" type="search"
+    placeholder="e.g. stoicism, learning, values" autocomplete="off"
+    aria-label="Search vault by title, topic, or content">
+  <p class="search-status" id="memex-search-status" aria-live="polite"></p>
+  <ul class="search-results" id="memex-search-results"></ul>
+</section>"""
+
+
+def render_footer() -> str:
+    return """
+    <footer class="site-footer">
+      <span>Socratic Mirror · personal second brain</span>
+      <span><a href="/memex/index.html">Memex</a> · <a href="/wiki/index.html">Wiki</a> · <a href="/index.html">Home</a></span>
+    </footer>"""
+
+
 def render_page(
     title: str,
     body_html: str,
@@ -204,12 +706,12 @@ def render_page(
     hero_title: str | None = None,
     subtitle: str = "",
     compact: bool = False,
+    with_search: bool = False,
 ) -> str:
     safe_title = html.escape(title)
     active = nav_active_for_path(rel_path)
     nav = render_nav(active)
     eyebrow = html.escape(eyebrow_for_path(rel_path))
-    hero_cls = "hero hero-compact" if compact else "hero"
     display_title = html.escape(hero_title or title)
     subtitle_block = (
         f'<p class="subtitle">{html.escape(subtitle)}</p>' if subtitle and not compact else ""
@@ -219,42 +721,59 @@ def render_page(
     )
 
     if compact:
-        header = f"""
-    <section class="{hero_cls}">
-      <a href="/index.html" class="eyebrow home-link">Socratic Mirror</a>
-      <nav class="nav">{nav}</nav>
-    </section>"""
+        hero_block = ""
+        meta_block = f"""
+      <div class="page-meta">
+        <span class="page-badge">{eyebrow}</span>
+        {path_block}
+      </div>"""
         content_block = f"""
     <section class="card answer">
-      <div class="eyebrow">{eyebrow}</div>
-      {path_block}
+      {meta_block}
       {body_html}
     </section>"""
     else:
-        header = f"""
-    <section class="{hero_cls}">
-      <a href="/index.html" class="eyebrow home-link">Socratic Mirror</a>
+        hero_block = f"""
+    <section class="hero">
       <h1>{display_title}</h1>
       {subtitle_block}
-      <nav class="nav">{nav}</nav>
     </section>"""
         content_block = f"""
     <section class="card answer">
       {body_html}
     </section>"""
 
+    header = f"""
+    <header class="site-header">
+      <div class="brand-block">
+        <a href="/index.html" class="brand home-link">Socratic Mirror</a>
+        <span class="brand-sub">Self-Wiki</span>
+      </div>
+      <nav class="nav" aria-label="Site">{nav}</nav>
+    </header>{hero_block}"""
+
+    search_scripts = ""
+    if with_search:
+        search_scripts = """
+  <script src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script>
+  <script src="/static/search.js"></script>"""
+
     return f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Personal wiki and memex — raw notes, wiki themes, digital twin.">
   <title>{safe_title} · Self-Wiki</title>
   <style>{SITE_CSS}</style>
 </head>
 <body>
-  <main class="wrap">{header}{content_block}
+  <main class="wrap">
+    <div class="site-shell">{header}{content_block}
+      {render_footer()}
+    </div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({{ startOnLoad: true, securityLevel: "strict" }});</script>
+  <script>mermaid.initialize({{ startOnLoad: true, securityLevel: "strict", theme: "neutral" }});</script>{search_scripts}
 </body>
 </html>"""

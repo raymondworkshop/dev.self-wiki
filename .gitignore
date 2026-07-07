@@ -4,9 +4,6 @@ self-wiki/
 scripts/__pycache__/
 .env
 .obsidian
-self-wiki/
-archive/
-!archive/plans/
-!archive/plans/**
 dist/
 .wrangler/
+launchd/

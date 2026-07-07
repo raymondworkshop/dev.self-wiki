@@ -26,7 +26,7 @@ apply_one() {
   local f="$1"
   echo "=== Applying $f ==="
   "$PY" "$ROOT/scripts/composer_wiki_batch.py" apply "$f"
-  $CLI post-ingest
+  $CLI ingest
   mv "$f" "${f%.json}.applied.json" 2>/dev/null || true
 }
 

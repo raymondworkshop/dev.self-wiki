@@ -7,10 +7,10 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from config import COMPRESSION_DIR, PENDING_DIR, WIKI_DIR, WORKSPACE_PATH
+from config import PENDING_DIR, RAW_DIR, WIKI_DIR, WORKSPACE_PATH
 from discover_provenance import (
     collect_raw_links,
-    enrich_compression_samples,
+    enrich_raw_samples,
     format_raw_snippets_section,
     resolve_raw_snippets,
     wiki_query_terms,
@@ -32,7 +32,7 @@ def _excerpt_limit(provider: str | None) -> int:
 def _sample_from_dir(directory: Path, limit: int, *, excerpt_limit: int = 2000) -> list[dict]:
     if not directory.exists() or limit <= 0:
         return []
-    files = sorted(directory.rglob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)
+    files = sorted(directory.rglob("*.md", recurse_symlinks=True), key=lambda p: p.stat().st_mtime, reverse=True)
     samples: list[dict] = []
     for path in files[:limit]:
         try:
@@ -44,10 +44,8 @@ def _sample_from_dir(directory: Path, limit: int, *, excerpt_limit: int = 2000) 
     return samples
 
 
-def _stratified_compression_samples(
-    *, total_limit: int = 50, excerpt_limit: int = 2000
-) -> list[dict]:
-    """Sample across lanes — avoid twitter-only packs when those files are newest."""
+def _stratified_raw_samples(*, total_limit: int = 50, excerpt_limit: int = 2000) -> list[dict]:
+    """Sample across raw lanes — avoid twitter-only packs when those files are newest."""
 
     strata: list[tuple[str, int]] = [
         ("_posts/new-apple-notes", 10),
@@ -63,7 +61,7 @@ def _stratified_compression_samples(
     seen: set[str] = set()
     out: list[dict] = []
     for rel_dir, cap in strata:
-        base = COMPRESSION_DIR / rel_dir
+        base = RAW_DIR / rel_dir
         for item in _sample_from_dir(base, cap, excerpt_limit=excerpt_limit):
             if item["path"] in seen:
                 continue
@@ -80,7 +78,7 @@ def _sample_files(
     return _sample_from_dir(directory, limit, excerpt_limit=excerpt_limit)
 
 
-def _compression_snippet(sample: dict) -> str:
+def _raw_snippet(sample: dict) -> str:
     header = f"### {sample['path']}\n"
     if sample.get("raw_links"):
         header += f"raw_links: {', '.join(sample['raw_links'])}\n"
@@ -94,7 +92,7 @@ def _wiki_snippet(sample: dict) -> str:
 def _build_budgeted_user_message(
     *,
     provider: str | None,
-    compression_samples: list[dict],
+    raw_samples: list[dict],
     wiki_samples: list[dict],
     raw_snippets: list[dict],
 ) -> str:
@@ -106,21 +104,21 @@ def _build_budgeted_user_message(
         f"Provider hint: {provider_name(provider)}\n\n"
     )
     header_tokens = estimate_tokens(header)
-    section_overhead = estimate_tokens("## Compression samples\n\n## Wiki samples\n\n")
+    section_overhead = estimate_tokens("## Raw samples\n\n## Wiki samples\n\n")
 
-    compression_snippets = [_compression_snippet(s) for s in compression_samples]
+    raw_snippets_list = [_raw_snippet(s) for s in raw_samples]
     wiki_snippets = [_wiki_snippet(s) for s in wiki_samples]
-    raw_section = format_raw_snippets_section(raw_snippets)
-    raw_snippets_list = [raw_section] if raw_section.strip() else []
+    resolved_section = format_raw_snippets_section(raw_snippets)
+    resolved_list = [resolved_section] if resolved_section.strip() else []
 
-    total_before = len(compression_snippets) + len(wiki_snippets) + len(raw_snippets_list)
+    total_before = len(raw_snippets_list) + len(wiki_snippets) + len(resolved_list)
 
-    trimmed_compression = trim_evidence_to_budget(
-        compression_snippets,
+    trimmed_raw = trim_evidence_to_budget(
+        raw_snippets_list,
         provider=provider,
         max_prompt_tokens=budget - header_tokens - section_overhead,
     )
-    remaining = budget - header_tokens - section_overhead - estimate_tokens(trimmed_compression)
+    remaining = budget - header_tokens - section_overhead - estimate_tokens(trimmed_raw)
 
     trimmed_wiki = trim_evidence_to_budget(
         wiki_snippets,
@@ -129,8 +127,8 @@ def _build_budgeted_user_message(
     )
     remaining -= estimate_tokens(trimmed_wiki)
 
-    trimmed_raw = trim_evidence_to_budget(
-        raw_snippets_list,
+    trimmed_resolved = trim_evidence_to_budget(
+        resolved_list,
         provider=provider,
         max_prompt_tokens=max(256, remaining),
     )
@@ -141,9 +139,9 @@ def _build_budgeted_user_message(
         return text.count("\n### ") + (1 if text.startswith("### ") else 0)
 
     total_after = (
-        _snippet_count(trimmed_compression)
+        _snippet_count(trimmed_raw)
         + _snippet_count(trimmed_wiki)
-        + _snippet_count(trimmed_raw)
+        + _snippet_count(trimmed_resolved)
     )
     if total_after < total_before:
         logger.info(
@@ -154,25 +152,25 @@ def _build_budgeted_user_message(
             budget,
         )
 
-    parts = [header.rstrip(), "## Compression samples"]
-    if trimmed_compression:
-        parts.append(trimmed_compression)
+    parts = [header.rstrip(), "## Raw samples"]
+    if trimmed_raw:
+        parts.append(trimmed_raw)
     parts.append("## Wiki samples")
     if trimmed_wiki:
         parts.append(trimmed_wiki)
-    if trimmed_raw:
-        parts.append(trimmed_raw)
+    if trimmed_resolved:
+        parts.append(trimmed_resolved)
     return "\n\n".join(parts) + "\n"
 
 
 def write_pending(*, provider: str | None = None) -> Path:
     excerpt_limit = _excerpt_limit(provider)
-    compression_samples = enrich_compression_samples(
-        _stratified_compression_samples(total_limit=50, excerpt_limit=excerpt_limit)
+    raw_samples = enrich_raw_samples(
+        _stratified_raw_samples(total_limit=50, excerpt_limit=excerpt_limit)
     )
     wiki_samples = _sample_files(WIKI_DIR, limit=20, excerpt_limit=excerpt_limit)
     query_terms = wiki_query_terms(wiki_samples)
-    raw_links = collect_raw_links(compression_samples)
+    raw_links = collect_raw_links(raw_samples + wiki_samples)
     raw_snippets = resolve_raw_snippets(
         raw_links,
         query_terms=query_terms,
@@ -183,7 +181,7 @@ def write_pending(*, provider: str | None = None) -> Path:
     pending_path = PENDING_DIR / f"discover-{ts}.json"
     user_message = _build_budgeted_user_message(
         provider=provider,
-        compression_samples=compression_samples,
+        raw_samples=raw_samples,
         wiki_samples=wiki_samples,
         raw_snippets=raw_snippets,
     )

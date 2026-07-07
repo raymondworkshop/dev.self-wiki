@@ -1,4 +1,4 @@
-"""Incubate new L1 wiki themes from repeated no_actions compression signals."""
+"""Incubate new L1 wiki themes from repeated no_actions raw signals."""
 
 from __future__ import annotations
 
@@ -16,9 +16,10 @@ from lang_utils import detect_language
 from models import WikiPage
 from wiki_synth_manifest import (
     _file_hash,
-    _raw_rel_from_compression,
+    canonical_raw_rel,
     load_manifest,
     mark_done,
+    raw_rel_inner,
 )
 from wiki_themes import load_existing_themes
 
@@ -339,7 +340,7 @@ def _excerpt(body: str, max_chars: int = 500) -> str:
 
 
 def score_candidate(text: str, keywords: list[str]) -> tuple[int, float]:
-    """Return (hit_count, confidence) for one compression body vs candidate keywords."""
+    """Return (hit_count, confidence) for one raw body vs candidate keywords."""
 
     lower = text.lower()
     hits = sum(1 for k in keywords if k.lower() in lower)
@@ -352,25 +353,27 @@ def score_candidate(text: str, keywords: list[str]) -> tuple[int, float]:
 def list_no_action_files() -> list[tuple[str, Path]]:
     data = load_manifest()
     out: list[tuple[str, Path]] = []
-    for comp_rel, entry in sorted(data.get("files", {}).items()):
+    for raw_rel, entry in sorted(data.get("files", {}).items()):
         if entry.get("status") != "no_actions":
             continue
-        abs_path = WORKSPACE_PATH / comp_rel
+        canon = canonical_raw_rel(raw_rel)
+        abs_path = WORKSPACE_PATH / canon
         if not abs_path.is_file():
             resolved = abs_path.resolve()
             if resolved.is_file():
                 abs_path = resolved
             else:
                 continue
-        if "compression/twitter/" in comp_rel.replace("\\", "/"):
+        inner = raw_rel_inner(canon)
+        if inner.startswith("twitter/"):
             continue
-        out.append((comp_rel, abs_path))
+        out.append((canon, abs_path))
     return out
 
 
 @dataclass
 class FileMatch:
-    comp_rel: str
+    raw_rel: str
     abs_path: Path
     confidence: float
     hits: int
@@ -417,7 +420,7 @@ def build_clusters() -> tuple[list[ThemeCluster], dict[str, float | int]]:
         c["title"]: ThemeCluster(title=c["title"], candidate=c) for c in candidates
     }
 
-    for comp_rel, abs_path in list_no_action_files():
+    for raw_rel, abs_path in list_no_action_files():
         try:
             text = abs_path.read_text(encoding="utf-8", errors="replace")
         except OSError:
@@ -431,7 +434,7 @@ def build_clusters() -> tuple[list[ThemeCluster], dict[str, float | int]]:
                 best_hits, best_conf, best_title = hits, conf, cand["title"]
         if best_title and best_conf >= min_file:
             clusters[best_title].files.append(
-                FileMatch(comp_rel=comp_rel, abs_path=abs_path, confidence=best_conf, hits=best_hits)
+                FileMatch(raw_rel=raw_rel, abs_path=abs_path, confidence=best_conf, hits=best_hits)
             )
 
     passing = [c for c in clusters.values() if c.passes(thresholds)]
@@ -450,7 +453,7 @@ def _create_theme_page(cluster: ThemeCluster) -> WikiPage:
         )
     else:
         summary = (
-            f"> [AI Synthesis] New L1 theme incubated from {cluster.support_count} compression digests "
+            f"> [AI Synthesis] New L1 theme incubated from {cluster.support_count} raw sources "
             f"(mean conf {cluster.mean_conf:.2f}, max {cluster.max_conf:.2f})."
         )
     page.summary = summary.lstrip("> ").strip()
@@ -464,14 +467,14 @@ def _create_theme_page(cluster: ThemeCluster) -> WikiPage:
     page.body = "## Core patterns\n\n- _(Incubated; evidence appended below.)_\n"
     page.evolution = (
         f"- {datetime.now().strftime('%Y-%m-%d')}: Theme incubated from "
-        f"{cluster.support_count} compression file(s) (threshold: support≥{_thresholds()['support_count']}, "
+        f"{cluster.support_count} raw file(s) (threshold: support≥{_thresholds()['support_count']}, "
         f"mean≥{_thresholds()['mean_conf']}, max≥{_thresholds()['max_conf']})."
     )
     page.save()
     return page
 
 
-def incubate(*, dry_run: bool = False, post_ingest: bool = False) -> dict:
+def incubate(*, dry_run: bool = False, ingest_after: bool = False) -> dict:
     passing, thresholds = build_clusters()
     report: dict = {
         "generated_at": datetime.now().isoformat(),
@@ -487,7 +490,7 @@ def incubate(*, dry_run: bool = False, post_ingest: bool = False) -> dict:
             "support_count": cluster.support_count,
             "mean_conf": round(cluster.mean_conf, 3),
             "max_conf": round(cluster.max_conf, 3),
-            "files": [f.comp_rel for f in cluster.files],
+            "files": [f.raw_rel for f in cluster.files],
         }
         if dry_run:
             report["themes_created"].append(theme_entry)
@@ -496,7 +499,7 @@ def incubate(*, dry_run: bool = False, post_ingest: bool = False) -> dict:
         _create_theme_page(cluster)
         pages_linked = 0
         for fm in cluster.files:
-            raw_suffix = _raw_rel_from_compression(fm.comp_rel)
+            raw_suffix = raw_rel_inner(fm.raw_rel)
             excerpt = _excerpt(fm.abs_path.read_text(encoding="utf-8", errors="replace"))
             payload = {
                 "actions": [
@@ -513,19 +516,19 @@ def incubate(*, dry_run: bool = False, post_ingest: bool = False) -> dict:
                 ]
             }
             pages_linked += apply_actions(payload, rel_path=raw_suffix)
-            mark_done(fm.comp_rel, pages=1, content_hash=_file_hash(fm.abs_path))
+            mark_done(fm.raw_rel, pages=1, content_hash=_file_hash(fm.abs_path))
 
         theme_entry["pages_linked"] = pages_linked
         report["themes_created"].append(theme_entry)
 
     if not dry_run:
         REPORT_JSON.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-        if post_ingest:
+        if ingest_after:
             import subprocess
             import sys
 
             subprocess.run(
-                [sys.executable, str(Path(__file__).parent / "cli.py"), "post-ingest"],
+                [sys.executable, str(Path(__file__).parent / "cli.py"), "ingest"],
                 check=True,
                 cwd=str(WORKSPACE_PATH),
             )
@@ -556,9 +559,9 @@ def main(argv: list[str] | None = None) -> int:
 
     p = argparse.ArgumentParser(description="Incubate new L1 wiki themes from no_actions clusters")
     p.add_argument("--dry-run", action="store_true")
-    p.add_argument("--post-ingest", action="store_true")
+    p.add_argument("--ingest", action="store_true", help="Run ingest after creating themes")
     args = p.parse_args(argv)
-    report = incubate(dry_run=args.dry_run, post_ingest=args.post_ingest)
+    report = incubate(dry_run=args.dry_run, ingest_after=args.ingest)
     print_report(report)
     return 0
 

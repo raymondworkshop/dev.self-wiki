@@ -153,7 +153,7 @@ class TestLLMProvider(unittest.TestCase):
         ):
             self.assertEqual(provider_for_role("query", None), "gemini")
             self.assertEqual(provider_for_role("lint", None), "gemini")
-            self.assertEqual(provider_for_role("compress", None), "gemini")
+            self.assertEqual(provider_for_role("wiki_synthesize", None), "gemini")
             self.assertEqual(provider_for_role("discovery", None), "gemini")
 
         self.assertEqual(provider_for_role("query", "mlx"), "mlx")
@@ -162,7 +162,7 @@ class TestLLMProvider(unittest.TestCase):
         from llm_provider import provider_for_role
 
         with mock.patch.dict("os.environ", {}, clear=True):
-            self.assertEqual(provider_for_role("compress", None), "mlx")
+            self.assertEqual(provider_for_role("wiki_synthesize", None), "mlx")
 
     def test_fallback_chain_sync_mlx_then_gemini(self):
         from llm_provider import fallback_provider_chain
@@ -215,7 +215,7 @@ class TestLLMProvider(unittest.TestCase):
             self.assertEqual(provider_for_role("discovery", None), "gemini")
             self.assertEqual(provider_for_role("gap", None), "gemini")
             self.assertEqual(provider_for_role("evolution", None), "gemini")
-            self.assertEqual(provider_for_role("compress", None), "mlx")
+            self.assertEqual(provider_for_role("wiki_synthesize", None), "mlx")
 
     def test_provider_for_role_agent_defaults_to_gemini_when_key_set(self):
         from llm_provider import provider_for_role
@@ -230,7 +230,7 @@ class TestLLMProvider(unittest.TestCase):
         ):
             self.assertEqual(provider_for_role("discovery", None), "gemini")
             self.assertEqual(provider_for_role("gap", None), "gemini")
-            self.assertEqual(provider_for_role("compress", None), "mlx")
+            self.assertEqual(provider_for_role("wiki_synthesize", None), "mlx")
 
     def test_fallback_chain_discovery_mlx_then_gemini(self):
         from llm_provider import fallback_provider_chain

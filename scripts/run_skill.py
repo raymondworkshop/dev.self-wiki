@@ -24,7 +24,7 @@ from provider_circuit import is_circuit_open, record_provider_failure
 
 logger = logging.getLogger(__name__)
 
-TEXT_KINDS = frozenset({"query", "lint", "compression", "discovery", "gap", "evolution"})
+TEXT_KINDS = frozenset({"query", "lint", "discovery", "gap", "evolution"})
 
 INGEST_COMPACT_RETRY_SUFFIX = """
 
@@ -145,26 +145,12 @@ def _write_text_output(pending: dict, pending_path: Path, response_text: str) ->
             if kind == "query"
             else "lint-output-"
             if kind == "lint"
-            else "compress-output-"
-            if kind == "compression"
             else f"{kind}-output-"
         )
         out_name = pending_path.name.replace(f"{kind}-", prefix, 1).replace(".json", ".md")
     out_path = Path(out_name)
     if not out_path.is_absolute():
         out_path = WORKSPACE_PATH / out_path
-
-    if pending.get("kind") == "compression" and pending.get("raw_path"):
-        from apply_compression import apply_compression_text
-
-        raw_rel = pending["raw_path"]
-        if not raw_rel.startswith("raw/"):
-            raw_rel = f"raw/{raw_rel}"
-        return apply_compression_text(
-            response_text,
-            rel_path=raw_rel,
-            out_rel=pending.get("output_file"),
-        )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(response_text, encoding="utf-8")
@@ -201,8 +187,8 @@ def run_skill_from_pending(
         if kind == "discovery"
         else kind
         if kind in ("gap", "evolution")
-        else "sync"
-        if kind in ("ingest", "compression")
+        else "wiki_synthesize"
+        if kind == "ingest"
         else "sync"
     )
     providers = fallback_provider_chain(provider, role=skill_role)
@@ -262,26 +248,6 @@ def run_skill_from_pending(
         raise RuntimeError("LLM call failed with no providers configured")
 
     should_write = write_output if write_output is not None else write_actions
-
-    if kind == "compression" and pending.get("batch"):
-        if not data or "digests" not in data:
-            batch_data = extract_json_object(response_text)
-        else:
-            batch_data = data
-        out_path = None
-        batch_paths: list[str] = []
-        if should_write and batch_data:
-            from apply_compression import apply_batch_digests
-
-            paths = apply_batch_digests(batch_data)
-            batch_paths = [workspace_relpath(p) for p in paths]
-            out_path = paths[0] if paths else None
-        return {
-            "text": response_text,
-            "kind": kind,
-            "batch_paths": batch_paths,
-            "output_path": workspace_relpath(out_path) if out_path else None,
-        }
 
     if kind in TEXT_KINDS:
         out_path = None

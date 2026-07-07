@@ -1,4 +1,4 @@
-"""Source language detection for ingest/compression."""
+"""Source language detection for ingest skills."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ def epistemic_label_instruction() -> str:
 
 
 def language_output_instruction(lang: str) -> str:
-    """Mandatory LLM instruction block for compression/ingest skills."""
+    """Mandatory LLM instruction block for ingest skills."""
 
     other = "English" if lang == "Chinese" else "Chinese"
     return (

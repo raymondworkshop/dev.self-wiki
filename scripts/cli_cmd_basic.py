@@ -11,7 +11,7 @@ from apply_ingest import apply_from_file
 from config import WORKSPACE_PATH
 from pending_cleanup import cleanup_pending_pair, json_actions_path
 from run_skill import run_skill_from_pending
-from cli_shared import post_ingest
+from cli_shared import ingest
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,6 @@ def cmd_apply_ingest(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_post_ingest(args: argparse.Namespace) -> int:
-    post_ingest(args.summary)
+def cmd_ingest(args: argparse.Namespace) -> int:
+    ingest(args.summary, report=getattr(args, "report", False))
     return 0

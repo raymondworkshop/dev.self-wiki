@@ -10,10 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
 from cli_cmd_analysis import cmd_discover, cmd_evolution, cmd_gap
-from cli_cmd_basic import cmd_apply_ingest, cmd_post_ingest, cmd_run_skill
+from cli_cmd_basic import cmd_apply_ingest, cmd_ingest, cmd_run_skill
 from cli_cmd_pipeline import (
-    cmd_apply_compression,
-    cmd_compress,
     cmd_progress,
     cmd_register_reference,
     cmd_sync,
@@ -84,45 +82,39 @@ def build_parser() -> argparse.ArgumentParser:
     p_apply.add_argument("--pending", default=None, help="Pending JSON path for cleanup after apply")
     p_apply.set_defaults(func=cmd_apply_ingest)
 
-    p_post = sub.add_parser("post-ingest", help="Run backliner, refresh index, twin, append log")
-    p_post.add_argument("--summary", default="post-ingest complete")
-    p_post.set_defaults(func=cmd_post_ingest)
+    p_ingest = sub.add_parser(
+        "ingest",
+        help="Memex graph, search index, backlinks, INDEX, twin (deterministic)",
+    )
+    p_ingest.add_argument("--summary", default="ingest complete")
+    p_ingest.add_argument("--report", action="store_true", help="Print memex stats")
+    p_ingest.set_defaults(func=cmd_ingest)
 
     p_reg = sub.add_parser("register-reference", help="Catalog twitter raw → log/sources.json (no LLM)")
     p_reg.add_argument("--dry-run", action="store_true")
     p_reg.set_defaults(func=cmd_register_reference)
 
-    p_compress = sub.add_parser("compress", help="Compress raw → compression/ via ingest skills")
-    p_compress.add_argument("--file", help="Single raw rel path under self-wiki/raw/")
-    p_compress.add_argument("--provider", default=None)
-    p_compress.add_argument("--limit", type=int, default=None, help="Max files per run")
-    p_compress.add_argument("--force", action="store_true", help="Recompress even if up to date")
-    p_compress.add_argument("--folder", default=None, help="Only under raw/<folder>/ e.g. origin-apple-notes")
-    p_compress.add_argument("--post-ingest", action="store_true", help="Run post-ingest after batch")
-    p_compress.set_defaults(func=cmd_compress)
-
     p_progress = sub.add_parser("progress", help="Show pipeline progress + resume hints")
-    p_progress.add_argument("--compression-only", action="store_true", help="Compression file checklist only")
-    p_progress.add_argument("--folder", default=None, help="Filter compression status by folder")
+    p_progress.add_argument("--folder", default=None, help="Filter wiki-synth status by raw folder")
     p_progress.add_argument("--wiki-synth-only", action="store_true", help="Wiki-synthesize manifest only")
     p_progress.set_defaults(func=cmd_progress)
 
     p_ws = sub.add_parser(
         "wiki-synthesize",
-        help="Link compression/ digests into wiki/ via wiki-synthesize skill",
+        help="Link raw sources into wiki/ via wiki-synthesize skill",
     )
-    p_ws.add_argument("--file", help="Single compression rel path e.g. compression/origin-apple-notes/foo.md")
+    p_ws.add_argument("--file", help="Single raw rel path e.g. raw/origin-apple-notes/foo.md")
     p_ws.add_argument("--provider", default=None)
     p_ws.add_argument("--limit", type=int, default=None, help="Max files per run")
     p_ws.add_argument("--force", action="store_true", help="Re-run even if manifest marks done")
-    p_ws.add_argument("--folder", default=None, help="Only under compression/<folder>/")
+    p_ws.add_argument("--folder", default=None, help="Only under raw/<folder>/")
     p_ws.add_argument(
         "--wave",
         default=None,
         choices=["theme_links"],
-        help="Filter wave: theme_links = only digests with ## Theme links",
+        help="Filter wave: theme_links = only sources with ## Theme links",
     )
-    p_ws.add_argument("--post-ingest", action="store_true", help="Run post-ingest after batch")
+    p_ws.add_argument("--ingest", action="store_true", help="Run ingest after batch")
     p_ws.set_defaults(func=cmd_wiki_synthesize)
 
     p_discover = sub.add_parser("discover", help="Unknown-known pattern report → discovery/")
@@ -137,11 +129,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_evolution.add_argument("--provider", default=None)
     p_evolution.set_defaults(func=cmd_evolution)
 
-    p_apply_comp = sub.add_parser("apply-compression", help="Apply compression JSON or batch digests")
-    p_apply_comp.add_argument("--file", required=True, help="Path to compression actions JSON")
-    p_apply_comp.set_defaults(func=cmd_apply_compression)
-
-    p_sync = sub.add_parser("sync", help="Changed raw → compression/ (profile-routed)")
+    p_sync = sub.add_parser("sync", help="Changed raw → wiki-synthesize (profile-routed)")
     p_sync.add_argument("--provider", default=None)
     p_sync.add_argument("--file", help="Single raw rel path under self-wiki/raw/")
     p_sync.set_defaults(func=cmd_sync)
@@ -156,7 +144,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Sample raw path used to resolve profile-routed skills",
     )
     p_doctor.add_argument("--provider", default=None, help="Global override provider")
-    p_doctor.add_argument("--compress-provider", default=None, help="Override compress provider")
     p_doctor.add_argument("--wiki-provider", default=None, help="Override wiki-synthesize provider")
     p_doctor.add_argument("--query-provider", default=None, help="Override query provider")
     p_doctor.add_argument("--lint-provider", default=None, help="Override lint provider")

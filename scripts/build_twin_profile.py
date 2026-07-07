@@ -19,6 +19,7 @@ from config import (
     twin_profile_max_principles,
     workspace_relpath,
 )
+from memex.config import HTML_COMMENT_RE
 
 logger = logging.getLogger(__name__)
 
@@ -242,6 +243,11 @@ def _evolution_line(item: dict) -> str:
 
 def _collect_tensions() -> list[str]:
     lines: list[str] = []
+    contradict_re = re.compile(r"-\s*\*\*Contradicts\*\*:\s*(.+)", re.IGNORECASE)
+    block_re = re.compile(
+        r"<!-- BEGIN BACKLINKS -->(.*?)<!-- END BACKLINKS -->",
+        re.DOTALL,
+    )
     for path in sorted(WIKI_DIR.rglob("*.md")):
         if not path.is_file():
             continue
@@ -249,18 +255,18 @@ def _collect_tensions() -> list[str]:
             content = path.read_text(encoding="utf-8", errors="ignore")
         except OSError:
             continue
-        m = re.search(
-            r"## Backlinks\s*\n.*?-\s*\*\*Contradicts\*\*:\s*(.+?)(?:\n-|\n## |\Z)",
-            content,
-            re.DOTALL | re.IGNORECASE,
-        )
-        if not m:
+        block_match = block_re.search(content)
+        if not block_match:
             continue
-        raw = m.group(1).strip()
-        if not raw or raw.lower() in {"none", "none identified", "none."}:
-            continue
-        rel = _wiki_rel(path)
-        lines.append(f"- [[{rel}]] → {raw}")
+        for line in block_match.group(1).splitlines():
+            match = contradict_re.match(line.strip())
+            if not match:
+                continue
+            raw = HTML_COMMENT_RE.sub("", match.group(1)).strip()
+            if not raw or raw.lower() in {"none", "none identified", "none."}:
+                continue
+            rel = _wiki_rel(path)
+            lines.append(f"- [[{rel}]] → {raw}")
     return lines
 
 
@@ -345,7 +351,7 @@ principle_count_shown: {len(profile_principles)}
 principles_index: {json_rel}
 ---
 
-> {snapshot} Built by `build_twin_profile.py` after post-ingest (backliner → index → twin).
+> {snapshot} Built by `build_twin_profile.py` after ingest (memex → index → twin).
 
 ## Operating principles
 
@@ -365,7 +371,7 @@ principles_index: {json_rel}
 
 ## Compiled
 
-- {date_str}: Regenerated from `self-wiki/wiki/` via post-ingest (`make sync` / `python scripts/cli.py twin`).
+- {date_str}: Regenerated from `self-wiki/wiki/` via ingest (`make sync` / `python scripts/cli.py twin`).
 - Query runtime reads `{json_rel}` with query-aware selection in `prepare_query` (deterministic, not LLM-generated).
 """
 

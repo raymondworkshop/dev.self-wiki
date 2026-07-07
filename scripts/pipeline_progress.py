@@ -7,20 +7,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
-from compression_manifest import (
-    MANIFEST_JSON as COMPRESSION_MANIFEST_JSON,
-    load_manifest as load_compression_manifest,
-    scan_all as scan_compression,
-    summarize_files,
-)
 from config import (
     AUDIT_MD,
-    COMPRESSION_DIR,
     LOG_DIR,
     LOG_MD,
+    RAW_DIR,
     TWIN_PROFILE,
+    WIKI_DIR,
     WORKSPACE_PATH,
 )
+from memex.cache import STAMP_PATH
+from wiki_synth_manifest import MANIFEST_JSON, load_manifest, scan_all, summarize_files
+from report_context import REPORT_DIRS, list_reports
 
 PIPELINE_JSON = LOG_DIR / "pipeline_progress.json"
 PROGRESS_MD = LOG_DIR / "PROGRESS.md"
@@ -29,24 +27,20 @@ StageStatus = Literal["done", "pending", "stale", "failed", "in_progress", "skip
 
 PIPELINE_ORDER = (
     "register_reference",
-    "compression",
-    "post_ingest",
+    "wiki_synthesize",
     "discovery",
     "gap",
     "evolution",
+    "ingest",
     "audit",
 )
 
-STAGE_DIRS = {
-    "discovery": WORKSPACE_PATH / "self-wiki" / "discovery",
-    "gap": WORKSPACE_PATH / "self-wiki" / "gap",
-    "evolution": WORKSPACE_PATH / "self-wiki" / "evolution",
-}
+STAGE_DIRS = REPORT_DIRS
 
 STAGE_RESUME = {
     "register_reference": "make register-reference",
-    "compression": "make compress LIMIT=50",
-    "post_ingest": "make post-ingest",
+    "wiki_synthesize": "make wiki-synthesize LIMIT=20",
+    "ingest": "make ingest",
     "discovery": "make discover",
     "gap": "make gap",
     "evolution": "make evolution",
@@ -95,24 +89,6 @@ def save_pipeline(data: dict) -> None:
     PIPELINE_JSON.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def _list_reports(directory: Path) -> list[dict]:
-    if not directory.exists():
-        return []
-    runs = []
-    for path in sorted(directory.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True):
-        runs.append(
-            {
-                "output": str(path.relative_to(WORKSPACE_PATH)).replace("\\", "/"),
-                "date": path.stem,
-                "completed_at": datetime.fromtimestamp(
-                    path.stat().st_mtime, tz=timezone.utc
-                ).isoformat(),
-                "status": "done",
-            }
-        )
-    return runs
-
-
 def _scan_register_reference() -> dict:
     sources = LOG_DIR / "sources.json"
     if not sources.exists():
@@ -137,70 +113,76 @@ def _scan_register_reference() -> dict:
     }
 
 
-def _scan_compression() -> dict:
-    cm = load_compression_manifest()
-    if not cm.get("files"):
-        cm = scan_compression()
-    summary = cm.get("summary") or summarize_files(cm.get("files", {}))
-    remaining = summary.get("pending", 0) + summary.get("stale", 0) + summary.get("failed", 0)
-    done = summary.get("done", 0)
-    compressible = done + remaining
+def _scan_wiki_synthesize() -> dict:
+    manifest = load_manifest()
+    if not manifest.get("files"):
+        scan_all()
+        manifest = load_manifest()
+    summary = summarize_files(manifest.get("files", {}))
+    remaining = summary.get("pending", 0) + summary.get("failed", 0)
+    done = summary.get("done", 0) + summary.get("no_actions", 0)
+    total = done + remaining + summary.get("skipped", 0)
 
     if remaining == 0 and done > 0:
         status: StageStatus = "done"
-    elif done > 0:
+    elif done > 0 or remaining > 0:
         status = "in_progress"
     else:
         status = "pending"
 
-    resume = STAGE_RESUME["compression"]
+    resume = STAGE_RESUME["wiki_synthesize"]
     if remaining > 0:
-        resume = f"make compress LIMIT=50  # {remaining} remaining"
+        resume = f"make wiki-synthesize LIMIT=20  # {remaining} pending/failed"
 
     return {
         "status": status,
         "summary": summary,
         "done": done,
         "remaining": remaining,
-        "compressible": compressible,
-        "manifest": str(COMPRESSION_MANIFEST_JSON.relative_to(WORKSPACE_PATH)),
-        "detail_report": "log/compression_progress.md",
-        "last_stop": cm.get("last_stop"),
+        "total": total,
+        "manifest": str(MANIFEST_JSON.relative_to(WORKSPACE_PATH)),
+        "last_stop": manifest.get("last_stop"),
         "resume_command": resume,
     }
 
 
-def _scan_post_ingest(_compression_done: int) -> dict:
-    comp_files = [p for p in COMPRESSION_DIR.rglob("*.md") if p.is_file()] if COMPRESSION_DIR.exists() else []
-    if not comp_files:
-        return {
-            "status": "skipped",
-            "reason": "no compression/ digests yet",
-            "resume_command": STAGE_RESUME["post_ingest"],
-        }
+def _newest_vault_mtime() -> float:
+    newest = 0.0
+    for root in (RAW_DIR, WIKI_DIR, WORKSPACE_PATH / "self-wiki" / "twin"):
+        if not root.exists():
+            continue
+        for path in root.rglob("*.md", recurse_symlinks=True):
+            try:
+                newest = max(newest, path.stat().st_mtime)
+            except OSError:
+                continue
+    return newest
 
-    newest_comp = max(p.stat().st_mtime for p in comp_files)
-    twin_mtime = TWIN_PROFILE.stat().st_mtime if TWIN_PROFILE.exists() else 0
 
-    if TWIN_PROFILE.exists() and twin_mtime >= newest_comp:
+def _scan_ingest() -> dict:
+    stamp_mtime = STAMP_PATH.stat().st_mtime if STAMP_PATH.exists() else 0.0
+    newest = _newest_vault_mtime()
+    twin_mtime = TWIN_PROFILE.stat().st_mtime if TWIN_PROFILE.exists() else 0.0
+
+    if stamp_mtime >= newest and stamp_mtime > 0 and twin_mtime >= stamp_mtime:
         status: StageStatus = "done"
         reason = None
     else:
         status = "pending"
-        reason = f"{len(comp_files)} compression file(s) — twin/index may be stale"
+        reason = "vault changed since last memex ingest — run make ingest"
 
     return {
         "status": status,
         "reason": reason,
-        "compression_files": len(comp_files),
+        "memex_stamp": str(STAMP_PATH.relative_to(WORKSPACE_PATH)) if STAMP_PATH.exists() else None,
         "twin_profile": str(TWIN_PROFILE.relative_to(WORKSPACE_PATH)),
-        "resume_command": STAGE_RESUME["post_ingest"],
+        "resume_command": STAGE_RESUME["ingest"],
     }
 
 
-def _scan_report_stage(stage: str, *, upstream_done: int) -> dict:
+def _scan_report_stage(stage: str) -> dict:
     directory = STAGE_DIRS[stage]
-    runs = _list_reports(directory)
+    runs = list_reports(directory)
     latest = runs[0] if runs else None
 
     if not latest:
@@ -213,8 +195,7 @@ def _scan_report_stage(stage: str, *, upstream_done: int) -> dict:
         status = "done"
         reason = None
 
-    # gap needs discovery first
-    if stage == "gap" and not _list_reports(STAGE_DIRS["discovery"]):
+    if stage == "gap" and not list_reports(STAGE_DIRS["discovery"]):
         status = "skipped"
         reason = "run discovery first"
 
@@ -266,8 +247,6 @@ def _compute_cycle(stages: dict) -> dict:
 
     if resume_stage is None:
         cycle_status = "complete" if completed else "idle"
-    elif resume_stage == "compression" and stages.get("compression", {}).get("remaining", 0) > 0:
-        cycle_status = "in_progress"
     elif resume_stage:
         cycle_status = "in_progress"
     else:
@@ -278,9 +257,6 @@ def _compute_cycle(stages: dict) -> dict:
         st = stages.get(name, {})
         if st.get("last_stop"):
             last_stop = {**st["last_stop"], "stage": name}
-            break
-        if name == "compression" and st.get("last_stop"):
-            last_stop = {**st["last_stop"], "stage": "compression"}
             break
 
     old_cycle = load_pipeline().get("cycle", {})
@@ -293,28 +269,23 @@ def _compute_cycle(stages: dict) -> dict:
     }
 
 
-def refresh_all(*, rescan_compression: bool = True) -> dict:
-    if rescan_compression:
-        scan_compression()
-
-    compression = _scan_compression()
-    comp_done = compression.get("done", 0)
+def refresh_all(*, rescan_wiki_synth: bool = True) -> dict:
+    if rescan_wiki_synth:
+        scan_all()
 
     stages = {
         "register_reference": _scan_register_reference(),
-        "compression": compression,
-        "post_ingest": _scan_post_ingest(comp_done),
-        "discovery": _scan_report_stage("discovery", upstream_done=comp_done),
-        "gap": _scan_report_stage("gap", upstream_done=comp_done),
-        "evolution": _scan_report_stage("evolution", upstream_done=comp_done),
+        "wiki_synthesize": _scan_wiki_synthesize(),
+        "ingest": _scan_ingest(),
+        "discovery": _scan_report_stage("discovery"),
+        "gap": _scan_report_stage("gap"),
+        "evolution": _scan_report_stage("evolution"),
         "audit": _scan_audit(),
     }
 
     data = _empty_pipeline()
     old = load_pipeline()
     data["stages"] = stages
-    data["cycle"] = _compute_cycle(stages)
-    # preserve failed markers set by mark_stage_failed until scan clears them
     for name, prev in old.get("stages", {}).items():
         if prev.get("status") == "failed" and stages.get(name, {}).get("status") == "pending":
             stages[name]["status"] = "failed"
@@ -369,7 +340,7 @@ def mark_stage_in_progress(stage: str) -> None:
 
 def write_progress_md(data: dict | None = None) -> Path:
     if data is None:
-        data = refresh_all(rescan_compression=False)
+        data = refresh_all(rescan_wiki_synth=False)
 
     stages = data.get("stages", {})
     cycle = data.get("cycle", {})
@@ -380,7 +351,7 @@ def write_progress_md(data: dict | None = None) -> Path:
         f"Updated: {data.get('updated_at', _now())}",
         "",
         "Machine index: `log/pipeline_progress.json`",
-        "Compression detail: `log/compression_manifest.json` · `log/compression_progress.md`",
+        "Wiki-synthesize detail: `log/wiki_synth_manifest.json`",
         "",
         "## Cycle",
         "",
@@ -416,8 +387,8 @@ def write_progress_md(data: dict | None = None) -> Path:
     for name in PIPELINE_ORDER:
         st = stages.get(name, {})
         status = st.get("status", "pending")
-        if name == "compression":
-            detail = f"{st.get('done', 0)}/{st.get('compressible', 0)} files"
+        if name == "wiki_synthesize":
+            detail = f"{st.get('done', 0)}/{st.get('total', 0)} raw files"
             if st.get("remaining"):
                 detail += f" ({st.get('remaining')} left)"
         elif name == "register_reference":
@@ -431,15 +402,23 @@ def write_progress_md(data: dict | None = None) -> Path:
         mark = "x" if status == "done" else " "
         lines.append(f"| [{mark}] {name} | {status} | {detail} | {resume} |")
 
-    lines.extend(["", "## Resume cheatsheet", "", "```bash", "make progress              # refresh + print",])
+    lines.extend(
+        [
+            "",
+            "## Resume cheatsheet",
+            "",
+            "```bash",
+            "make progress              # refresh + print",
+        ]
+    )
 
     if cycle.get("resume_command"):
         lines.append(cycle["resume_command"])
     lines.extend(
         [
-            "make compress LIMIT=50",
-            "make compress FOLDER=origin-apple-notes LIMIT=30",
-            "make post-ingest",
+            "make wiki-synthesize LIMIT=20",
+            "make wiki-synthesize FOLDER=origin-apple-notes LIMIT=30",
+            "make ingest",
             "make discover && make gap && make evolution",
             "make audit",
             "```",
@@ -447,17 +426,15 @@ def write_progress_md(data: dict | None = None) -> Path:
         ]
     )
 
-    # Compression file lists delegated
-    cm = load_compression_manifest()
-    if cm.get("files"):
-        summary = cm.get("summary", {})
+    manifest = load_manifest()
+    if manifest.get("files"):
+        summary = manifest.get("summary", {})
         lines.extend(
             [
-                "## Compression files (summary)",
+                "## Wiki-synthesize (summary)",
                 "",
-                f"- done: {summary.get('done', 0)} · pending: {summary.get('pending', 0)} · "
-                f"stale: {summary.get('stale', 0)} · failed: {summary.get('failed', 0)}",
-                "- Full checklists: [compression_progress.md](compression_progress.md)",
+                f"- done: {summary.get('done', 0)} · no_actions: {summary.get('no_actions', 0)} · "
+                f"pending: {summary.get('pending', 0)} · failed: {summary.get('failed', 0)}",
                 "",
             ]
         )
@@ -479,8 +456,8 @@ def print_status() -> dict:
         status = st.get("status", "pending")
         icon = {"done": "✓", "failed": "!", "in_progress": "…"}.get(status, "○")
         extra = ""
-        if name == "compression":
-            extra = f"  ({st.get('done', 0)}/{st.get('compressible', 0)})"
+        if name == "wiki_synthesize":
+            extra = f"  ({st.get('done', 0)}/{st.get('total', 0)})"
         print(f"  [{icon}] {name:<22} {status}{extra}")
 
     print()

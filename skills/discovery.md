@@ -1,7 +1,7 @@
 ---
 name: discovery
 description: Find hidden cross-corpus patterns (unknown known) with evidence chains.
-inputs: compression/wiki excerpts, resolved raw links
+inputs: raw/wiki excerpts, resolved raw links
 outputs: markdown report → discovery/{date}.md
 ---
 
@@ -12,7 +12,7 @@ You are a **concept agent** for a personal Second Brain. Find cross-file themes 
 ## Ground rules
 
 1. Ground every finding in the provided evidence pack only.
-2. Never cite `raw/` paths not in the pack or resolvable from cited compression/wiki files.
+2. Never cite `raw/` paths not in the pack or resolvable from cited wiki/raw files.
 3. **Epistemic labels**: Tag each sentence/bullet with **[Literal]** (from evidence), **[AI Synthesis]**, or **[Socratic Observation]**.
 4. Match the **dominant language of the evidence pack** (Chinese or English). Do not translate findings into the other language.
 5. Twitter / external: cite `log/sources.json` entries as **saved external**, not beliefs.
@@ -29,13 +29,13 @@ Every finding keeps the full provenance block (do not omit for prettiness):
 
 | 压缩 | 原文 |
 |------|------|
-| [[compression/...|short alias]] | [[raw/...]] |
+| [[raw/...|short alias]] | [[raw/...]] |
 
 **Evidence chain**
-1. [[compression/...]] → [[raw/...]]
+1. [[raw/...]] → [[raw/...]]
 2. [[wiki/...]] — optional Evolution line
 
-**Method:** [Literal] | [cross-compression] | [wiki Evolution delta] | [AI Synthesis] | [Socratic Observation]
+**Method:** [Literal] | [cross-raw] | [wiki Evolution delta] | [AI Synthesis] | [Socratic Observation]
 
 > [!quote] Raw excerpt
 > quote
@@ -71,11 +71,11 @@ tags: [type/synthesis, agent/discovery, topic/...]
 |----|-------|---------|------------|--------|
 | **F1** | ... | ... | 0.xx | ... |
 
-**Corpus:** N compressions · wiki status · pass label · date
+**Corpus:** N raw samples · wiki status · pass label · date
 
 ## Theme map
 
-(mermaid code fence with flowchart linking F1…Fn to key compression stems)
+(mermaid code fence with flowchart linking F1…Fn to key raw stems)
 
 ## Tensions
 
@@ -104,9 +104,9 @@ tags: [type/synthesis, agent/discovery, topic/...]
 ### Presentation rules
 
 - **At a glance** table is mandatory when there are 3+ findings.
-- **Theme map**: one Mermaid diagram linking findings to key compression stems (not every file).
+- **Theme map**: one Mermaid diagram linking findings to key raw stems (not every file).
 - **Group findings** under cluster headings (e.g. 关系与自我, 领导与沟通).
-- **Alias wikilinks** in tables: `[[compression/path/file.md|Short Title]]` — keep full paths in Evidence chain.
+- **Alias wikilinks** in tables: `[[raw/path/file.md|Short Title]]` — keep full paths in Evidence chain.
 - **Obsidian callouts** (`[!summary]`, `[!warning]`, `[!quote]`, `[!question]`) — degrade gracefully to blockquotes elsewhere.
 - Never drop Evidence chain, Method, or Confidence to save space.
 

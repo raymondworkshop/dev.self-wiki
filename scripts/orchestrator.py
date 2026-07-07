@@ -38,7 +38,7 @@ class SocraticOrchestrator:
             if self.cache.get(rel) != curr_hash:
                 changed.append((rel, p, curr_hash))
             else:
-                logger.info(f"Skipping unchanged file: {rel}")
+                logger.debug("Skipping unchanged file: %s", rel)
         return changed
 
 if __name__ == "__main__":

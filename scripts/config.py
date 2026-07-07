@@ -27,7 +27,6 @@ WORKSPACE_PATH = Path(
     os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
 )
 RAW_DIR = WORKSPACE_PATH / "self-wiki" / "raw"
-COMPRESSION_DIR = WORKSPACE_PATH / "self-wiki" / "compression"
 WIKI_DIR = WORKSPACE_PATH / "self-wiki" / "wiki"
 OUTPUTS_DIR = WORKSPACE_PATH / "self-wiki" / "outputs"
 LOG_DIR = WORKSPACE_PATH / "self-wiki" / "log"
@@ -48,6 +47,7 @@ def _resolve_operating_manual() -> Path:
 
 GEMINI_CONF = _resolve_operating_manual()
 LOG_MD = LOG_DIR / "log.md"
+MEMEX_DIR = LOG_DIR / "memex"
 INDEX_MD = LOG_DIR / "index.md"
 INDEX_JSON = LOG_DIR / "INDEX.json"
 AUDIT_MD = WORKSPACE_PATH / "self-wiki" / "audit.md"
@@ -87,5 +87,5 @@ def twin_profile_max_evolution() -> int:
     return max(1, int(os.environ.get("TWIN_PROFILE_MAX_EVOLUTION", "15")))
 
 # Ensure directories exist
-for d in [RAW_DIR, COMPRESSION_DIR, WIKI_DIR, OUTPUTS_DIR, LOG_DIR, PENDING_DIR, SKILLS_DIR, TWIN_DIR]:
+for d in [RAW_DIR, WIKI_DIR, OUTPUTS_DIR, LOG_DIR, PENDING_DIR, SKILLS_DIR, TWIN_DIR]:
     d.mkdir(parents=True, exist_ok=True)

@@ -1,11 +1,10 @@
-"""Resolve compression/wiki citations to raw excerpts for discovery packs."""
+"""Resolve raw/wiki citations to raw excerpts for discovery packs."""
 
 from __future__ import annotations
 
 import re
 from pathlib import Path
 
-from compression_provenance import normalize_raw_link
 from config import RAW_DIR, WORKSPACE_PATH
 from query_retrieval import extract_key_lines
 
@@ -15,8 +14,17 @@ RAW_WIKILINK_RE = re.compile(
 )
 
 
+def normalize_raw_link(rel_path: str) -> str:
+    rel = rel_path.replace("\\", "/").strip().lstrip("/")
+    if rel.startswith("self-wiki/raw/"):
+        rel = rel[len("self-wiki/raw/") :]
+    if rel.startswith("raw/"):
+        return rel
+    return f"raw/{rel}"
+
+
 def parse_raw_links_from_text(text: str) -> list[str]:
-    """Extract unique raw/... paths from compression or wiki markdown."""
+    """Extract unique raw/... paths from wiki markdown."""
 
     seen: set[str] = set()
     out: list[str] = []
@@ -43,8 +51,8 @@ def collect_raw_links(samples: list[dict]) -> list[str]:
     return out
 
 
-def enrich_compression_samples(samples: list[dict]) -> list[dict]:
-    """Attach parsed raw_links to each compression sample."""
+def enrich_raw_samples(samples: list[dict]) -> list[dict]:
+    """Attach parsed raw_links to each raw sample."""
 
     enriched: list[dict] = []
     for sample in samples:

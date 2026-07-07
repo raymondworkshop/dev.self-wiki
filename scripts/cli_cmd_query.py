@@ -99,20 +99,12 @@ def cmd_doctor_config(args: argparse.Namespace) -> int:
         raw_rel = f"raw/{raw_rel}"
 
     profile = resolve_profile(raw_rel) or {}
-    profile_skill = profile.get("skill", "skills/ingest-summary.md")
     profile_wiki_skill = profile.get("wiki_skill", "skills/wiki-synthesize.md")
 
-    compress_provider = provider_for_role("compress", args.compress_provider or args.provider)
     wiki_provider = provider_for_role("wiki_synthesize", args.wiki_provider or args.provider)
     query_provider = provider_for_role("query", args.query_provider or args.provider)
     lint_provider = provider_for_role("lint", args.lint_provider or args.provider)
 
-    compress_skill = resolve_skill(
-        "compression",
-        profile_skill,
-        raw_rel=raw_rel,
-        current_skill=profile.get("skill"),
-    )
     wiki_skill = resolve_skill(
         "wiki_synthesize",
         profile_wiki_skill,
@@ -125,12 +117,7 @@ def cmd_doctor_config(args: argparse.Namespace) -> int:
     print(f"raw_path: {raw_rel}")
     print(f"profile: {profile.get('name', '(no matched profile)')}")
     print("")
-    print("[raw -> compression]")
-    print(f"provider={compress_provider}")
-    print(f"model={model_name(compress_provider)}")
-    print(f"skill={compress_skill}")
-    print("")
-    print("[compression -> wiki]")
+    print("[raw -> wiki]")
     print(f"provider={wiki_provider}")
     print(f"model={model_name(wiki_provider)}")
     print(f"skill={wiki_skill}")

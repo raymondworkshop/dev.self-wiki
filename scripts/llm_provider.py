@@ -76,10 +76,8 @@ def _role_env_key(role: str) -> str | None:
         "discover": "DISCOVERY_LLM_PROVIDER",
         "gap": "GAP_LLM_PROVIDER",
         "evolution": "EVOLUTION_LLM_PROVIDER",
-        "compress": "COMPRESS_LLM_PROVIDER",
-        "compression": "COMPRESS_LLM_PROVIDER",
-        "ingest": "COMPRESS_LLM_PROVIDER",
-        "sync": "COMPRESS_LLM_PROVIDER",
+        "sync": "WIKI_LLM_PROVIDER",
+        "ingest": "WIKI_LLM_PROVIDER",
         "wiki_synthesize": "WIKI_LLM_PROVIDER",
         "wiki-synthesize": "WIKI_LLM_PROVIDER",
         "synthesize": "WIKI_LLM_PROVIDER",
@@ -88,7 +86,7 @@ def _role_env_key(role: str) -> str | None:
 
 
 def provider_for_role(role: str | None = None, explicit: str | None = None) -> str:
-    """Resolve provider for pipeline role (compress/wiki/query/lint/etc.).
+    """Resolve provider for pipeline role (wiki/query/lint/etc.).
 
     Priority: explicit CLI arg → ``{ROLE}_LLM_PROVIDER`` → ``AGENT_LLM_PROVIDER``
     (agent roles) → ``QUERY_LLM_PROVIDER`` / ``LINT_LLM_PROVIDER`` → ``LLM_PROVIDER``.
@@ -155,10 +153,8 @@ def fallback_provider_chain(
         "query",
         "lint",
         *AGENT_ROLES,
-        "compress",
         "sync",
         "ingest",
-        "compression",
         "wiki_synthesize",
         "wiki-synthesize",
         "synthesize",

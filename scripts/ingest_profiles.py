@@ -39,6 +39,6 @@ def resolve_profile(rel_path: str) -> dict | None:
     return None
 
 
-def is_compressible(rel_path: str) -> bool:
+def is_wiki_synthesizable(rel_path: str) -> bool:
     profile = resolve_profile(rel_path)
-    return profile is not None and profile.get("mode") in ("summarize", "distill-lite")
+    return bool(profile and profile.get("wiki_skill") and profile.get("max_theme_updates", 0) > 0)

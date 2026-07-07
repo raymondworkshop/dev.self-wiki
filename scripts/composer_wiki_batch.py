@@ -12,21 +12,12 @@ sys.path.insert(0, str(Path(__file__).parent.resolve()))
 from apply_ingest import apply_actions
 from config import WORKSPACE_PATH
 from wiki_synth_manifest import (
-    _comp_rel,
     _file_hash,
-    _raw_rel_from_compression,
+    canonical_raw_rel,
     list_resume_targets,
     mark_done,
-    load_manifest,
-    save_manifest,
+    raw_rel_inner,
 )
-
-
-def _raw_rel_from_comp_path(comp_path: str) -> str:
-    rel = comp_path.replace("\\", "/")
-    if rel.startswith("self-wiki/compression/"):
-        rel = rel[len("self-wiki/compression/") :]
-    return _raw_rel_from_compression(f"self-wiki/compression/{rel}")
 
 
 def apply_batch_file(batch_path: Path) -> dict:
@@ -34,39 +25,43 @@ def apply_batch_file(batch_path: Path) -> dict:
     stats = {"applied": 0, "pages": 0, "no_actions": 0, "errors": []}
 
     for entry in data.get("files", []):
-        comp_path = entry.get("compression_path", "")
-        if not comp_path:
+        raw_path = entry.get("raw_path", "")
+        if not raw_path:
             continue
-        abs_comp = WORKSPACE_PATH / comp_path
-        if not abs_comp.is_file():
-            abs_comp = WORKSPACE_PATH / "self-wiki" / comp_path.lstrip("self-wiki/")
-        comp_rel = _comp_rel(abs_comp) if abs_comp.is_file() else comp_path
-        content_hash = _file_hash(abs_comp) if abs_comp.is_file() else ""
-        raw_suffix = _raw_rel_from_comp_path(comp_rel).replace("raw/", "")
+        raw_rel = canonical_raw_rel(raw_path)
+        abs_raw = WORKSPACE_PATH / raw_rel
+        if not abs_raw.is_file():
+            resolved = abs_raw.resolve()
+            if resolved.is_file():
+                abs_raw = resolved
+            else:
+                stats["errors"].append({"raw_path": raw_rel, "error": "not_found"})
+                continue
+        content_hash = _file_hash(abs_raw)
+        raw_suffix = raw_rel_inner(raw_rel)
 
         if entry.get("no_actions"):
-            mark_done(comp_rel, pages=0, content_hash=content_hash)
+            mark_done(raw_rel, pages=0, content_hash=content_hash)
             stats["no_actions"] += 1
             continue
 
         actions = entry.get("actions", [])
         if not actions:
-            mark_done(comp_rel, pages=0, content_hash=content_hash)
+            mark_done(raw_rel, pages=0, content_hash=content_hash)
             stats["no_actions"] += 1
             continue
 
         try:
             payload = {
-                "compression_path": comp_rel,
-                "raw_path": _raw_rel_from_comp_path(comp_rel),
+                "raw_path": raw_rel,
                 "actions": actions,
             }
             pages = apply_actions(payload, rel_path=raw_suffix)
-            mark_done(comp_rel, pages=pages, content_hash=content_hash)
+            mark_done(raw_rel, pages=pages, content_hash=content_hash)
             stats["applied"] += 1
             stats["pages"] += pages
         except Exception as exc:
-            stats["errors"].append({"compression_path": comp_rel, "error": str(exc)})
+            stats["errors"].append({"raw_path": raw_rel, "error": str(exc)})
 
     return stats
 
@@ -80,7 +75,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Composer wiki-synthesize batch helper")
     sub = parser.add_subparsers(dest="command")
 
-    p_list = sub.add_parser("list", help="Print next N pending compression paths")
+    p_list = sub.add_parser("list", help="Print next N pending raw paths")
     p_list.add_argument("--limit", type=int, default=10)
     p_list.add_argument("--folder")
     p_list.add_argument("--wave")
@@ -97,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
     p_stats = sub.add_parser("stats", help="Manifest summary")
     p_stats.set_defaults(
         func=lambda a: (
-            print(json.dumps(load_manifest().get("summary", {}), indent=2)) or 0
+            print(json.dumps(__import__("wiki_synth_manifest").load_manifest().get("summary", {}), indent=2)) or 0
         )
     )
 

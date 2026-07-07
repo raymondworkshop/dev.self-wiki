@@ -30,7 +30,7 @@ def reject_local_mlx(provider: str, *, context: str, as_last_resort: bool = Fals
         return
     raise RuntimeError(
         f"{context}: local MLX is disabled. "
-        "Use Cursor Composer (see AGENTS.md + skills/ingest-*.md), "
+        "Use Cursor Composer (see AGENTS.md + skills/wiki-synthesize.md), "
         "or cloud API (LLM_PROVIDER=gemini). "
         "Override: ALLOW_LOCAL_LLM=1 or LLM_MLX_LAST_RESORT=1"
     )
@@ -42,10 +42,10 @@ def reject_python_llm_ingest(*, context: str = "ingest", provider: str | None = 
     if provider and provider not in ("mlx",):
         return
     print(
-        "Composer is the default for digest/discovery. Write compression/ in Cursor, "
-        "then: make post-ingest.\n"
-        "Cloud batch build: make build  (Gemini, no MLX)\n"
-        "Manual override: ALLOW_PYTHON_LLM=1 make compress",
+        "Composer is the default for wiki-synthesize/discovery. Edit wiki in Cursor, "
+        "then: make ingest.\n"
+        "Cloud batch: ALLOW_PYTHON_LLM=1 make sync  (Gemini, no MLX)\n"
+        "Manual override: ALLOW_PYTHON_LLM=1 make wiki-synthesize",
         file=sys.stderr,
     )
     raise SystemExit(1)

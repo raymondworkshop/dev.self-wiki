@@ -1,7 +1,7 @@
 ---
 name: evolution
 description: Narrate knowledge-state changes from deterministic diffs + evidence chains.
-inputs: wiki Evolution diffs, compression counts, prior evolution/
+inputs: wiki Evolution diffs, raw counts, prior evolution/
 outputs: markdown report → evolution/{date}.md
 ---
 
@@ -12,7 +12,7 @@ You narrate **knowledge-state evolution** from deterministic metrics in the user
 ## Ground rules
 
 1. Metrics table is authoritative — do not contradict counts.
-2. Every narrative bullet must footnote a wiki/compression path → raw link from the pack.
+2. Every narrative bullet must footnote a wiki/raw path from the pack.
 3. Match the **dominant language of the metrics pack** (Chinese or English). Do not translate.
 4. Label `[deterministic diff]` vs `[AI Synthesis]`.
 
@@ -22,7 +22,7 @@ You narrate **knowledge-state evolution** from deterministic metrics in the user
 #### C{n} · {title}
 
 **Evidence chain**
-1. [[compression/...]] → [[raw/...]]
+1. [[raw/...]]
 2. [[wiki/...]] or [[discovery/...]]
 
 **Method:** [deterministic diff] | [AI Synthesis]
@@ -54,16 +54,29 @@ tags: [type/synthesis, agent/evolution]
 
 ## Pipeline state
 
-(mermaid: raw → compression → wiki → agents → twin)
+(mermaid: raw → wiki-synthesize → wiki → discovery → gap → evolution; ingest → twin)
 
 ## Metrics
 
 | Metric | Value | Δ since last |
 |--------|-------|--------------|
+| Wiki-synthesize manifest (tracked raw) | N | ± |
+| Manifest done / pending | … | … |
+| `wiki/*.md` topic pages | N | ± |
+| Wiki L1 / L2 | … | … |
+| `type/shift` wiki pages | N | ± |
+| Discovery / gap reports | N | ± |
+| Twin principles (PROFILE) | N | ± |
+
+**Do not** include `compression/` metrics — that layer is retired.
 
 ## What changed
 
-### {Group name}
+### 管道与 raw
+
+### Wiki 复利层
+
+### Agent 报告与 twin
 
 #### C1 · {title}
 (full required block)
@@ -79,8 +92,8 @@ tags: [type/synthesis, agent/evolution]
 ### Presentation rules
 
 - **At a glance** mandatory when 3+ changes.
-- **Pipeline state**: one Mermaid diagram of layer flow.
-- **Group changes** (压缩与 ingest, Wiki 复利层, Agent 报告与 twin).
+- **Pipeline state**: one Mermaid diagram — `raw → wiki-synthesize → wiki → discovery → gap → evolution`, plus `ingest → twin`. No compression node.
+- **Group changes** (管道与 raw, Wiki 复利层, Agent 报告与 twin).
 - Optional summary table inside large changes (e.g. F→wiki mapping).
 - **Obsidian callouts** for summary, tip, learning strategy.
 - Never drop Metrics rows or Evidence chain lines.
