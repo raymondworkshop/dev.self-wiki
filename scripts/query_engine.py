@@ -18,6 +18,7 @@ from llm_provider import (
     provider_for_role,
     provider_name,
 )
+from pending_cleanup import cleanup_pending_artifacts
 from prepare_query import prepare_query
 from query_promote import format_promote_suggestion
 from query_retrieval import iter_wiki_files, load_index, print_retrieval_debug
@@ -115,6 +116,7 @@ def generate_query_answer(
 
     result = run_skill_from_pending(pending_path, provider=llm_provider, write_output=True)
     answer = result["text"]
+    cleanup_pending_artifacts(pending_path)
 
     messages.append({"role": "user", "content": pending["user_message"]})
     messages.append({"role": "assistant", "content": answer})

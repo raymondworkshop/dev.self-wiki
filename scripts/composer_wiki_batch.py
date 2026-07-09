@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
 from apply_ingest import apply_actions
 from config import WORKSPACE_PATH
+from pending_cleanup import cleanup_pending_artifacts
 from wiki_synth_manifest import (
     _file_hash,
     canonical_raw_rel,
@@ -20,7 +21,7 @@ from wiki_synth_manifest import (
 )
 
 
-def apply_batch_file(batch_path: Path) -> dict:
+def apply_batch_file(batch_path: Path, *, cleanup: bool = True) -> dict:
     data = json.loads(batch_path.read_text(encoding="utf-8"))
     stats = {"applied": 0, "pages": 0, "no_actions": 0, "errors": []}
 
@@ -63,6 +64,8 @@ def apply_batch_file(batch_path: Path) -> dict:
         except Exception as exc:
             stats["errors"].append({"raw_path": raw_rel, "error": str(exc)})
 
+    if cleanup and not stats["errors"]:
+        cleanup_pending_artifacts(batch_path)
     return stats
 
 
@@ -83,9 +86,16 @@ def main(argv: list[str] | None = None) -> int:
 
     p_apply = sub.add_parser("apply", help="Apply composer batch JSON")
     p_apply.add_argument("batch", help="Path to batch JSON with files[]")
+    p_apply.add_argument("--no-cleanup", action="store_true", help="Keep batch JSON after apply")
     p_apply.set_defaults(
         func=lambda a: (
-            print(json.dumps(apply_batch_file(Path(a.batch)), indent=2)) or 0
+            print(
+                json.dumps(
+                    apply_batch_file(Path(a.batch), cleanup=not a.no_cleanup),
+                    indent=2,
+                )
+            )
+            or 0
         )
     )
 

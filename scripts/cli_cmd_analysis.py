@@ -15,6 +15,7 @@ from pipeline_progress import (
     mark_stage_in_progress,
     refresh_all,
 )
+from pending_cleanup import cleanup_pending_artifacts
 from prepare_discover import write_pending as write_discover_pending
 from prepare_evolution import write_pending as write_evolution_pending
 from prepare_gap import write_pending as write_gap_pending
@@ -35,6 +36,7 @@ def _run_report_stage(command: str, args: argparse.Namespace) -> int:
     try:
         pending = write_pending(provider=provider)
         result = run_skill_from_pending(pending, provider=provider)
+        cleanup_pending_artifacts(pending)
         append_log(command, f"{progress_stage} report via {pending.name}")
         mark_stage_done(progress_stage, output=result.get("output_path"))
         refresh_all()

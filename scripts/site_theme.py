@@ -5,49 +5,52 @@ from __future__ import annotations
 import html
 
 SITE_CSS = """
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap');
-
     :root {
       color-scheme: light;
-      --bg: #f4f1eb;
-      --bg-accent-1: rgba(124, 58, 237, 0.14);
-      --bg-accent-2: rgba(14, 165, 233, 0.12);
-      --bg-accent-3: rgba(245, 158, 11, 0.08);
-      --shell: rgba(255, 253, 248, 0.94);
-      --panel: #fffdf9;
-      --text: #1c1917;
-      --muted: #78716c;
-      --line: rgba(28, 25, 23, 0.1);
-      --accent: #7c3aed;
-      --accent-soft: rgba(124, 58, 237, 0.12);
-      --accent-2: #0e7490;
-      --good: #047857;
-      --link: #2563eb;
-      --link-hover: #1d4ed8;
-      --heading-2: #5b21b6;
-      --body-soft: #44403c;
-      --nav-bg: rgba(255, 253, 248, 0.82);
-      --blockquote-bg: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(124, 58, 237, 0.06));
-      --blockquote-text: #0f766e;
-      --code-text: #9a3412;
-      --code-bg: rgba(251, 191, 36, 0.16);
-      --pre-bg: #f5f5f4;
-      --list-bg: #fffdf9;
-      --shadow-sm: 0 2px 8px rgba(28, 25, 23, 0.04);
-      --shadow: 0 18px 50px rgba(28, 25, 23, 0.08);
-      --shadow-lg: 0 28px 80px rgba(28, 25, 23, 0.1);
-      --radius-lg: 24px;
-      --radius-md: 16px;
-      --radius-sm: 12px;
-      --font-ui: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
-      --font-body: "Source Serif 4", "Noto Serif SC", "Songti SC", Georgia, serif;
-      --measure: 42rem;
+      --bg: #f5f5f7;
+      --bg-accent-1: rgba(0, 122, 255, 0.06);
+      --bg-accent-2: rgba(88, 86, 214, 0.05);
+      --bg-accent-3: rgba(255, 149, 0, 0.04);
+      --shell: rgba(255, 255, 255, 0.88);
+      --panel: #ffffff;
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --line: rgba(0, 0, 0, 0.08);
+      --accent: #007aff;
+      --accent-soft: rgba(0, 122, 255, 0.1);
+      --accent-2: #5856d6;
+      --good: #248a3d;
+      --link: #0071e3;
+      --link-hover: #0077ed;
+      --heading-2: #1d1d1f;
+      --body-soft: #424245;
+      --nav-bg: rgba(255, 255, 255, 0.72);
+      --blockquote-bg: rgba(0, 122, 255, 0.05);
+      --blockquote-text: #424245;
+      --code-text: #bf4800;
+      --code-bg: rgba(0, 0, 0, 0.05);
+      --pre-bg: #f5f5f7;
+      --list-bg: #ffffff;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 18px 60px rgba(0, 0, 0, 0.08);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --font-en: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
+      --font-zh: "PingFang SC", "PingFang TC", "PingFang HK", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --font-ui: var(--font-en), var(--font-zh);
+      --font-body: var(--font-en), var(--font-zh);
+      --measure: 44rem;
     }
 
     * { box-sizing: border-box; }
 
     html {
       scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
     }
 
     body {
@@ -55,12 +58,13 @@ SITE_CSS = """
       min-height: 100vh;
       color: var(--text);
       font-family: var(--font-ui);
-      font-size: 16px;
-      line-height: 1.6;
+      font-size: 17px;
+      line-height: 1.65;
+      font-feature-settings: "kern" 1, "liga" 1;
       background:
-        radial-gradient(circle at 0% 0%, var(--bg-accent-1), transparent 38rem),
-        radial-gradient(circle at 100% 0%, var(--bg-accent-2), transparent 34rem),
-        radial-gradient(circle at 50% 100%, var(--bg-accent-3), transparent 42rem),
+        radial-gradient(circle at 0% 0%, var(--bg-accent-1), transparent 36rem),
+        radial-gradient(circle at 100% 0%, var(--bg-accent-2), transparent 32rem),
+        radial-gradient(circle at 50% 100%, var(--bg-accent-3), transparent 40rem),
         var(--bg);
     }
 
@@ -81,9 +85,9 @@ SITE_CSS = """
     .site-shell {
       background: var(--shell);
       border: 1px solid var(--line);
-      border-radius: calc(var(--radius-lg) + 4px);
+      border-radius: calc(var(--radius-lg) + 2px);
       box-shadow: var(--shadow-lg);
-      backdrop-filter: blur(20px);
+      backdrop-filter: saturate(180%) blur(20px);
       overflow: clip;
     }
 
@@ -151,9 +155,9 @@ SITE_CSS = """
       transform: translateY(-1px);
     }
     .nav a.active {
-      border-color: rgba(124, 58, 237, 0.28);
+      border-color: rgba(0, 122, 255, 0.22);
       background: var(--accent-soft);
-      color: var(--heading-2);
+      color: var(--link);
       font-weight: 600;
     }
 
@@ -175,14 +179,11 @@ SITE_CSS = """
     .hero h1 {
       margin: 0;
       font-family: var(--font-ui);
-      font-size: clamp(2rem, 5.5vw, 3.2rem);
-      line-height: 1.02;
-      letter-spacing: -0.05em;
+      font-size: clamp(2rem, 5.5vw, 3rem);
+      line-height: 1.15;
+      letter-spacing: -0.025em;
       font-weight: 700;
-      background: linear-gradient(135deg, #1c1917 20%, #5b21b6 72%, #0e7490 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      color: var(--text);
     }
 
     .hero-compact h1 {
@@ -221,23 +222,25 @@ SITE_CSS = """
       margin: 0 auto;
       font-family: var(--font-body);
       font-size: 1.02rem;
+      line-height: 1.75;
     }
 
     .answer h1, .answer h2, .answer h3, .answer h4 {
       font-family: var(--font-ui);
-      letter-spacing: -0.03em;
-      line-height: 1.2;
+      letter-spacing: -0.015em;
+      line-height: 1.35;
       color: var(--text);
+      font-weight: 600;
     }
-    .answer h1 { font-size: 1.85rem; margin-top: 0; }
+    .answer h1 { font-size: 1.9rem; margin-top: 0; font-weight: 700; }
     .answer h2 {
-      margin-top: 2rem;
+      margin-top: 2.2rem;
       color: var(--heading-2);
-      font-size: 1.35rem;
-      padding-bottom: 0.35rem;
+      font-size: 1.4rem;
+      padding-bottom: 0.4rem;
       border-bottom: 1px solid var(--line);
     }
-    .answer h3 { font-size: 1.12rem; margin-top: 1.5rem; }
+    .answer h3 { font-size: 1.15rem; margin-top: 1.6rem; }
     .answer p, .answer li { color: var(--body-soft); }
     .answer p { margin: 0 0 1rem; }
     .answer p:last-child { margin-bottom: 0; }
@@ -287,7 +290,7 @@ SITE_CSS = """
       text-align: left;
     }
     .answer th {
-      background: rgba(124, 58, 237, 0.06);
+      background: rgba(0, 122, 255, 0.05);
       font-weight: 600;
     }
     .answer tr:nth-child(even) td { background: rgba(0, 0, 0, 0.015); }
@@ -295,15 +298,14 @@ SITE_CSS = """
     blockquote {
       margin: 1.25rem 0;
       padding: 1rem 1.1rem;
-      border-left: 4px solid var(--accent-2);
+      border-left: 3px solid var(--accent);
       background: var(--blockquote-bg);
       border-radius: 0 var(--radius-md) var(--radius-md) 0;
       color: var(--blockquote-text);
-      font-style: italic;
     }
 
     code {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
       color: var(--code-text);
       background: var(--code-bg);
       padding: 0.15em 0.45em;
@@ -344,18 +346,18 @@ SITE_CSS = """
       border-radius: 999px;
       font-family: var(--font-ui);
       font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
+      font-weight: 600;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       background: var(--accent-soft);
-      color: var(--heading-2);
-      border: 1px solid rgba(124, 58, 237, 0.18);
+      color: var(--link);
+      border: 1px solid rgba(0, 122, 255, 0.15);
     }
 
     .path {
       color: var(--muted);
       font-size: 0.8rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
       overflow-wrap: anywhere;
       padding: 6px 10px;
       border-radius: var(--radius-sm);
@@ -385,8 +387,8 @@ SITE_CSS = """
       min-height: 100%;
     }
     .list-item:hover {
-      border-color: rgba(124, 58, 237, 0.28);
-      box-shadow: 0 10px 24px rgba(124, 58, 237, 0.08);
+      border-color: rgba(0, 122, 255, 0.22);
+      box-shadow: 0 8px 24px rgba(0, 122, 255, 0.08);
       transform: translateY(-2px);
       color: var(--text);
       text-decoration: none;
@@ -424,7 +426,7 @@ SITE_CSS = """
       padding: 16px 18px;
       border: 1px solid var(--line);
       border-radius: var(--radius-md);
-      background: linear-gradient(180deg, #fff, #faf8f5);
+      background: var(--panel);
       box-shadow: var(--shadow-sm);
     }
     .memex-panel h3 {
@@ -446,7 +448,7 @@ SITE_CSS = """
       padding: 18px 18px 16px;
       border: 1px solid var(--line);
       border-radius: var(--radius-md);
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(14, 165, 233, 0.04));
+      background: rgba(0, 122, 255, 0.04);
       font-family: var(--font-ui);
     }
     .memex-search h2 {
@@ -474,8 +476,8 @@ SITE_CSS = """
     }
     .search-input:focus {
       outline: none;
-      border-color: rgba(124, 58, 237, 0.45);
-      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+      border-color: rgba(0, 122, 255, 0.45);
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.12);
     }
 
     .search-status {
@@ -759,7 +761,7 @@ def render_page(
   <script src="/static/search.js"></script>"""
 
     return f"""<!doctype html>
-<html lang="en">
+<html lang="zh-Hans">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

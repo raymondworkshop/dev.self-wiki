@@ -559,7 +559,7 @@ def copy_bundled_static(out: Path) -> int:
     return copied
 
 
-def copy_memex_artifacts(out: Path) -> int:
+def copy_memex_artifacts(out: Path, *, ctx: dict | None = None) -> int:
     copied = 0
     if not MEMEX_DIR.is_dir():
         return copied
@@ -570,12 +570,18 @@ def copy_memex_artifacts(out: Path) -> int:
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dest)
             copied += 1
-    memex_index = MEMEX_DIR / "index.html"
-    if memex_index.is_file():
-        dest = out / "memex" / "index.html"
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(memex_index, dest)
+    dest = out / "memex" / "index.html"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if ctx:
+        from memex.write_index import render_memex_index_html
+
+        dest.write_text(render_memex_index_html(ctx), encoding="utf-8")
         copied += 1
+    else:
+        memex_index = MEMEX_DIR / "index.html"
+        if memex_index.is_file():
+            shutil.copy2(memex_index, dest)
+            copied += 1
     return copied
 
 
@@ -621,7 +627,7 @@ def build_static_site(*, vault: Path = VAULT_DIR, out: Path = DEFAULT_OUT) -> di
     dir_indexes = write_directory_indexes(out, md_files)
     assets = copy_static_assets(vault, out)
     bundled = copy_bundled_static(out)
-    memex_artifacts = copy_memex_artifacts(out)
+    memex_artifacts = copy_memex_artifacts(out, ctx=ctx)
 
     meta = {
         "built_at": datetime.now(timezone.utc).isoformat(),

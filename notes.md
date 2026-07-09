@@ -2,6 +2,11 @@
 #### self-wiki  
 
 ##### ideas  
+- todo  
+    +  Twin chatbot = outward "chat like me" persona (ideal: others talk to a version of you)  
+    + Socratic query = inward self-awareness (limits, motivations, inconsistencies, blind spots)  
+
+    
 - add memex in self-wiki, remove compression step
 
 - the result is not practical, especially when I build memex in blog  

@@ -10,6 +10,7 @@ from config import WORKSPACE_PATH
 from ingest_profiles import resolve_profile
 from llm_provider import model_name, provider_for_role
 from log_utils import append_log
+from pending_cleanup import cleanup_pending_artifacts
 from prepare_lint import merge_lint_into_audit, write_pending as write_lint_pending
 from prepare_query import prepare_query
 from promote_output import promote_output
@@ -62,6 +63,7 @@ def cmd_lint(args: argparse.Namespace) -> int:
     pending_path = write_lint_pending()
     result = run_skill_from_pending(pending_path, provider=llm_provider)
     merge_lint_into_audit(result["text"])
+    cleanup_pending_artifacts(pending_path)
     append_log("lint", "Global cognitive lint merged into audit.md")
     logger.info("Lint complete; audit.md updated")
     return 0

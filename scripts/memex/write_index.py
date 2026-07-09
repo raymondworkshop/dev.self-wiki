@@ -74,8 +74,7 @@ def _stats_panel(stats: dict[str, Any], wiki_count: int) -> str:
     )
 
 
-def write_memex_index(ctx: dict[str, Any]) -> None:
-    MEMEX_DIR.mkdir(parents=True, exist_ok=True)
+def render_memex_index_html(ctx: dict[str, Any]) -> str:
     stats = ctx.get("stats", {})
 
     wiki_ranked = get_wiki_ranked(ctx)
@@ -164,7 +163,7 @@ def write_memex_index(ctx: dict[str, Any]) -> None:
         + _stats_panel(stats, len(wiki_ranked))
     )
 
-    page_html = render_page(
+    return render_page(
         "Memex",
         body,
         rel_path="memex/index.html",
@@ -173,4 +172,9 @@ def write_memex_index(ctx: dict[str, Any]) -> None:
         compact=False,
         with_search=True,
     )
+
+
+def write_memex_index(ctx: dict[str, Any]) -> None:
+    MEMEX_DIR.mkdir(parents=True, exist_ok=True)
+    page_html = render_memex_index_html(ctx)
     (MEMEX_DIR / "index.html").write_text(page_html, encoding="utf-8")
