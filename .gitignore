@@ -2,6 +2,7 @@
 .selfwikienv/
 self-wiki/
 scripts/__pycache__/
+scripts/memex/__pycache__/
 .env
 .obsidian
 dist/
