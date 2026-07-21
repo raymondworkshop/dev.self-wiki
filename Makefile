@@ -2,28 +2,7 @@
 
 .DEFAULT_GOAL := help
 
-PY  := .selfwikienv/bin/python3
-CLI := $(PY) scripts/cli.py
-
-LLM_PROVIDER ?= mlx
-LLM_ENV := ALLOW_PYTHON_LLM=1 ALLOW_LOCAL_LLM=1 LLM_PROVIDER=$(LLM_PROVIDER)
-CLI_PROVIDER_ARG := --provider $(LLM_PROVIDER)
-
-INGEST_OPTS := $(if $(REPORT),--report,)
-INGEST_ENV := $(if $(FAST),FAST=$(FAST),) $(if $(REPORT),REPORT=1,)
-
-WIKI_SYNTH_OPTS := $(if $(LIMIT),--limit $(LIMIT)) $(if $(FORCE),--force) \
-	$(if $(FOLDER),--folder $(FOLDER)) $(if $(WAVE),--wave $(WAVE)) \
-	$(if $(INGEST),--ingest)
-DOCTOR_ARGS := $(if $(RAW),--raw $(RAW),) $(CLI_PROVIDER_ARG)
-
-SITE_PORT ?= 8787
-SITE_DIR  ?= dist
-
-.PHONY: help ingest memex audit progress register-reference sync \
-	fix-provenance wiki-synthesize wiki-synthesize-apple-notes wiki-synth-status \
-	discover gap evolution agents reflect promote query test \
-	doctor-config publish site
+.PHONY: help sync query audit query-web test all 
 
 help:
 	@echo "Daily:  sync · ingest · site · publish · query · audit · reflect"
@@ -32,44 +11,9 @@ help:
 	@echo "Agents:  discover · gap · evolution · agents"
 	@echo "Other:  promote · register-reference · test · doctor-config"
 	@echo ""
-	@echo "Examples:"
-	@echo "  make sync              # changed raw → wiki-synthesize, then ingest"
-	@echo "  make sync SKIP_INGEST=1  # wiki-synthesize only, skip ingest"
-	@echo "  make ingest [FAST=1]   # memex · index · twin (no LLM)"
-	@echo "  make query Q=\"what are my values?\""
-	@echo "  make audit LINT=1"
-	@echo "  make agents            # discover → gap → evolution"
-	@echo "  make reflect           # agents + ingest + audit LINT=1"
-	@echo "  make site [PORT=8787]     # serve dist/ locally (build first: ingest + publish BUILD_ONLY=1)"
-	@echo "  make publish [BUILD_ONLY=1]"
-	@echo ""
-	@echo "Docs: README.md · $(CLI) --help"
-
-# --- pipeline ---
-ingest:
-	$(INGEST_ENV) $(CLI) ingest $(INGEST_OPTS)
-
-audit:
-	$(PY) scripts/test_wiki_compliance.py
-	$(PY) scripts/audit_wiki.py
-ifdef LINT
-	$(LLM_ENV) $(CLI) lint $(CLI_PROVIDER_ARG)
-endif
-
-progress:
-	$(CLI) progress
-
-register-reference:
-	$(CLI) register-reference
-
-wiki-synthesize:
-	$(LLM_ENV) $(CLI) wiki-synthesize $(CLI_PROVIDER_ARG) $(WIKI_SYNTH_OPTS)
-
-wiki-synthesize-apple-notes:
-	$(LLM_ENV) $(CLI) wiki-synthesize $(CLI_PROVIDER_ARG) --folder origin-apple-notes $(WIKI_SYNTH_OPTS)
-
-wiki-synth-status:
-	$(CLI) progress --wiki-synth-only $(if $(FOLDER),--folder $(FOLDER),)
+	@echo "  make query-web         browser UI"
+	@echo "  make extract-twitter   Twitter .js → raw markdown"
+	@echo "  python scripts/cli.py --help   advanced / Cursor mode"
 
 sync:
 	$(LLM_ENV) $(CLI) sync $(CLI_PROVIDER_ARG)
@@ -123,7 +67,14 @@ memex:
 doctor-config:
 	$(LLM_ENV) $(CLI) doctor-config $(DOCTOR_ARGS)
 
+extract-twitter:
+	$(PYTHON) scripts/extract_twitter_raw.py
+
 test:
-	@set -- scripts/test_*.py; \
-	if [ ! -e "$$1" ]; then echo "No test files found."; exit 0; fi; \
-	for f in "$$@"; do $(PY) "$$f" || exit 1; done
+	$(PYTHON) scripts/test_wiki_compliance.py
+	$(PYTHON) scripts/test_query_server.py
+	$(PYTHON) scripts/test_promote_output.py
+	$(PYTHON) scripts/test_audit_wiki.py
+	$(PYTHON) scripts/test_extract_twitter_raw.py
+
+all: sync audit
