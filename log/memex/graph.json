@@ -1,0 +1,593 @@
+{
+  "stats": {
+    "date": "2026-07-20",
+    "files": 7,
+    "pages": 7,
+    "wikilinks": 15,
+    "hashtag_links": 0,
+    "internal_links": 0,
+    "lines": 393
+  },
+  "backlinks": {
+    "/log": [
+      {
+        "title": "2026-07-20",
+        "url": "/log/reports/discovery/2026-07-20.html",
+        "rel": "log/reports/discovery/2026-07-20.md",
+        "layer": "log"
+      },
+      {
+        "title": "Digital Twin Profile",
+        "url": "/log/twin/PROFILE.html",
+        "rel": "log/twin/PROFILE.md",
+        "layer": "log"
+      },
+      {
+        "title": "Evolution 2026-07-20",
+        "url": "/log/reports/evolution/2026-07-20.html",
+        "rel": "log/reports/evolution/2026-07-20.md",
+        "layer": "log"
+      },
+      {
+        "title": "Gap 2026-07-20",
+        "url": "/log/reports/gap/2026-07-20.html",
+        "rel": "log/reports/gap/2026-07-20.md",
+        "layer": "log"
+      },
+      {
+        "title": "log",
+        "url": "/log/log.html",
+        "rel": "log/log.md",
+        "layer": "log"
+      },
+      {
+        "title": "PROGRESS",
+        "url": "/log/PROGRESS.html",
+        "rel": "log/PROGRESS.md",
+        "layer": "log"
+      }
+    ],
+    "/log/reports/gap/2026-07-20.html": [
+      {
+        "title": "Evolution 2026-07-20",
+        "url": "/log/reports/evolution/2026-07-20.html",
+        "rel": "log/reports/evolution/2026-07-20.md",
+        "layer": "log"
+      }
+    ],
+    "/evolution": [
+      {
+        "title": "Evolution 2026-07-20",
+        "url": "/log/reports/evolution/2026-07-20.html",
+        "rel": "log/reports/evolution/2026-07-20.md",
+        "layer": "log"
+      }
+    ],
+    "/gap": [
+      {
+        "title": "Gap 2026-07-20",
+        "url": "/log/reports/gap/2026-07-20.html",
+        "rel": "log/reports/gap/2026-07-20.md",
+        "layer": "log"
+      }
+    ]
+  },
+  "typed_backlinks": {},
+  "backlink_counts": {
+    "/log": 6,
+    "/log/reports/gap/2026-07-20.html": 1,
+    "/evolution": 1,
+    "/gap": 1
+  },
+  "unlinked_mentions": {
+    "/log/PROGRESS.html": [
+      {
+        "title": "2026-07-20",
+        "url": "/log/reports/discovery/2026-07-20.html",
+        "label": "2026-07-20"
+      },
+      {
+        "title": "Evolution 2026-07-20",
+        "url": "/log/reports/evolution/2026-07-20.html",
+        "label": "2026-07-20"
+      },
+      {
+        "title": "Gap 2026-07-20",
+        "url": "/log/reports/gap/2026-07-20.html",
+        "label": "2026-07-20"
+      }
+    ],
+    "/log/log.html": [
+      {
+        "title": "2026-07-20",
+        "url": "/log/reports/discovery/2026-07-20.html",
+        "label": "2026-07-20"
+      },
+      {
+        "title": "Evolution 2026-07-20",
+        "url": "/log/reports/evolution/2026-07-20.html",
+        "label": "2026-07-20"
+      },
+      {
+        "title": "Gap 2026-07-20",
+        "url": "/log/reports/gap/2026-07-20.html",
+        "label": "2026-07-20"
+      }
+    ],
+    "/log/reports/discovery/2026-07-20.html": [
+      {
+        "title": "Evolution 2026-07-20",
+        "url": "/log/reports/evolution/2026-07-20.html",
+        "label": "2026-07-20"
+      },
+      {
+        "title": "Gap 2026-07-20",
+        "url": "/log/reports/gap/2026-07-20.html",
+        "label": "2026-07-20"
+      }
+    ],
+    "/log/reports/evolution/2026-07-20.html": [
+      {
+        "title": "2026-07-20",
+        "url": "/log/reports/discovery/2026-07-20.html",
+        "label": "2026-07-20"
+      },
+      {
+        "title": "Digital Twin Profile",
+        "url": "/log/twin/PROFILE.html",
+        "label": "PROFILE"
+      }
+    ],
+    "/log/reports/gap/2026-07-20.html": [
+      {
+        "title": "2026-07-20",
+        "url": "/log/reports/discovery/2026-07-20.html",
+        "label": "2026-07-20"
+      },
+      {
+        "title": "Evolution 2026-07-20",
+        "url": "/log/reports/evolution/2026-07-20.html",
+        "label": "2026-07-20"
+      }
+    ],
+    "/log/twin/PROFILE.html": [
+      {
+        "title": "2026-07-20",
+        "url": "/log/reports/discovery/2026-07-20.html",
+        "label": "2026-07-20"
+      },
+      {
+        "title": "Evolution 2026-07-20",
+        "url": "/log/reports/evolution/2026-07-20.html",
+        "label": "2026-07-20"
+      },
+      {
+        "title": "Gap 2026-07-20",
+        "url": "/log/reports/gap/2026-07-20.html",
+        "label": "2026-07-20"
+      }
+    ]
+  },
+  "topic_pages": {
+    "type/synthesis": [
+      {
+        "title": "Evolution 2026-07-20",
+        "url": "/log/reports/evolution/2026-07-20.html",
+        "layer": "log"
+      },
+      {
+        "title": "Gap 2026-07-20",
+        "url": "/log/reports/gap/2026-07-20.html",
+        "layer": "log"
+      }
+    ],
+    "agent/evolution": [
+      {
+        "title": "Evolution 2026-07-20",
+        "url": "/log/reports/evolution/2026-07-20.html",
+        "layer": "log"
+      }
+    ],
+    "agent/gap": [
+      {
+        "title": "Gap 2026-07-20",
+        "url": "/log/reports/gap/2026-07-20.html",
+        "layer": "log"
+      }
+    ],
+    "type/principle": [
+      {
+        "title": "Digital Twin Profile",
+        "url": "/log/twin/PROFILE.html",
+        "layer": "log"
+      }
+    ],
+    "twin/profile": [
+      {
+        "title": "Digital Twin Profile",
+        "url": "/log/twin/PROFILE.html",
+        "layer": "log"
+      }
+    ]
+  },
+  "page_topics": {
+    "/log/PROGRESS.html": [],
+    "/log": [],
+    "/log/log.html": [],
+    "/log/reports/discovery/2026-07-20.html": [],
+    "/log/reports/evolution/2026-07-20.html": [
+      "type/synthesis",
+      "agent/evolution"
+    ],
+    "/log/reports/gap/2026-07-20.html": [
+      "type/synthesis",
+      "agent/gap"
+    ],
+    "/log/twin/PROFILE.html": [
+      "type/principle",
+      "twin/profile"
+    ]
+  },
+  "layer_pages": {
+    "log": [
+      {
+        "title": "2026-07-20",
+        "url": "/log/reports/discovery/2026-07-20.html",
+        "rel": "log/reports/discovery/2026-07-20.md",
+        "excerpt": "markdown --- title: \"Discovery 2026-07-20\" description: \"从自我叙事到关系动态的深层结构：连接、脆弱、自主性与技术赋能的交叉点\" level: 1 lastupdated: 2026-07-20T12:00:00Z tags: [type/synthesis, agent/discovery, topic/self, topic/relat…"
+      },
+      {
+        "title": "Digital Twin Profile",
+        "url": "/log/twin/PROFILE.html",
+        "rel": "log/twin/PROFILE.md",
+        "excerpt": "> Top 0 of 0 Level-2 principle(s) (confidence ≥ 0.7), 0 recent evolution entry(ies), 0 recent shift(s), 0 tension edge(s). Full catalog: log/twin/principles.json. Built by buildtwinprofile.py after i…"
+      },
+      {
+        "title": "Evolution 2026-07-20",
+        "url": "/log/reports/evolution/2026-07-20.html",
+        "rel": "log/reports/evolution/2026-07-20.md",
+        "excerpt": "> [!summary] 方向 > 本周期为知识演化起点（bootstrap），无原始输入（rawmdfiles=0），系统首次进入“发现-差距”闭环。核心演化路径从零构建，通过首次生成发现报告与差距报告，确立了“技术介入情感表达”为关键研究方向。当前状态为知识系统的初始状态，所有内容基于对已有发现的结构化解读与逻辑推演，尚未生成任何实际的 raw 或 wiki 内容，但已建立对“技术中介脆弱性…"
+      },
+      {
+        "title": "Gap 2026-07-20",
+        "url": "/log/reports/gap/2026-07-20.html",
+        "rel": "log/reports/gap/2026-07-20.md",
+        "excerpt": "> [!summary] 本报告识别出在“情感暴露—技术赋能—关系重构”交叉路径中尚未被系统化探索的深层机制，尤其在脆弱性如何被技术工具感知、记录与反向影响关系动态方面存在显著知识空白。当前发现强调“情感暴露”是打破交易感的关键，但缺乏对技术介入下“脆弱性被结构化、数据化”的后果分析。 > [!warning] 优先关闭 > 技术工具如何在不被察觉的情况下“中介”或“替代”情感暴露，从而削弱其作…"
+      },
+      {
+        "title": "index",
+        "url": "/log/index.html",
+        "rel": "log/index.md",
+        "excerpt": "Wiki Index (auto-generated) See also: ../INDEX.md (Obsidian hubs) Level 0 / Other Level 1 / Synthesis Level 2 / Principle"
+      },
+      {
+        "title": "log",
+        "url": "/log/log.html",
+        "rel": "log/log.md",
+        "excerpt": "Self-Wiki Log Chronological record of ingest, query, and lint operations. [2026-06-02] ingest | MVP smoke test [2026-06-02] ingest | 1 raw file(s), 1 page update(s) [2026-06-02] ingest | 1 raw file(s…"
+      },
+      {
+        "title": "PROGRESS",
+        "url": "/log/PROGRESS.html",
+        "rel": "log/PROGRESS.md",
+        "excerpt": "Pipeline progress Updated: 2026-07-20T09:36:41.840453+00:00 Machine index: log/pipelineprogress.json Wiki-synthesize detail: log/wikisynthmanifest.json Cycle - Status: inprogress - Resume stage: wiki…"
+      }
+    ]
+  },
+  "layer_hubs": {
+    "raw": {
+      "title": "Raw",
+      "url": "/raw/index.html",
+      "rel": "raw/index.md"
+    },
+    "wiki": {
+      "title": "Wiki",
+      "url": "/wiki/index.html",
+      "rel": "wiki/index.md"
+    },
+    "twin": {
+      "title": "Twin",
+      "url": "/twin/index.html",
+      "rel": "twin/index.md"
+    },
+    "discovery": {
+      "title": "Discovery",
+      "url": "/discovery/index.html",
+      "rel": "discovery/index.md"
+    },
+    "gap": {
+      "title": "Gap",
+      "url": "/gap/index.html",
+      "rel": "gap/index.md"
+    },
+    "evolution": {
+      "title": "Evolution",
+      "url": "/evolution/index.html",
+      "rel": "evolution/index.md"
+    },
+    "outputs": {
+      "title": "Outputs",
+      "url": "/outputs/index.html",
+      "rel": "outputs/index.md"
+    },
+    "log": {
+      "title": "Log",
+      "url": "/log/index.html",
+      "rel": "log/index.md"
+    }
+  },
+  "registry": {
+    "raw": {
+      "url": "/raw/index.html",
+      "title": "Raw",
+      "rel": "raw/"
+    },
+    "raw/": {
+      "url": "/raw/index.html",
+      "title": "Raw",
+      "rel": "raw/"
+    },
+    "wiki": {
+      "url": "/wiki/index.html",
+      "title": "Wiki",
+      "rel": "wiki/"
+    },
+    "wiki/": {
+      "url": "/wiki/index.html",
+      "title": "Wiki",
+      "rel": "wiki/"
+    },
+    "twin": {
+      "url": "/twin/index.html",
+      "title": "Twin",
+      "rel": "twin/"
+    },
+    "twin/": {
+      "url": "/twin/index.html",
+      "title": "Twin",
+      "rel": "twin/"
+    },
+    "discovery": {
+      "url": "/discovery/index.html",
+      "title": "Discovery",
+      "rel": "discovery/"
+    },
+    "discovery/": {
+      "url": "/discovery/index.html",
+      "title": "Discovery",
+      "rel": "discovery/"
+    },
+    "gap": {
+      "url": "/gap/index.html",
+      "title": "Gap",
+      "rel": "gap/"
+    },
+    "gap/": {
+      "url": "/gap/index.html",
+      "title": "Gap",
+      "rel": "gap/"
+    },
+    "evolution": {
+      "url": "/evolution/index.html",
+      "title": "Evolution",
+      "rel": "evolution/"
+    },
+    "evolution/": {
+      "url": "/evolution/index.html",
+      "title": "Evolution",
+      "rel": "evolution/"
+    },
+    "outputs": {
+      "url": "/outputs/index.html",
+      "title": "Outputs",
+      "rel": "outputs/"
+    },
+    "outputs/": {
+      "url": "/outputs/index.html",
+      "title": "Outputs",
+      "rel": "outputs/"
+    },
+    "log": {
+      "url": "/log/log.html",
+      "title": "log",
+      "rel": "log/log.md"
+    },
+    "log/": {
+      "url": "/log/index.html",
+      "title": "Log",
+      "rel": "log/"
+    },
+    "progress": {
+      "url": "/log/PROGRESS.html",
+      "title": "PROGRESS",
+      "rel": "log/PROGRESS.md"
+    },
+    "log/PROGRESS.md": {
+      "url": "/log/PROGRESS.html",
+      "title": "PROGRESS",
+      "rel": "log/PROGRESS.md"
+    },
+    "PROGRESS.md": {
+      "url": "/log/PROGRESS.html",
+      "title": "PROGRESS",
+      "rel": "log/PROGRESS.md"
+    },
+    "PROGRESS": {
+      "url": "/log/PROGRESS.html",
+      "title": "PROGRESS",
+      "rel": "log/PROGRESS.md"
+    },
+    "index": {
+      "url": "/log/index.html",
+      "title": "index",
+      "rel": "log/index.md"
+    },
+    "log/index.md": {
+      "url": "/log/index.html",
+      "title": "index",
+      "rel": "log/index.md"
+    },
+    "index.md": {
+      "url": "/log/index.html",
+      "title": "index",
+      "rel": "log/index.md"
+    },
+    "log/log.md": {
+      "url": "/log/log.html",
+      "title": "log",
+      "rel": "log/log.md"
+    },
+    "log.md": {
+      "url": "/log/log.html",
+      "title": "log",
+      "rel": "log/log.md"
+    },
+    "2026-07-20": {
+      "url": "/log/reports/gap/2026-07-20.html",
+      "title": "Gap 2026-07-20",
+      "rel": "log/reports/gap/2026-07-20.md"
+    },
+    "log/reports/discovery/2026-07-20.md": {
+      "url": "/log/reports/discovery/2026-07-20.html",
+      "title": "2026-07-20",
+      "rel": "log/reports/discovery/2026-07-20.md"
+    },
+    "2026-07-20.md": {
+      "url": "/log/reports/gap/2026-07-20.html",
+      "title": "Gap 2026-07-20",
+      "rel": "log/reports/gap/2026-07-20.md"
+    },
+    "evolution 2026-07-20": {
+      "url": "/log/reports/evolution/2026-07-20.html",
+      "title": "Evolution 2026-07-20",
+      "rel": "log/reports/evolution/2026-07-20.md"
+    },
+    "evolution-2026-07-20": {
+      "url": "/log/reports/evolution/2026-07-20.html",
+      "title": "Evolution 2026-07-20",
+      "rel": "log/reports/evolution/2026-07-20.md"
+    },
+    "log/reports/evolution/2026-07-20.md": {
+      "url": "/log/reports/evolution/2026-07-20.html",
+      "title": "Evolution 2026-07-20",
+      "rel": "log/reports/evolution/2026-07-20.md"
+    },
+    "gap 2026-07-20": {
+      "url": "/log/reports/gap/2026-07-20.html",
+      "title": "Gap 2026-07-20",
+      "rel": "log/reports/gap/2026-07-20.md"
+    },
+    "gap-2026-07-20": {
+      "url": "/log/reports/gap/2026-07-20.html",
+      "title": "Gap 2026-07-20",
+      "rel": "log/reports/gap/2026-07-20.md"
+    },
+    "log/reports/gap/2026-07-20.md": {
+      "url": "/log/reports/gap/2026-07-20.html",
+      "title": "Gap 2026-07-20",
+      "rel": "log/reports/gap/2026-07-20.md"
+    },
+    "digital twin profile": {
+      "url": "/log/twin/PROFILE.html",
+      "title": "Digital Twin Profile",
+      "rel": "log/twin/PROFILE.md"
+    },
+    "digital-twin-profile": {
+      "url": "/log/twin/PROFILE.html",
+      "title": "Digital Twin Profile",
+      "rel": "log/twin/PROFILE.md"
+    },
+    "profile": {
+      "url": "/log/twin/PROFILE.html",
+      "title": "Digital Twin Profile",
+      "rel": "log/twin/PROFILE.md"
+    },
+    "log/twin/PROFILE.md": {
+      "url": "/log/twin/PROFILE.html",
+      "title": "Digital Twin Profile",
+      "rel": "log/twin/PROFILE.md"
+    },
+    "PROFILE.md": {
+      "url": "/log/twin/PROFILE.html",
+      "title": "Digital Twin Profile",
+      "rel": "log/twin/PROFILE.md"
+    },
+    "PROFILE": {
+      "url": "/log/twin/PROFILE.html",
+      "title": "Digital Twin Profile",
+      "rel": "log/twin/PROFILE.md"
+    }
+  },
+  "url_registry": {
+    "/raw": {
+      "url": "/raw/index.html",
+      "title": "Raw",
+      "rel": "raw/"
+    },
+    "/wiki": {
+      "url": "/wiki/index.html",
+      "title": "Wiki",
+      "rel": "wiki/"
+    },
+    "/twin": {
+      "url": "/twin/index.html",
+      "title": "Twin",
+      "rel": "twin/"
+    },
+    "/discovery": {
+      "url": "/discovery/index.html",
+      "title": "Discovery",
+      "rel": "discovery/"
+    },
+    "/gap": {
+      "url": "/gap/index.html",
+      "title": "Gap",
+      "rel": "gap/"
+    },
+    "/evolution": {
+      "url": "/evolution/index.html",
+      "title": "Evolution",
+      "rel": "evolution/"
+    },
+    "/outputs": {
+      "url": "/outputs/index.html",
+      "title": "Outputs",
+      "rel": "outputs/"
+    },
+    "/log/log.html": {
+      "url": "/log/log.html",
+      "title": "log",
+      "rel": "log/log.md"
+    },
+    "/log": {
+      "url": "/log/index.html",
+      "title": "index",
+      "rel": "log/index.md"
+    },
+    "/log/PROGRESS.html": {
+      "url": "/log/PROGRESS.html",
+      "title": "PROGRESS",
+      "rel": "log/PROGRESS.md"
+    },
+    "/log/reports/gap/2026-07-20.html": {
+      "url": "/log/reports/gap/2026-07-20.html",
+      "title": "Gap 2026-07-20",
+      "rel": "log/reports/gap/2026-07-20.md"
+    },
+    "/log/reports/discovery/2026-07-20.html": {
+      "url": "/log/reports/discovery/2026-07-20.html",
+      "title": "2026-07-20",
+      "rel": "log/reports/discovery/2026-07-20.md"
+    },
+    "/log/reports/evolution/2026-07-20.html": {
+      "url": "/log/reports/evolution/2026-07-20.html",
+      "title": "Evolution 2026-07-20",
+      "rel": "log/reports/evolution/2026-07-20.md"
+    },
+    "/log/twin/PROFILE.html": {
+      "url": "/log/twin/PROFILE.html",
+      "title": "Digital Twin Profile",
+      "rel": "log/twin/PROFILE.md"
+    }
+  }
+}

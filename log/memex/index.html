@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Personal wiki and memex — raw notes, wiki themes, digital twin.">
+  <title>Memex · Self-Wiki</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f5f7;
+      --bg-accent-1: rgba(0, 122, 255, 0.06);
+      --bg-accent-2: rgba(88, 86, 214, 0.05);
+      --bg-accent-3: rgba(255, 149, 0, 0.04);
+      --shell: rgba(255, 255, 255, 0.88);
+      --panel: #ffffff;
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --line: rgba(0, 0, 0, 0.08);
+      --accent: #007aff;
+      --accent-soft: rgba(0, 122, 255, 0.1);
+      --accent-2: #5856d6;
+      --good: #248a3d;
+      --link: #0071e3;
+      --link-hover: #0077ed;
+      --heading-2: #1d1d1f;
+      --body-soft: #424245;
+      --nav-bg: rgba(255, 255, 255, 0.72);
+      --blockquote-bg: rgba(0, 122, 255, 0.05);
+      --blockquote-text: #424245;
+      --code-text: #bf4800;
+      --code-bg: rgba(0, 0, 0, 0.05);
+      --pre-bg: #f5f5f7;
+      --list-bg: #ffffff;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 18px 60px rgba(0, 0, 0, 0.08);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --font-en: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
+      --font-zh: "PingFang SC", "PingFang TC", "PingFang HK", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --font-ui: var(--font-en), var(--font-zh);
+      --font-body: var(--font-en), var(--font-zh);
+      --measure: 44rem;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: var(--font-ui);
+      font-size: 17px;
+      line-height: 1.65;
+      font-feature-settings: "kern" 1, "liga" 1;
+      background:
+        radial-gradient(circle at 0% 0%, var(--bg-accent-1), transparent 36rem),
+        radial-gradient(circle at 100% 0%, var(--bg-accent-2), transparent 32rem),
+        radial-gradient(circle at 50% 100%, var(--bg-accent-3), transparent 40rem),
+        var(--bg);
+    }
+
+    a {
+      color: var(--link);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+      transition: color 140ms ease;
+    }
+    a:hover { color: var(--link-hover); }
+
+    .wrap {
+      width: min(1080px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 20px 0 56px;
+    }
+
+    .site-shell {
+      background: var(--shell);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius-lg) + 2px);
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: saturate(180%) blur(20px);
+      overflow: clip;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px 20px;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--line);
+      background: var(--nav-bg);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand-block {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .brand {
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+    .brand:hover { color: var(--accent); text-decoration: none; }
+
+    .brand-sub {
+      color: var(--muted);
+      font-size: 0.82rem;
+      letter-spacing: 0;
+      text-transform: none;
+      font-weight: 500;
+    }
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .nav a {
+      color: var(--body-soft);
+      text-decoration: none;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 7px 13px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+    }
+    .nav a:hover {
+      background: rgba(255, 255, 255, 0.7);
+      border-color: var(--line);
+      color: var(--text);
+      transform: translateY(-1px);
+    }
+    .nav a.active {
+      border-color: rgba(0, 122, 255, 0.22);
+      background: var(--accent-soft);
+      color: var(--link);
+      font-weight: 600;
+    }
+
+    .hero {
+      display: grid;
+      gap: 14px;
+      padding: 34px 28px 26px;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 70%);
+    }
+    .hero-compact {
+      padding: 18px 22px;
+      gap: 0;
+      border-bottom: none;
+      background: transparent;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-family: var(--font-ui);
+      font-size: clamp(2rem, 5.5vw, 3rem);
+      line-height: 1.15;
+      letter-spacing: -0.025em;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .hero-compact h1 {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--good);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .home-link { color: inherit; text-decoration: none; }
+    .home-link:hover { color: var(--accent); text-decoration: none; }
+
+    .subtitle {
+      max-width: 38rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .card {
+      background: var(--panel);
+    }
+
+    .answer {
+      padding: clamp(22px, 4vw, 34px);
+      max-width: calc(var(--measure) + 8rem);
+      margin: 0 auto;
+      font-family: var(--font-body);
+      font-size: 1.02rem;
+      line-height: 1.75;
+    }
+
+    .answer h1, .answer h2, .answer h3, .answer h4 {
+      font-family: var(--font-ui);
+      letter-spacing: -0.015em;
+      line-height: 1.35;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .answer h1 { font-size: 1.9rem; margin-top: 0; font-weight: 700; }
+    .answer h2 {
+      margin-top: 2.2rem;
+      color: var(--heading-2);
+      font-size: 1.4rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .answer h3 { font-size: 1.15rem; margin-top: 1.6rem; }
+    .answer p, .answer li { color: var(--body-soft); }
+    .answer p { margin: 0 0 1rem; }
+    .answer p:last-child { margin-bottom: 0; }
+    .answer ul, .answer ol {
+      padding-left: 1.35rem;
+      margin: 0 0 1.1rem;
+    }
+    .answer li + li { margin-top: 0.45rem; }
+    .answer li::marker { color: var(--accent); }
+
+    .answer .source-line {
+      margin-top: 0.65rem;
+      padding: 8px 12px;
+      border-left: 3px solid rgba(14, 165, 233, 0.35);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      background: rgba(14, 165, 233, 0.05);
+      font-family: var(--font-ui);
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .answer h3.distillation-heading {
+      margin-top: 1.75rem;
+      padding-top: 0.35rem;
+      font-size: 1.02rem;
+      color: var(--body-soft);
+      font-weight: 600;
+    }
+    .answer h3.distillation-heading + p,
+    .answer h3.distillation-heading + ul {
+      margin-top: 0.55rem;
+    }
+
+    .answer table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-family: var(--font-ui);
+      font-size: 0.92rem;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .answer th, .answer td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+    }
+    .answer th {
+      background: rgba(0, 122, 255, 0.05);
+      font-weight: 600;
+    }
+    .answer tr:nth-child(even) td { background: rgba(0, 0, 0, 0.015); }
+
+    blockquote {
+      margin: 1.25rem 0;
+      padding: 1rem 1.1rem;
+      border-left: 3px solid var(--accent);
+      background: var(--blockquote-bg);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      color: var(--blockquote-text);
+    }
+
+    code {
+      font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--code-text);
+      background: var(--code-bg);
+      padding: 0.15em 0.45em;
+      border-radius: 6px;
+      font-size: 0.9em;
+    }
+    pre {
+      overflow: auto;
+      padding: 1rem 1.1rem;
+      border-radius: var(--radius-md);
+      background: var(--pre-bg);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+    }
+    pre code { background: transparent; padding: 0; color: inherit; }
+    pre.mermaid {
+      overflow-x: auto;
+      margin: 1rem 0;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+    pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+    .page-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .page-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-family: var(--font-ui);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--accent-soft);
+      color: var(--link);
+      border: 1px solid rgba(0, 122, 255, 0.15);
+    }
+
+    .path {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      overflow-wrap: anywhere;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      background: rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--line);
+    }
+
+    .list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .list-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 15px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--list-bg);
+      color: var(--text);
+      text-decoration: none;
+      box-shadow: var(--shadow-sm);
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+      min-height: 100%;
+    }
+    .list-item:hover {
+      border-color: rgba(0, 122, 255, 0.22);
+      box-shadow: 0 8px 24px rgba(0, 122, 255, 0.08);
+      transform: translateY(-2px);
+      color: var(--text);
+      text-decoration: none;
+    }
+    .list-item::after {
+      content: "→";
+      margin-top: auto;
+      padding-top: 6px;
+      color: var(--accent);
+      font-family: var(--font-ui);
+      font-size: 0.9rem;
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+    .list-item:hover::after {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .list-item small {
+      display: block;
+      color: var(--muted);
+      font-family: var(--font-ui);
+      font-size: 0.78rem;
+      overflow-wrap: anywhere;
+    }
+
+    .memex-panels {
+      margin-top: 2rem;
+      display: grid;
+      gap: 14px;
+      font-family: var(--font-ui);
+    }
+    .memex-panel {
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--panel);
+      box-shadow: var(--shadow-sm);
+    }
+    .memex-panel h3 {
+      margin: 0 0 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--heading-2);
+    }
+    .memex-panel p { margin: 0; font-family: var(--font-ui); font-size: 0.92rem; }
+    .memex-panel a { text-decoration: none; font-weight: 500; }
+    .memex-panel a:hover { text-decoration: underline; }
+
+    .wikilink-missing { border-bottom: 1px dashed var(--muted); }
+
+    .memex-search {
+      margin: 0 0 2rem;
+      padding: 18px 18px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(0, 122, 255, 0.04);
+      font-family: var(--font-ui);
+    }
+    .memex-search h2 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: var(--heading-2);
+    }
+    .memex-search-note {
+      color: var(--muted);
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+    }
+
+    .search-input {
+      display: block;
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      font: inherit;
+      background: #fff;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: rgba(0, 122, 255, 0.45);
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.12);
+    }
+
+    .search-status {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin: 10px 0 0;
+      min-height: 1.4rem;
+    }
+
+    .search-results {
+      list-style: none;
+      margin: 10px 0 0;
+      padding: 0;
+    }
+    .search-result {
+      border-top: 1px solid var(--line);
+      padding: 12px 0;
+    }
+    .search-result:first-child { border-top: none; padding-top: 0; }
+    .search-result-title {
+      color: var(--link);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .search-result-title:hover { text-decoration: underline; }
+    .search-result-meta {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .search-result-excerpt {
+      margin: 6px 0 0;
+      color: var(--body-soft);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      font-family: var(--font-body);
+    }
+
+    .wiki-panel {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--line);
+      font-family: var(--font-ui);
+    }
+    .wiki-panel h2 {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+      color: var(--heading-2);
+      letter-spacing: -0.02em;
+    }
+    .wiki-panel-note {
+      color: var(--muted);
+      margin: 0 0 16px;
+      font-size: 0.94rem;
+      max-width: 40rem;
+    }
+
+    .wiki-card-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .wiki-card {
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-md);
+      background: var(--list-bg);
+      box-shadow: var(--shadow-sm);
+      transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+    .wiki-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(28, 25, 23, 0.07);
+    }
+    .wiki-card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      line-height: 1.3;
+    }
+    .wiki-card h3 a {
+      color: var(--text);
+      text-decoration: none;
+    }
+    .wiki-card h3 a:hover { color: var(--link); }
+    .wiki-card-excerpt {
+      margin: 0 0 8px;
+      color: var(--body-soft);
+      font-size: 0.92rem;
+      line-height: 1.55;
+      font-family: var(--font-body);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .wiki-mentions {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .memex-stats-list {
+      margin: 0;
+      padding-left: 1.2rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      columns: 2;
+      column-gap: 2rem;
+    }
+
+    .memex-intro h2 {
+      margin: 0 0 6px;
+      font-family: var(--font-ui);
+      font-size: 1.2rem;
+      color: var(--heading-2);
+    }
+
+    .site-footer {
+      padding: 18px 24px 22px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.82rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.35);
+      font-family: var(--font-ui);
+    }
+    .site-footer a { color: var(--muted); text-decoration: none; }
+    .site-footer a:hover { color: var(--accent); }
+
+    @media (max-width: 720px) {
+      .wrap { width: min(100vw - 16px, 1080px); padding-top: 10px; }
+      .site-header { padding: 12px 14px; }
+      .hero { padding: 24px 18px 18px; }
+      .answer { padding: 18px 16px 24px; }
+      .memex-stats-list { columns: 1; }
+      .list { grid-template-columns: 1fr; }
+      .wiki-card-list { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .nav a, .list-item, .wiki-card { transition: none; }
+    }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="site-shell">
+    <header class="site-header">
+      <div class="brand-block">
+        <a href="/index.html" class="brand home-link">Socratic Mirror</a>
+        <span class="brand-sub">Self-Wiki</span>
+      </div>
+      <nav class="nav" aria-label="Site"><a href="/index.html">Home</a><a href="/memex/index.html" class="active">Memex</a><a href="/raw/index.html">Raw</a><a href="/wiki/index.html">Wiki</a><a href="/discovery/index.html">Discovery</a><a href="/gap/index.html">Gap</a><a href="/evolution/index.html">Evolution</a><a href="/twin/PROFILE.html">Twin</a><a href="/outputs/index.html">Output</a></nav>
+    </header>
+    <section class="hero">
+      <h1>Memex</h1>
+      <p class="subtitle">Wiki themes, backlinks, and layer hubs</p>
+    </section>
+    <section class="card answer">
+      
+<section class="memex-search" aria-label="Search vault">
+  <h2>Search</h2>
+  <p class="memex-search-note">Find pages across raw, wiki, twin, and agents.</p>
+  <input class="search-input" id="memex-search-input" type="search"
+    placeholder="e.g. stoicism, learning, values" autocomplete="off"
+    aria-label="Search vault by title, topic, or content">
+  <p class="search-status" id="memex-search-status" aria-live="polite"></p>
+  <ul class="search-results" id="memex-search-results"></ul>
+</section><div class="memex-intro"><h2>Explore the vault</h2><p class="wiki-panel-note">Wiki themes, backlinks, and layer hubs across your second brain.</p></div><section class="wiki-panel"><h2>Areas</h2><p class="wiki-panel-note">Each layer is a hub — a map into a corner of this vault.</p><ul class="wiki-card-list"><li class="wiki-card"><h3><a href="/raw/index.html">Raw</a></h3><p class="wiki-mentions">raw/</p></li><li class="wiki-card"><h3><a href="/wiki/index.html">Wiki</a></h3><p class="wiki-mentions">wiki/</p></li><li class="wiki-card"><h3><a href="/twin/index.html">Twin</a></h3><p class="wiki-mentions">twin/</p></li><li class="wiki-card"><h3><a href="/discovery/index.html">Discovery</a></h3><p class="wiki-mentions">discovery/</p></li><li class="wiki-card"><h3><a href="/gap/index.html">Gap</a></h3><p class="wiki-mentions">gap/ · 1 backlink</p></li><li class="wiki-card"><h3><a href="/evolution/index.html">Evolution</a></h3><p class="wiki-mentions">evolution/ · 1 backlink</p></li><li class="wiki-card"><h3><a href="/outputs/index.html">Outputs</a></h3><p class="wiki-mentions">outputs/</p></li><li class="wiki-card"><h3><a href="/log/index.html">Log</a></h3><p class="wiki-card-excerpt">Wiki Index (auto-generated) See also: ../INDEX.md (Obsidian hubs) Level 0 / Other Level 1 / Synthesis Level 2 / Principle</p><p class="wiki-mentions">log/ · 6 backlinks</p></li></ul></section><section class="wiki-panel"><h2>Most linked across vault</h2><p class="wiki-panel-note">Pages that other notes link to most often (excluding layer hubs).</p><ul class="wiki-card-list"><li class="wiki-card"><h3><a href="/log/reports/gap/2026-07-20.html">Gap 2026-07-20</a></h3><p class="wiki-mentions">log · 1 backlink</p></li></ul></section><section class="wiki-panel"><h2>Log — most linked</h2><p class="wiki-panel-note">Top pages in log/. Browse all via the layer index.</p><ul class="wiki-card-list"><li class="wiki-card"><h3><a href="/log/reports/gap/2026-07-20.html">Gap 2026-07-20</a></h3><p class="wiki-mentions">log · 1 backlink</p></li></ul></section><p class="wiki-panel-note"><a href="/log/index.html">Open log/ index →</a></p><section class="wiki-panel memex-stats"><h2>Stats</h2><ul class="memex-stats-list"><li>pages = 7</li><li>wiki themes = 0</li><li>wikilinks = 15</li><li>internal links = 0</li><li>lines = 393</li></ul></section>
+    </section>
+      
+    <footer class="site-footer">
+      <span>Socratic Mirror · personal second brain</span>
+      <span><a href="/memex/index.html">Memex</a> · <a href="/wiki/index.html">Wiki</a> · <a href="/index.html">Home</a></span>
+    </footer>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, securityLevel: "strict", theme: "neutral" });</script>
+  <script src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script>
+  <script src="/static/search.js"></script>
+</body>
+</html>

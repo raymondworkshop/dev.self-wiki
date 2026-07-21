@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "updated_at": "2026-07-20T09:36:42.859921+00:00",
+  "cycle": {
+    "status": "in_progress",
+    "resume_stage": "wiki_synthesize",
+    "resume_command": "make wiki-synthesize LIMIT=20",
+    "completed_stages": [
+      "register_reference",
+      "discovery",
+      "gap",
+      "evolution",
+      "ingest",
+      "audit"
+    ],
+    "last_stop": {
+      "status": "done",
+      "at": "2026-07-20T09:36:42.859532+00:00",
+      "output": null,
+      "stage": "ingest"
+    }
+  },
+  "stages": {
+    "register_reference": {
+      "status": "done",
+      "output": "log/sources.json",
+      "count": 23959,
+      "completed_at": "2026-06-15T09:31:46+00:00",
+      "resume_command": "make register-reference"
+    },
+    "wiki_synthesize": {
+      "status": "pending",
+      "summary": {
+        "done": 0,
+        "pending": 0,
+        "no_actions": 0,
+        "skipped": 0,
+        "failed": 0
+      },
+      "done": 0,
+      "remaining": 0,
+      "total": 0,
+      "manifest": "log/wiki_synth_manifest.json",
+      "last_stop": {
+        "rel": "self-wiki/raw/_posts/origin-apple-notes/daily.md",
+        "status": "no_actions",
+        "at": "2026-07-20T07:04:14.966234+00:00",
+        "pages": 0
+      },
+      "resume_command": "make wiki-synthesize LIMIT=20"
+    },
+    "ingest": {
+      "status": "done",
+      "reason": "vault changed since last memex ingest — run make ingest",
+      "memex_stamp": "log/memex/.stamp",
+      "twin_profile": "self-wiki/twin/PROFILE.md",
+      "resume_command": "make ingest",
+      "completed_at": "2026-07-20T09:36:42.858966+00:00",
+      "last_stop": {
+        "status": "done",
+        "at": "2026-07-20T09:36:42.859532+00:00",
+        "output": null
+      }
+    },
+    "discovery": {
+      "status": "done",
+      "reason": null,
+      "runs": [
+        {
+          "output": "log/reports/discovery/2026-07-20.md",
+          "date": "2026-07-20",
+          "completed_at": "2026-07-20T09:34:26.310026+00:00",
+          "status": "done"
+        }
+      ],
+      "latest": {
+        "output": "log/reports/discovery/2026-07-20.md",
+        "date": "2026-07-20",
+        "completed_at": "2026-07-20T09:34:26.310026+00:00",
+        "status": "done"
+      },
+      "resume_command": "make discover"
+    },
+    "gap": {
+      "status": "done",
+      "reason": null,
+      "runs": [
+        {
+          "output": "log/reports/gap/2026-07-20.md",
+          "date": "2026-07-20",
+          "completed_at": "2026-07-20T09:35:32.822938+00:00",
+          "status": "done"
+        }
+      ],
+      "latest": {
+        "output": "log/reports/gap/2026-07-20.md",
+        "date": "2026-07-20",
+        "completed_at": "2026-07-20T09:35:32.822938+00:00",
+        "status": "done"
+      },
+      "resume_command": "make gap"
+    },
+    "evolution": {
+      "status": "done",
+      "reason": null,
+      "runs": [
+        {
+          "output": "log/reports/evolution/2026-07-20.md",
+          "date": "2026-07-20",
+          "completed_at": "2026-07-20T09:36:41.523956+00:00",
+          "status": "done"
+        }
+      ],
+      "latest": {
+        "output": "log/reports/evolution/2026-07-20.md",
+        "date": "2026-07-20",
+        "completed_at": "2026-07-20T09:36:41.523956+00:00",
+        "status": "done"
+      },
+      "resume_command": "make evolution"
+    },
+    "audit": {
+      "status": "done",
+      "output": "self-wiki/audit.md",
+      "completed_at": "2026-07-20T08:38:29.436392+00:00",
+      "resume_command": "make audit LINT=1"
+    }
+  }
+}

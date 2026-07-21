@@ -23,14 +23,14 @@ SITE_DIR  ?= dist
 .PHONY: help ingest memex audit progress register-reference sync \
 	fix-provenance wiki-synthesize wiki-synthesize-apple-notes wiki-synth-status \
 	discover gap evolution agents reflect promote query test \
-	doctor-config publish site
+	doctor-config incubate-themes publish site
 
 help:
 	@echo "Daily:  sync · ingest · site · publish · query · audit · reflect"
 	@echo "Pipeline:  wiki-synthesize · ingest · progress · fix-provenance"
 	@echo "Memex:  make memex CMD=\"stats|missing|backlinks PAGE\""
 	@echo "Agents:  discover · gap · evolution · agents"
-	@echo "Other:  promote · register-reference · test · doctor-config"
+	@echo "Other:  promote · register-reference · test · doctor-config · incubate-themes"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make sync              # changed raw → wiki-synthesize, then ingest"
@@ -122,6 +122,9 @@ memex:
 
 doctor-config:
 	$(LLM_ENV) $(CLI) doctor-config $(DOCTOR_ARGS)
+
+incubate-themes:
+	$(PY) scripts/incubate_themes.py $(if $(DRY),--dry-run) $(if $(INGEST),--ingest)
 
 extract-twitter:
 	$(PY) scripts/extract_twitter_raw.py

@@ -10,11 +10,12 @@ from wiki_synth_manifest import load_manifest, summarize_files
 from config import PENDING_DIR, WORKSPACE_PATH
 from report_context import REPORT_DIRS, latest_report, twin_principle_count, wiki_summary
 from skill_registry import resolve_skill
+from pending_builder import write_skill_pending_json
 
 
 def write_pending(*, provider: str | None = None) -> Path:
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-    pending_path = PENDING_DIR / f"gap-{ts}.json"
+    pending_name = f"gap-{ts}.json"
     latest = latest_report(REPORT_DIRS["discovery"])
     manifest = summarize_files(load_manifest().get("files", {}))
     wiki_ctx = wiki_summary()
@@ -42,14 +43,13 @@ def write_pending(*, provider: str | None = None) -> Path:
         f"## Latest discovery\n{discovery_text}\n"
     )
     out_name = f"self-wiki/gap/{context['date']}.md"
-    payload = {
-        "kind": "gap",
-        "skill": resolve_skill("gap", "skills/gap.md"),
-        "user_message": user_message,
-        "output_file": out_name,
-        "created_at": datetime.now().isoformat(),
-    }
-    pending_path.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+    pending_path = write_skill_pending_json(
+        pending_dir=PENDING_DIR,
+        pending_name=pending_name,
+        kind="gap",
+        skill=resolve_skill("gap", "skills/gap.md"),
+        user_message=user_message,
+        output_file=out_name,
+        created_at=datetime.now().isoformat(),
     )
     return pending_path

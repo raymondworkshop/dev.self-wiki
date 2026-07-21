@@ -274,6 +274,10 @@ class TestLLMProvider(unittest.TestCase):
             {
                 "LLM_PROVIDER": "gemini",
                 "GEMINI_API_KEY": "test-key",
+                # Make expectations deterministic regardless of local `.env`.
+                "ALLOW_LOCAL_LLM": "0",
+                "LLM_FALLBACK_ENABLED": "1",
+                "LLM_MLX_LAST_RESORT": "1",
             },
             clear=False,
         ):
@@ -365,8 +369,9 @@ class TestLLMProvider(unittest.TestCase):
     def test_mlx_blocked_as_primary_without_allow(self):
         from composer_policy import reject_local_mlx
 
-        with self.assertRaises(RuntimeError):
-            reject_local_mlx("mlx", context="test", as_last_resort=False)
+        with mock.patch.dict("os.environ", {"ALLOW_LOCAL_LLM": "0"}, clear=False):
+            with self.assertRaises(RuntimeError):
+                reject_local_mlx("mlx", context="test", as_last_resort=False)
 
     def test_mlx_allowed_as_last_resort(self):
         from composer_policy import reject_local_mlx
@@ -383,6 +388,8 @@ class TestLLMProvider(unittest.TestCase):
                 "LLM_PROVIDER": "gemini",
                 "GEMINI_API_KEY": "test-key",
                 "LLM_MLX_LAST_RESORT": "1",
+                "ALLOW_LOCAL_LLM": "0",
+                "LLM_FALLBACK_ENABLED": "1",
             },
             clear=False,
         ):

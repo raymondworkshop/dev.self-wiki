@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -18,6 +17,7 @@ from discover_provenance import (
 from llm_provider import context_limits, provider_name
 from query_retrieval import estimate_tokens, trim_evidence_to_budget
 from skill_registry import resolve_skill
+from pending_builder import write_skill_pending_json
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +178,7 @@ def write_pending(*, provider: str | None = None) -> Path:
         max_files=20,
     )
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-    pending_path = PENDING_DIR / f"discover-{ts}.json"
+    pending_name = f"discover-{ts}.json"
     user_message = _build_budgeted_user_message(
         provider=provider,
         raw_samples=raw_samples,
@@ -186,14 +186,17 @@ def write_pending(*, provider: str | None = None) -> Path:
         raw_snippets=raw_snippets,
     )
     out_name = f"self-wiki/discovery/{datetime.now().date().isoformat()}.md"
-    payload = {
-        "kind": "discovery",
-        "skill": resolve_skill("discovery", "skills/discovery.md"),
-        "user_message": user_message,
-        "output_file": out_name,
-        "created_at": datetime.now().isoformat(),
-        "resolved_raw": raw_snippets,
-        "raw_link_count": len(raw_links),
-    }
-    pending_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    pending_path = write_skill_pending_json(
+        pending_dir=PENDING_DIR,
+        pending_name=pending_name,
+        kind="discovery",
+        skill=resolve_skill("discovery", "skills/discovery.md"),
+        user_message=user_message,
+        output_file=out_name,
+        created_at=datetime.now().isoformat(),
+        extra={
+            "resolved_raw": raw_snippets,
+            "raw_link_count": len(raw_links),
+        },
+    )
     return pending_path

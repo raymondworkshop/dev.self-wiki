@@ -41,8 +41,10 @@ class WikiPage:
         else:
             body_plus = content.strip()
 
-        # Parse Socratic Summary (starts with >)
-        summary_match = re.search(r"^>\s*(.*?)(?=\n\n|\n##)", body_plus, re.DOTALL)
+        # Parse Socratic Summary (starts with "> ...").
+        # Important: only allow spaces/tabs after ">" so empty summaries don't
+        # accidentally consume body content due to newline-matching `\s*`.
+        summary_match = re.search(r"^>[ \t]*(.*?)(?=\n\n|\n##)", body_plus, re.DOTALL)
         if summary_match:
             self.summary = summary_match.group(1).strip()
             remaining = body_plus[summary_match.end() :].strip()

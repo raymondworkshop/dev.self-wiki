@@ -17,6 +17,7 @@ from report_context import (
     wiki_summary,
 )
 from skill_registry import resolve_skill
+from pending_builder import write_skill_pending_json
 
 EVOLUTION_DIR = REPORT_DIRS["evolution"]
 
@@ -78,7 +79,7 @@ def build_metrics_pack() -> dict:
 
 def write_pending(*, provider: str | None = None) -> Path:
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-    pending_path = PENDING_DIR / f"evolution-{ts}.json"
+    pending_name = f"evolution-{ts}.json"
     metrics = build_metrics_pack()
     user_message = (
         f"Evolution snapshot {metrics['date']}\n"
@@ -94,14 +95,13 @@ def write_pending(*, provider: str | None = None) -> Path:
         gap_text = gap_path.read_text(encoding="utf-8", errors="replace")[:4000]
         user_message += f"\n## Latest gap (learning strategy source)\n{gap_text}\n"
     out_name = f"self-wiki/evolution/{metrics['date']}.md"
-    payload = {
-        "kind": "evolution",
-        "skill": resolve_skill("evolution", "skills/evolution.md"),
-        "user_message": user_message,
-        "output_file": out_name,
-        "created_at": datetime.now().isoformat(),
-    }
-    pending_path.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+    pending_path = write_skill_pending_json(
+        pending_dir=PENDING_DIR,
+        pending_name=pending_name,
+        kind="evolution",
+        skill=resolve_skill("evolution", "skills/evolution.md"),
+        user_message=user_message,
+        output_file=out_name,
+        created_at=datetime.now().isoformat(),
     )
     return pending_path

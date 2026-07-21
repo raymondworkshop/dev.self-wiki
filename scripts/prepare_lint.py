@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 from datetime import datetime
 from pathlib import Path
@@ -10,6 +9,7 @@ from pathlib import Path
 from config import AUDIT_MD, LINT_SKILL, PENDING_DIR, WIKI_DIR, WORKSPACE_PATH
 from build_twin_profile import lint_principle_excerpts, lint_profile_summary
 from skill_registry import resolve_skill
+from pending_builder import write_skill_pending_json
 
 
 def _truncate(text: str, limit: int = 1200) -> str:
@@ -81,16 +81,16 @@ def write_pending() -> Path:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     pending_name = f"lint-{stamp}.json"
     output_name = f"lint-output-{stamp}.md"
-
-    pending = {
-        "kind": "lint",
-        "skill": resolve_skill("lint", str(LINT_SKILL.relative_to(WORKSPACE_PATH))),
-        "user_message": build_user_message(),
-        "output_file": str((PENDING_DIR / output_name).relative_to(WORKSPACE_PATH)),
-    }
-    path = PENDING_DIR / pending_name
-    path.write_text(json.dumps(pending, indent=2, ensure_ascii=False), encoding="utf-8")
-    return path
+    output_file = str((PENDING_DIR / output_name).relative_to(WORKSPACE_PATH))
+    return write_skill_pending_json(
+        pending_dir=PENDING_DIR,
+        pending_name=pending_name,
+        kind="lint",
+        skill=resolve_skill("lint", str(LINT_SKILL.relative_to(WORKSPACE_PATH))),
+        user_message=build_user_message(),
+        output_file=output_file,
+        created_at=None,
+    )
 
 
 def merge_lint_into_audit(lint_text: str) -> Path:
