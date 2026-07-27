@@ -10,8 +10,8 @@
 |------|------|----------|
 | **Composer (default)** | `wiki-synthesize`, `discovery/`, `gap/`, `evolution/` via `skills/` | — |
 | **Python** | `register-reference`, `ingest`, `audit` — deterministic | LLM |
-| **Cloud API (optional)** | `make query`, `make audit LINT=1` (`LLM_PROVIDER=gemini`) | Primary path |
-| **Local MLX** | Only with `ALLOW_LOCAL_LLM=1`; last resort via `LLM_MLX_LAST_RESORT=1` (default) | Primary |
+| **Cloud API (optional)** | `make query`, `make audit LINT=1` (`LLM_PROVIDER=openai|openrouter`) | Primary path |
+| **local-gateway** (dev.local-ai) | Only with `ALLOW_LOCAL_LLM=1`; last resort via `LLM_MLX_LAST_RESORT=1` (default). Models: `mlx` \| `gemma4` (`google/gemma-4-31b-it`) \| `laguna` (`poolside/laguna-m.1`) | Primary |
 
 `make wiki-synthesize` / `make sync` LLM batch: opt-in only (`ALLOW_PYTHON_LLM=1`). Prefer Composer for quality.
 
@@ -27,7 +27,7 @@ Pipeline detail: [design.md](design.md) · daily commands: [README.md](README.md
 | L1 | `wiki/` | Themes, patterns (`type/synthesis`) |
 | L2 | `wiki/` | Principles, mental models (`type/principle`) |
 
-Also: `discovery/`, `gap/`, `evolution/` (agent reports) · `outputs/` (query) · `log/` (index, pending, `sources.json`) · `twin/PROFILE.md` (after ingest, under `self-wiki/`) · `INDEX.md` (Obsidian hub).
+Also: `discovery/`, `gap/`, `evolution/` (agent reports) · `outputs/` (query) · `log/` (index, pending, `sources.json`, outside iCloud) · `twin/PROFILE.md` (after ingest, repo-local) · `INDEX.md` (Obsidian hub).
 
 `raw/` folders: `_posts/`, `origin-apple-notes/`, `twitter/`. Twitter → `register-reference` only (`sources.json` = external, not beliefs).
 
@@ -123,7 +123,7 @@ This wiki is a **Reasoning Engine** and a **Socratic Mirror**. We treat LLMs as 
 
 - **Dual-Model Workflow**:
   - **Gemini (Strategic)**: Performs high-level architectural design, system auditing, and knowledge synthesis strategy.
-  - **Local MLX (Operational)**: Executes routine data processing, file synchronization (`make sync`), and continuous synthesis based on Gemini’s architectural definitions.
+  - **local-gateway (dev.local-ai)**: Optional batch path when `ALLOW_LOCAL_LLM=1`; gateway models `mlx` | `gemma4` (`google/gemma-4-31b-it`) | `laguna` (`poolside/laguna-m.1`).
 
 - **Goal**: Foster self-discovery, emotional regulation, and deep cognitive engagement through iterative distillation.
 - **Principle**: High signal-to-noise ratio. Every word must earn its place in the context window.
@@ -137,9 +137,9 @@ This wiki is a **Reasoning Engine** and a **Socratic Mirror**. We treat LLMs as 
 - `self-wiki/raw/`: Input stream. Read-only for AI. Never modify raw files.
 - `self-wiki/wiki/`: The "Second Brain". AI-curated, structured, and cross-linked.
 - `self-wiki/outputs/`: Snapshots of reasoning, reports, and deep-dives.
-- `self-wiki/log/pending/`: Harness builds JSON here; skills read `user_message` from pending files.
-- `self-wiki/log/INDEX.json` + `log/index.md`: Machine index (auto); `self-wiki/INDEX.md`: human Obsidian hub.
-- `twin/PROFILE.md`: Digital twin snapshot (post-ingest).
+- `self-wiki/log/pending/`: legacy vault path — runtime pending lives in repo-root `log/pending/`
+- `log/INDEX.json` + `log/index.md`: Machine index (auto); `self-wiki/INDEX.md`: human Obsidian hub.
+- `twin/PROFILE.md`: Digital twin snapshot (post-ingest; repo-local, outside iCloud).
 
 
 ## Agent Skills (Operational Mandates)

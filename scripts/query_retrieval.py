@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple
 import yaml
 
 from config import INDEX_JSON, QUERY_PROFILES, WIKI_DIR, WORKSPACE_PATH
-from llm_provider import context_limits, normalize_provider, provider_name
+from llm_provider import context_limits, is_cloud_provider, normalize_provider
 
 logger = logging.getLogger(__name__)
 
@@ -236,9 +236,7 @@ def build_evidence_snippet(
 ) -> str:
     try:
         content = path.read_text(encoding="utf-8", errors="ignore")
-        lines_budget = (
-            40 if normalize_provider(provider) in {"gemini", "openai"} else 15
-        )
+        lines_budget = 40 if is_cloud_provider(provider) else 15
         lines = extract_key_lines(content, query_terms, max_lines=lines_budget)
         try:
             source_ref = str(path.relative_to(WORKSPACE_PATH))
@@ -412,10 +410,11 @@ def select_candidates(
         return []
 
     llm_provider = normalize_provider(provider)
+    cloud = is_cloud_provider(llm_provider)
     if top_k is None:
-        top_k = 40 if llm_provider == "gemini" else 16
+        top_k = 40 if cloud else 16
 
-    threshold_diff = 150 if llm_provider == "gemini" else 60
+    threshold_diff = 150 if cloud else 60
     floor = max(ranked[0][0] - threshold_diff, 1)
     filtered = [it for it in ranked if it[0] >= floor]
     return filtered[:top_k]

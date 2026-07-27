@@ -3,11 +3,11 @@
 set -euo pipefail
 
 ROOT="/Users/zhaowenlong/workspace/dev.self-wiki"
-LOG_DIR="$ROOT/self-wiki/log"
+LOG_DIR="$ROOT/log"
 PY="$ROOT/.selfwikienv/bin/python3"
 
 cd "$ROOT"
-mkdir -p "$LOG_DIR"
+mkdir -p "$LOG_DIR" "$ROOT/twin" "$ROOT/launchd"
 
 # Rotate oversized launchd logs before appending more output.
 "$PY" "$ROOT/scripts/log_cleanup.py" --rotate 2>/dev/null || true

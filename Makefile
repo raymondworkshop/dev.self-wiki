@@ -5,7 +5,7 @@
 PY  := .selfwikienv/bin/python3
 CLI := $(PY) scripts/cli.py
 
-LLM_PROVIDER ?= mlx
+LLM_PROVIDER ?= local-gateway
 LLM_ENV := ALLOW_PYTHON_LLM=1 ALLOW_LOCAL_LLM=1 LLM_PROVIDER=$(LLM_PROVIDER)
 CLI_PROVIDER_ARG := --provider $(LLM_PROVIDER)
 

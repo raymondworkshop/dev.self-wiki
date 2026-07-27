@@ -26,7 +26,7 @@ SKILL_INSTRUCTION_RESERVE_TOKENS = 1500
 
 def _excerpt_limit(provider: str | None) -> int:
     name = provider_name(provider)
-    return 800 if name == "mlx" else 2000
+    return 800 if name in ("mlx", "local-gateway", "local_gateway") else 2000
 
 
 def _sample_from_dir(directory: Path, limit: int, *, excerpt_limit: int = 2000) -> list[dict]:

@@ -17,7 +17,7 @@ from pathlib import Path
 
 import yaml
 
-from config import LOG_DIR, MEMEX_DIR, WORKSPACE_PATH, load_env
+from config import LOG_DIR, MEMEX_DIR, TWIN_DIR, WORKSPACE_PATH, load_env
 from memex.config import BACKLINKS_BLOCK
 from memex.panels import render_panels
 from memex.resolve import normalize_url, resolve_target
@@ -166,8 +166,18 @@ def collect_markdown(vault: Path) -> dict[str, Path]:
     for path in vault.rglob("*.md", recurse_symlinks=True):
         if any(part in SKIP_DIR_NAMES for part in path.parts):
             continue
+        # Generated twin lives outside the iCloud vault now
+        if "twin" in path.parts and path.is_relative_to(vault / "twin"):
+            continue
         rel = vault_rel(path)
         files[rel] = path
+    # Repo-local twin/ (outside iCloud)
+    if TWIN_DIR.is_dir():
+        for path in TWIN_DIR.rglob("*.md"):
+            if any(part in SKIP_DIR_NAMES for part in path.parts):
+                continue
+            rel = f"twin/{path.relative_to(TWIN_DIR).as_posix()}"
+            files[rel] = path
     return files
 
 

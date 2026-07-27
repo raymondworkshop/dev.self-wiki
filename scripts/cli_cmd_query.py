@@ -32,7 +32,7 @@ def cmd_query(args: argparse.Namespace) -> int:
     import os
 
     llm_provider = provider_for_role("query", args.provider)
-    logger.info("Query LLM: provider=%s model=%s", llm_provider, model_name(llm_provider))
+    logger.info("Query LLM: provider=%s model=%s", llm_provider, model_name(llm_provider, role="query"))
     promote_suggest = None
     if getattr(args, "no_promote_suggest", False):
         promote_suggest = False
@@ -59,7 +59,7 @@ def cmd_prepare_lint(args: argparse.Namespace) -> int:
 
 def cmd_lint(args: argparse.Namespace) -> int:
     llm_provider = provider_for_role("lint", args.provider)
-    logger.info("Lint LLM: provider=%s model=%s", llm_provider, model_name(llm_provider))
+    logger.info("Lint LLM: provider=%s model=%s", llm_provider, model_name(llm_provider, role="lint"))
     pending_path = write_lint_pending()
     result = run_skill_from_pending(pending_path, provider=llm_provider)
     merge_lint_into_audit(result["text"])
@@ -121,16 +121,16 @@ def cmd_doctor_config(args: argparse.Namespace) -> int:
     print("")
     print("[raw -> wiki]")
     print(f"provider={wiki_provider}")
-    print(f"model={model_name(wiki_provider)}")
+    print(f"model={model_name(wiki_provider, role='wiki_synthesize')}")
     print(f"skill={wiki_skill}")
     print("")
     print("[query]")
     print(f"provider={query_provider}")
-    print(f"model={model_name(query_provider)}")
+    print(f"model={model_name(query_provider, role='query')}")
     print(f"skill={query_skill}")
     print("")
     print("[lint]")
     print(f"provider={lint_provider}")
-    print(f"model={model_name(lint_provider)}")
+    print(f"model={model_name(lint_provider, role='lint')}")
     print(f"skill={lint_skill}")
     return 0

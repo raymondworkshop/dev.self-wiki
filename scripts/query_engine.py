@@ -125,7 +125,7 @@ def generate_query_answer(
         "query": query,
         "answer": answer,
         "provider": llm_provider,
-        "model": model_name(llm_provider),
+        "model": model_name(llm_provider, role="query"),
         "profile": pending["profile"],
         "strong_profile": pending["strong_profile"],
         "profile_scores": pending["profile_scores"],

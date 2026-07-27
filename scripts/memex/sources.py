@@ -9,10 +9,9 @@ from typing import Any
 
 import yaml
 
-from config import LOG_DIR, WORKSPACE_PATH
+from config import LOG_DIR, VAULT_DIR, WORKSPACE_PATH
 from memex.config import BACKLINKS_BLOCK, SKIP_DIR_NAMES
 
-VAULT_DIR = WORKSPACE_PATH / "self-wiki"
 MEMEX_DIR = LOG_DIR / "memex"
 
 DATED_STEM_SUFFIX = re.compile(r"^(.+)-\d{4}-\d{2}-\d{2}$")

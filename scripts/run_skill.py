@@ -55,6 +55,7 @@ def _run_llm_with_retries(
     system_instruction: str,
     provider: str,
     as_last_resort: bool = False,
+    role: str | None = None,
 ) -> tuple[str, dict | None]:
     """Call LLM with per-provider parse/empty retries; returns (text, parsed ingest data)."""
 
@@ -76,6 +77,7 @@ def _run_llm_with_retries(
             provider=provider,
             max_tokens=max_tokens,
             as_last_resort=as_last_resort,
+            role=role,
         )
         if not response_text:
             record_provider_failure(provider, LAST_LLM_ERROR)
@@ -214,11 +216,11 @@ def run_skill_from_pending(
         logger.info(
             "LLM call: provider=%s model=%s for %s",
             active_provider,
-            model_name(active_provider),
+            model_name(active_provider, role=skill_role),
             subject,
         )
         try:
-            as_last_resort = active_provider == "mlx" and index > 0
+            as_last_resort = active_provider == "local-gateway" and index > 0
             response_text, data = _run_llm_with_retries(
                 kind=kind,
                 subject=subject,
@@ -226,6 +228,7 @@ def run_skill_from_pending(
                 system_instruction=system_instruction,
                 provider=active_provider,
                 as_last_resort=as_last_resort,
+                role=skill_role,
             )
             if index > 0:
                 logger.info("Recovered %s using fallback provider %s", subject, active_provider)

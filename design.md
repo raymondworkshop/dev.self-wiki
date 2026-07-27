@@ -31,7 +31,7 @@ raw/  ──wiki-synthesize──►  wiki/
 | L0 Raw | `self-wiki/raw/{_posts,origin-apple-notes,twitter}/` | Source truth — append only |
 | L1–L2 | `self-wiki/wiki/` | Themes & principles |
 | External | `log/sources.json` | Twitter catalog — not your beliefs |
-| Twin | `self-wiki/twin/PROFILE.md` | Snapshot after ingest |
+| Twin | `twin/PROFILE.md` | Snapshot after ingest (repo-local) |
 
 Long raw files are chunked in-memory (`scripts/raw_chunking.py`) before wiki-synthesize.
 
@@ -78,7 +78,7 @@ Harness pattern: `prepare_*.py` → `log/pending/*.json` → `run_skill` → `ap
 | W2 posts | `make wiki-synthesize FOLDER=_posts LIMIT=50` |
 | W3 rest | incremental batches |
 
-Skip `raw/twitter/**` for wiki-synthesize. Provider: `LLM_PROVIDER` (default `mlx`).
+Skip `raw/twitter/**` for wiki-synthesize. Provider: `LLM_PROVIDER` (default `local-gateway`; `mlx` legacy alias).
 
 **Internal flows**
 

@@ -138,7 +138,12 @@ class TestLLMProvider(unittest.TestCase):
 
     def test_normalize_provider_accepts_openai(self):
         self.assertEqual(normalize_provider("openai"), "openai")
-        self.assertEqual(normalize_provider("unknown-vendor"), "mlx")
+        self.assertEqual(normalize_provider("openrouter"), "openrouter")
+        self.assertEqual(normalize_provider("unknown-vendor"), "local-gateway")
+
+    def test_normalize_provider_mlx_legacy_alias(self):
+        self.assertEqual(normalize_provider("mlx"), "local-gateway")
+        self.assertEqual(normalize_provider("local_gateway"), "local-gateway")
 
     def test_provider_for_role_uses_llm_provider(self):
         from llm_provider import provider_for_role
@@ -156,13 +161,13 @@ class TestLLMProvider(unittest.TestCase):
             self.assertEqual(provider_for_role("wiki_synthesize", None), "gemini")
             self.assertEqual(provider_for_role("discovery", None), "gemini")
 
-        self.assertEqual(provider_for_role("query", "mlx"), "mlx")
+        self.assertEqual(provider_for_role("query", "mlx"), "local-gateway")
 
-    def test_provider_for_role_defaults_to_mlx(self):
+    def test_provider_for_role_defaults_to_local_gateway(self):
         from llm_provider import provider_for_role
 
         with mock.patch.dict("os.environ", {}, clear=True):
-            self.assertEqual(provider_for_role("wiki_synthesize", None), "mlx")
+            self.assertEqual(provider_for_role("wiki_synthesize", None), "local-gateway")
 
     def test_fallback_chain_sync_mlx_then_gemini(self):
         from llm_provider import fallback_provider_chain
@@ -177,7 +182,9 @@ class TestLLMProvider(unittest.TestCase):
             },
             clear=False,
         ):
-            self.assertEqual(fallback_provider_chain(None, role="sync"), ["mlx", "gemini"])
+            self.assertEqual(
+                fallback_provider_chain(None, role="sync"), ["local-gateway", "gemini"]
+            )
 
     def test_fallback_chain_query_gemini_then_mlx(self):
         from llm_provider import fallback_provider_chain
@@ -193,7 +200,7 @@ class TestLLMProvider(unittest.TestCase):
             clear=False,
         ):
             self.assertEqual(
-                fallback_provider_chain(None, role="query"), ["gemini", "mlx"]
+                fallback_provider_chain(None, role="query"), ["gemini", "local-gateway"]
             )
 
     def test_provider_for_role_honors_role_env_overrides(self):
@@ -215,24 +222,86 @@ class TestLLMProvider(unittest.TestCase):
             self.assertEqual(provider_for_role("discovery", None), "gemini")
             self.assertEqual(provider_for_role("gap", None), "gemini")
             self.assertEqual(provider_for_role("evolution", None), "gemini")
-            self.assertEqual(provider_for_role("wiki_synthesize", None), "mlx")
+            self.assertEqual(provider_for_role("wiki_synthesize", None), "local-gateway")
 
-    def test_provider_for_role_agent_defaults_to_gemini_when_key_set(self):
-        from llm_provider import provider_for_role
+    def test_model_name_honors_query_llm_model(self):
+        from llm_provider import model_name
 
         with mock.patch.dict(
             "os.environ",
             {
                 "LLM_PROVIDER": "mlx",
-                "GEMINI_API_KEY": "test-key",
+                "LLM_MODEL": "mlx",
+                "QUERY_LLM_MODEL": "gemma4",
             },
             clear=False,
         ):
-            self.assertEqual(provider_for_role("discovery", None), "gemini")
-            self.assertEqual(provider_for_role("gap", None), "gemini")
-            self.assertEqual(provider_for_role("wiki_synthesize", None), "mlx")
+            self.assertEqual(model_name("mlx", role="query"), "gemma4")
+            self.assertEqual(model_name("mlx", role="wiki_synthesize"), "mlx")
+            self.assertEqual(model_name("mlx"), "mlx")
 
-    def test_fallback_chain_discovery_mlx_then_gemini(self):
+    def test_fallback_model_chain_gemma4_then_mlx(self):
+        from llm_provider import fallback_model_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "local-gateway",
+                "LLM_MODEL": "gemma4",
+                "LLM_MODEL_FALLBACK": "",
+            },
+            clear=False,
+        ):
+            self.assertEqual(
+                fallback_model_chain("local-gateway"), ["gemma4", "mlx"]
+            )
+
+    def test_fallback_model_chain_can_disable(self):
+        from llm_provider import fallback_model_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "local-gateway",
+                "LLM_MODEL": "gemma4",
+                "LLM_MODEL_FALLBACK": "0",
+            },
+            clear=False,
+        ):
+            self.assertEqual(fallback_model_chain("local-gateway"), ["gemma4"])
+
+    def test_default_gateway_model_is_gemma4(self):
+        from llm_provider import model_name
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "local-gateway",
+                "LLM_MODEL": "",
+                "QUERY_LLM_MODEL": "",
+            },
+            clear=False,
+        ):
+            self.assertEqual(model_name("local-gateway"), "gemma4")
+
+    def test_provider_for_role_agent_defaults_to_local_gateway_when_only_gemini_key(
+        self,
+    ):
+        from llm_provider import provider_for_role
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "",
+                "GEMINI_API_KEY": "test-key",
+            },
+            clear=True,
+        ):
+            self.assertEqual(provider_for_role("discovery", None), "local-gateway")
+            self.assertEqual(provider_for_role("gap", None), "local-gateway")
+            self.assertEqual(provider_for_role("wiki_synthesize", None), "local-gateway")
+
+    def test_fallback_chain_discovery_mlx_no_auto_cloud_fallback(self):
         from llm_provider import fallback_provider_chain
 
         with mock.patch.dict(
@@ -240,13 +309,16 @@ class TestLLMProvider(unittest.TestCase):
             {
                 "LLM_PROVIDER": "mlx",
                 "LLM_FALLBACK_ENABLED": "1",
+                "LLM_FALLBACK_PROVIDERS": "",
+                "AGENT_FALLBACK_PROVIDERS": "",
                 "GEMINI_API_KEY": "test-key",
                 "OPENAI_API_KEY": "",
+                "OPENROUTER_API_KEY": "",
             },
             clear=False,
         ):
             self.assertEqual(
-                fallback_provider_chain("mlx", role="discovery"), ["mlx", "gemini"]
+                fallback_provider_chain("mlx", role="discovery"), ["local-gateway"]
             )
 
     def test_fallback_chain_discovery_gemini_primary_with_mlx_last_resort(self):
@@ -258,12 +330,14 @@ class TestLLMProvider(unittest.TestCase):
                 "AGENT_LLM_PROVIDER": "gemini",
                 "LLM_FALLBACK_ENABLED": "1",
                 "GEMINI_API_KEY": "test-key",
+                "OPENAI_API_KEY": "",
+                "OPENROUTER_API_KEY": "",
                 "LLM_MLX_LAST_RESORT": "1",
             },
             clear=False,
         ):
             self.assertEqual(
-                fallback_provider_chain(None, role="discovery"), ["gemini", "mlx"]
+                fallback_provider_chain(None, role="discovery"), ["gemini", "local-gateway"]
             )
 
     def test_provider_for_role_discovery_uses_llm_provider(self):
@@ -274,6 +348,8 @@ class TestLLMProvider(unittest.TestCase):
             {
                 "LLM_PROVIDER": "gemini",
                 "GEMINI_API_KEY": "test-key",
+                "OPENAI_API_KEY": "",
+                "OPENROUTER_API_KEY": "",
                 # Make expectations deterministic regardless of local `.env`.
                 "ALLOW_LOCAL_LLM": "0",
                 "LLM_FALLBACK_ENABLED": "1",
@@ -283,17 +359,20 @@ class TestLLMProvider(unittest.TestCase):
         ):
             self.assertEqual(provider_for_role("discovery", None), "gemini")
             self.assertEqual(
-                fallback_provider_chain(None, role="discovery"), ["gemini", "mlx"]
+                fallback_provider_chain(None, role="discovery"), ["gemini", "local-gateway"]
             )
 
     def test_context_limits_are_provider_aware(self):
         gemini_context, gemini_reserved, _ = context_limits("gemini")
         mlx_context, mlx_reserved, _ = context_limits("mlx")
         openai_context, openai_reserved, _ = context_limits("openai")
+        openrouter_context, openrouter_reserved, _ = context_limits("openrouter")
         self.assertGreater(gemini_context, mlx_context)
         self.assertGreater(gemini_reserved, mlx_reserved)
         self.assertGreater(openai_context, mlx_context)
         self.assertGreater(openai_reserved, mlx_reserved)
+        self.assertGreater(openrouter_context, mlx_context)
+        self.assertGreater(openrouter_reserved, mlx_reserved)
 
     def test_extract_json_object_from_model_text(self):
         parsed = extract_json_object('```json\n{"actions": []}\n```')
@@ -309,12 +388,32 @@ class TestLLMProvider(unittest.TestCase):
                 "LLM_FALLBACK_ENABLED": "1",
                 "GEMINI_API_KEY": "",
                 "OPENAI_API_KEY": "",
+                "OPENROUTER_API_KEY": "",
             },
             clear=False,
         ):
-            self.assertEqual(fallback_provider_chain(None), ["mlx"])
+            self.assertEqual(fallback_provider_chain(None), ["local-gateway"])
 
-    def test_fallback_chain_includes_gemini_when_key_set(self):
+    def test_fallback_chain_gemini_only_when_explicit(self):
+        from llm_provider import fallback_provider_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "mlx",
+                "LLM_FALLBACK_ENABLED": "1",
+                "LLM_FALLBACK_PROVIDERS": "gemini",
+                "GEMINI_API_KEY": "test-key",
+                "OPENAI_API_KEY": "",
+                "OPENROUTER_API_KEY": "",
+            },
+            clear=False,
+        ):
+            self.assertEqual(
+                fallback_provider_chain(None), ["local-gateway", "gemini"]
+            )
+
+    def test_fallback_chain_includes_openrouter_when_key_set(self):
         from llm_provider import fallback_provider_chain
 
         with mock.patch.dict(
@@ -323,12 +422,15 @@ class TestLLMProvider(unittest.TestCase):
                 "LLM_PROVIDER": "mlx",
                 "LLM_FALLBACK_ENABLED": "1",
                 "LLM_FALLBACK_PROVIDERS": "",
-                "GEMINI_API_KEY": "test-key",
+                "GEMINI_API_KEY": "",
                 "OPENAI_API_KEY": "",
+                "OPENROUTER_API_KEY": "test-key",
             },
             clear=False,
         ):
-            self.assertEqual(fallback_provider_chain(None), ["mlx", "gemini"])
+            self.assertEqual(
+                fallback_provider_chain(None), ["local-gateway", "openrouter"]
+            )
 
     def test_fallback_chain_gemini_primary_includes_mlx_last_resort(self):
         from llm_provider import fallback_provider_chain
@@ -340,12 +442,13 @@ class TestLLMProvider(unittest.TestCase):
                 "LLM_FALLBACK_ENABLED": "1",
                 "GEMINI_API_KEY": "test-key",
                 "OPENAI_API_KEY": "",
+                "OPENROUTER_API_KEY": "",
                 "LLM_MLX_LAST_RESORT": "1",
             },
             clear=False,
         ):
             self.assertEqual(
-                fallback_provider_chain("gemini", role="sync"), ["gemini", "mlx"]
+                fallback_provider_chain("gemini", role="sync"), ["gemini", "local-gateway"]
             )
 
     def test_fallback_chain_sync_honors_llm_provider(self):
@@ -358,12 +461,13 @@ class TestLLMProvider(unittest.TestCase):
                 "LLM_FALLBACK_ENABLED": "1",
                 "GEMINI_API_KEY": "test-key",
                 "OPENAI_API_KEY": "",
+                "OPENROUTER_API_KEY": "",
                 "LLM_MLX_LAST_RESORT": "1",
             },
             clear=False,
         ):
             self.assertEqual(
-                fallback_provider_chain(None, role="sync"), ["gemini", "mlx"]
+                fallback_provider_chain(None, role="sync"), ["gemini", "local-gateway"]
             )
 
     def test_mlx_blocked_as_primary_without_allow(self):
@@ -378,6 +482,19 @@ class TestLLMProvider(unittest.TestCase):
 
         reject_local_mlx("mlx", context="test", as_last_resort=True)
 
+    def test_local_gateway_blocked_as_primary_without_allow(self):
+        from composer_policy import reject_local_mlx
+
+        with mock.patch.dict("os.environ", {"ALLOW_LOCAL_LLM": "0"}, clear=False):
+            with self.assertRaises(RuntimeError):
+                reject_local_mlx("local-gateway", context="test", as_last_resort=False)
+
+    def test_provider_for_role_honors_mlx_env_alias(self):
+        from llm_provider import provider_for_role
+
+        with mock.patch.dict("os.environ", {"LLM_PROVIDER": "mlx"}, clear=True):
+            self.assertEqual(provider_for_role("wiki_synthesize", None), "local-gateway")
+
     def test_provider_circuit_skips_gemini_after_geo_error(self):
         from llm_provider import fallback_provider_chain
         from provider_circuit import open_provider_circuit
@@ -387,17 +504,20 @@ class TestLLMProvider(unittest.TestCase):
             {
                 "LLM_PROVIDER": "gemini",
                 "GEMINI_API_KEY": "test-key",
+                "OPENAI_API_KEY": "",
+                "OPENROUTER_API_KEY": "",
                 "LLM_MLX_LAST_RESORT": "1",
                 "ALLOW_LOCAL_LLM": "0",
                 "LLM_FALLBACK_ENABLED": "1",
             },
             clear=False,
         ):
-            open_provider_circuit(
-                "gemini", "User location is not supported for the API use."
-            )
+            with mock.patch("provider_circuit.logger.warning"):
+                open_provider_circuit(
+                    "gemini", "User location is not supported for the API use."
+                )
             self.assertEqual(
-                fallback_provider_chain(None, role="sync"), ["mlx"]
+                fallback_provider_chain(None, role="sync"), ["local-gateway"]
             )
 
 

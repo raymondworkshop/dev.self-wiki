@@ -1,0 +1,97 @@
+{
+  "compiled_at": "2026-07-27T17:16:41",
+  "principle_count": 5,
+  "confidence_floor": 0.7,
+  "level_min": 2,
+  "principles": [
+    {
+      "title": "知识系统与自我维基",
+      "rel": "self-wiki/wiki/知识系统与自我维基.md",
+      "level": 2,
+      "confidence": 0.95,
+      "summary": "**Operating rule:** 个人语料经 raw→compression→wiki 复利 distillation；工具服务于可重复合成，而非单次聊天或 RAG 重检索。",
+      "last_updated": "2026-07-09T20:04:34.747550",
+      "tags": [
+        "topic/systems",
+        "type/synthesis",
+        "topic/learning",
+        "topic/wiki",
+        "type/principle",
+        "agent/composer-batch"
+      ]
+    },
+    {
+      "title": "脆弱性领导",
+      "rel": "self-wiki/wiki/脆弱性领导.md",
+      "level": 2,
+      "confidence": 0.92,
+      "summary": "**Operating rule:** 领导不必全知；容纳不确定、教练式探询，比假装永远正确更能建立深层信任。",
+      "last_updated": "2026-07-09T20:07:22.820474",
+      "tags": [
+        "agent/composer-batch",
+        "topic/softskills",
+        "type/principle",
+        "type/synthesis",
+        "topic/vulnerability",
+        "topic/leadership"
+      ]
+    },
+    {
+      "title": "连结式关系",
+      "rel": "self-wiki/wiki/连结式关系.md",
+      "level": 2,
+      "confidence": 0.92,
+      "summary": "**Operating rule:** 关系优先经营共同体验与连结，而非审计付出或堆砌技巧；温暖来自真心，安全来自边界。",
+      "last_updated": "2026-07-09T20:07:23.013380",
+      "tags": [
+        "topic/connection",
+        "type/synthesis",
+        "agent/composer-batch",
+        "topic/self-growth",
+        "topic/network",
+        "topic/social",
+        "topic/softskills",
+        "type/principle",
+        "topic/relationships"
+      ]
+    },
+    {
+      "title": "商业算盘与激励",
+      "rel": "self-wiki/wiki/商业算盘与激励.md",
+      "level": 2,
+      "confidence": 0.9,
+      "summary": "**Operating rule:** 生意先看清激励结构与算盘（利害、分利、BATNA），再谈信任与脆弱；结构塑造结果。",
+      "last_updated": "2026-07-09T20:07:23.002630",
+      "tags": [
+        "topic/incentive",
+        "type/synthesis",
+        "topic/leadership",
+        "agent/composer-batch",
+        "topic/wealth",
+        "topic/career",
+        "type/principle",
+        "topic/invest",
+        "topic/business"
+      ]
+    },
+    {
+      "title": "先利益后逻辑",
+      "rel": "self-wiki/wiki/先利益后逻辑.md",
+      "level": 2,
+      "confidence": 0.84,
+      "summary": "**Operating rule:** 先保护对方自尊与 self-interest 叙事，逻辑才进门；人对事实的反应常是对内在威胁的反应。",
+      "last_updated": "2026-07-09T20:07:22.858610",
+      "tags": [
+        "agent/composer-batch",
+        "topic/incentive",
+        "topic/communication",
+        "topic/politics",
+        "type/principle",
+        "topic/career",
+        "topic/social",
+        "type/synthesis",
+        "topic/leadership"
+      ]
+    }
+  ]
+}

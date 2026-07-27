@@ -21,9 +21,9 @@
 		<integer>0</integer>
 	</dict>
 	<key>StandardOutPath</key>
-	<string>/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki/log/launchd-weekly.log</string>
+	<string>/Users/zhaowenlong/workspace/dev.self-wiki/launchd/launchd-weekly.log</string>
 	<key>StandardErrorPath</key>
-	<string>/Users/zhaowenlong/workspace/dev.self-wiki/self-wiki/log/launchd-weekly.err.log</string>
+	<string>/Users/zhaowenlong/workspace/dev.self-wiki/launchd/launchd-weekly.err.log</string>
 	<key>RunAtLoad</key>
 	<false/>
 </dict>

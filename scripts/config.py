@@ -26,15 +26,21 @@ load_env()
 WORKSPACE_PATH = Path(
     os.environ.get("WORKSPACE_PATH", "/Users/zhaowenlong/workspace/dev.self-wiki")
 )
-RAW_DIR = WORKSPACE_PATH / "self-wiki" / "raw"
-WIKI_DIR = WORKSPACE_PATH / "self-wiki" / "wiki"
-OUTPUTS_DIR = WORKSPACE_PATH / "self-wiki" / "outputs"
-LOG_DIR = WORKSPACE_PATH / "self-wiki" / "log"
+# Vault (often iCloud symlink) — human notes only; avoid writing runtime state here.
+VAULT_DIR = WORKSPACE_PATH / "self-wiki"
+RAW_DIR = VAULT_DIR / "raw"
+WIKI_DIR = VAULT_DIR / "wiki"
+OUTPUTS_DIR = VAULT_DIR / "outputs"
+# Repo-local (outside iCloud) — logs, indexes, twin snapshot for launchd/scripts
+LOG_DIR = WORKSPACE_PATH / "log"
 PENDING_DIR = LOG_DIR / "pending"
+LAUNCHD_DIR = WORKSPACE_PATH / "launchd"
 SKILLS_DIR = WORKSPACE_PATH / "skills"
 QUERY_SKILL = SKILLS_DIR / "query.md"
 LINT_SKILL = SKILLS_DIR / "lint.md"
 QUERY_PROFILES = SKILLS_DIR / "query-profiles.yaml"
+
+
 def _resolve_operating_manual() -> Path:
     for name in ("AGENTS.md", "GEMINI.md"):
         path = WORKSPACE_PATH / name
@@ -50,9 +56,9 @@ LOG_MD = LOG_DIR / "log.md"
 MEMEX_DIR = LOG_DIR / "memex"
 INDEX_MD = LOG_DIR / "index.md"
 INDEX_JSON = LOG_DIR / "INDEX.json"
-AUDIT_MD = WORKSPACE_PATH / "self-wiki" / "audit.md"
-TWIN_PROFILE = WORKSPACE_PATH / "self-wiki" / "twin" / "PROFILE.md"
-TWIN_PRINCIPLES_JSON = WORKSPACE_PATH / "self-wiki" / "twin" / "principles.json"
+AUDIT_MD = VAULT_DIR / "audit.md"
+TWIN_PROFILE = WORKSPACE_PATH / "twin" / "PROFILE.md"
+TWIN_PRINCIPLES_JSON = WORKSPACE_PATH / "twin" / "principles.json"
 TWIN_DIR = TWIN_PROFILE.parent
 
 
@@ -63,7 +69,7 @@ def workspace_relpath(path: Path) -> str:
         return str(p.relative_to(WORKSPACE_PATH)).replace("\\", "/")
     except ValueError:
         pass
-    vault = (WORKSPACE_PATH / "self-wiki").resolve()
+    vault = VAULT_DIR.resolve()
     resolved = p.resolve()
     if resolved == vault or vault in resolved.parents:
         suffix = resolved.relative_to(vault)
@@ -86,6 +92,16 @@ def twin_profile_excerpt_chars() -> int:
 def twin_profile_max_evolution() -> int:
     return max(1, int(os.environ.get("TWIN_PROFILE_MAX_EVOLUTION", "15")))
 
-# Ensure directories exist
-for d in [RAW_DIR, WIKI_DIR, OUTPUTS_DIR, LOG_DIR, PENDING_DIR, SKILLS_DIR, TWIN_DIR]:
-    d.mkdir(parents=True, exist_ok=True)
+
+def ensure_workspace_dirs() -> None:
+    """Create local runtime dirs; vault dirs only if writable (skip under launchd/iCloud blocks)."""
+    for d in [LOG_DIR, PENDING_DIR, LAUNCHD_DIR, SKILLS_DIR, TWIN_DIR]:
+        d.mkdir(parents=True, exist_ok=True)
+    for d in [RAW_DIR, WIKI_DIR, OUTPUTS_DIR]:
+        try:
+            d.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+
+
+ensure_workspace_dirs()

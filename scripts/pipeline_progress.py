@@ -12,6 +12,7 @@ from config import (
     LOG_DIR,
     LOG_MD,
     RAW_DIR,
+    TWIN_DIR,
     TWIN_PROFILE,
     WIKI_DIR,
     WORKSPACE_PATH,
@@ -148,7 +149,7 @@ def _scan_wiki_synthesize() -> dict:
 
 def _newest_vault_mtime() -> float:
     newest = 0.0
-    for root in (RAW_DIR, WIKI_DIR, WORKSPACE_PATH / "self-wiki" / "twin"):
+    for root in (RAW_DIR, WIKI_DIR, TWIN_DIR):
         if not root.exists():
             continue
         for path in root.rglob("*.md", recurse_symlinks=True):

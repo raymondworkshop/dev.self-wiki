@@ -41,18 +41,42 @@ python3 -m venv .selfwikienv && .selfwikienv/bin/pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Minimal `.env`:
+Minimal `.env` (local LLM via [dev.local-ai](../dev.local-ai) gateway `:8080`):
 
 ```bash
-GEMINI_API_KEY=your-key-here
-LLM_PROVIDER=mlx
+LLM_PROVIDER=local-gateway
+LLM_URL=http://127.0.0.1:8080/v1/chat/completions
+LLM_MODEL=gemma4
+LLM_MODEL_FALLBACK=mlx
 ALLOW_PYTHON_LLM=1
+ALLOW_LOCAL_LLM=1
 ```
+
+`LLM_PROVIDER=mlx` is still accepted as a legacy alias for `local-gateway`.
+
+Gateway model aliases (same URL; set `LLM_MODEL`):
+
+| Alias | Upstream (via gateway) | Notes |
+|-------|------------------------|--------|
+| `mlx` | local Qwen3.5 | fast / private / fallback |
+| `gemma4` | `google/gemma-4-31b-it` (paid) | **default** for wiki query/sync (quality) |
+| `laguna` | `poolside/laguna-m.1` | paid coding only — not for wiki synthesize |
+
+Recommended: `LLM_MODEL=gemma4` + `LLM_MODEL_FALLBACK=mlx`. Gateway uses **`reasoning=high`**, floor **4096** / cap **8192** tokens, and **does not overwrite** skill system prompts. Legacy `nemotron` still routes to gemma4.
+
+Or OpenAI / OpenRouter (if you prefer direct cloud API over the gateway):
+
+```bash
+OPENROUTER_API_KEY=your-key-here
+LLM_PROVIDER=openrouter
+```
+
+Gemini is still supported in code but **not recommended in HK** (geo-block). Default: **local-gateway** + **gemma4**.
 
 
 ## Model
 
-`raw/` → `wiki/` → `make ingest` → `self-wiki/twin/PROFILE.md`
+`raw/` → `wiki/` → `make ingest` → `twin/PROFILE.md`
 
 - `raw/`: source truth (append only)
 - `wiki/`: themes and principles
@@ -64,7 +88,7 @@ Ingest can be Composer-first (Cursor skills) or batch (`make sync`).
 
 `make wiki-synthesize` · `make wiki-synthesize-apple-notes` · `make fix-provenance` · `make ingest` · `make progress` · `make wiki-synth-status` · `make agents` · `make promote FILE=… TARGET=… CONFIRM=1` · `make doctor-config` · `make test`
 
-Override provider: `LLM_PROVIDER=gemini make sync` · check: `make doctor-config`
+Override provider: `LLM_PROVIDER=openrouter make sync` · `LLM_MODEL=laguna make query` · `QUERY_LLM_MODEL=gemma4` (query default via gateway) · check: `make doctor-config`
 
 ## Safety rules
 

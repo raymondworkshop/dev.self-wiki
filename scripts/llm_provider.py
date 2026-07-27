@@ -1,8 +1,13 @@
 """Shared LLM provider adapter for self-wiki scripts.
 
-Composer-first: ingest/discovery prefer Composer or cloud; local MLX is last-resort fallback.
-Query/lint use cloud API (gemini/openai) when configured.
-Local MLX as primary: ALLOW_LOCAL_LLM=1. As fallback when cloud fails: LLM_MLX_LAST_RESORT=1 (default).
+Composer-first: ingest/discovery prefer Composer or cloud; local-gateway is last-resort fallback.
+Query/lint use cloud API (gemini/openai/openrouter) when configured.
+Local gateway as primary: ALLOW_LOCAL_LLM=1. As fallback when cloud fails: LLM_MLX_LAST_RESORT=1 (default).
+Provider ``local-gateway`` talks to LLM_URL (dev.local-ai); model aliases: mlx | gemma4 | laguna.
+Upstream defaults (gateway): gemma4 → ``google/gemma-4-31b-it``, laguna → ``poolside/laguna-m.1``.
+Default model is ``gemma4``; on failure, ``LLM_MODEL_FALLBACK`` retries ``mlx`` (default for cloud aliases).
+Legacy alias ``nemotron`` still routes to gemma4 on the gateway.
+Legacy provider name ``mlx`` normalizes to ``local-gateway``.
 """
 
 from __future__ import annotations
@@ -26,8 +31,26 @@ from provider_circuit import (
 
 logger = logging.getLogger(__name__)
 LAST_LLM_ERROR: str | None = None
-DEFAULT_MLX_MODEL = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
+DEFAULT_GATEWAY_MODEL = "gemma4"
+DEFAULT_GATEWAY_MODEL_FALLBACK = "mlx"
+# Gateway aliases that route through OpenRouter (dev.local-ai); fall back to local mlx.
+GATEWAY_CLOUD_ALIASES = frozenset({"gemma4", "nemotron", "laguna", "openrouter"})
 PLACEHOLDER_MODELS = {"", "mlx-model", "local-model"}
+
+LOCAL_GATEWAY = "local-gateway"
+# ``mlx`` remains accepted as a legacy alias for the local-ai gateway transport.
+PROVIDER_ALIASES = {
+    "mlx": LOCAL_GATEWAY,
+    "local_gateway": LOCAL_GATEWAY,
+    "local-gateway": LOCAL_GATEWAY,
+}
+VALID_PROVIDERS = frozenset({LOCAL_GATEWAY, "gemini", "openai", "openrouter"})
+CLOUD_PROVIDERS = frozenset({"gemini", "openai", "openrouter"})
+DEFAULT_CLOUD_FALLBACKS = ["openrouter", "openai"]
+DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
+DEFAULT_OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini"
+DEFAULT_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 def is_rate_limited(error: str | None = None) -> bool:
@@ -50,17 +73,21 @@ def _parse_retry_after(response: requests.Response, default: int) -> int:
 
 def provider_name(provider: str | None = None) -> str:
     load_env()
-    return (provider or os.environ.get("LLM_PROVIDER", "mlx")).lower()
-
-
-VALID_PROVIDERS = frozenset({"mlx", "gemini", "openai"})
-DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
-DEFAULT_OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+    return (provider or os.environ.get("LLM_PROVIDER", LOCAL_GATEWAY)).lower()
 
 
 def normalize_provider(raw: str | None = None) -> str:
     value = provider_name(raw)
-    return value if value in VALID_PROVIDERS else "mlx"
+    value = PROVIDER_ALIASES.get(value, value)
+    return value if value in VALID_PROVIDERS else LOCAL_GATEWAY
+
+
+def is_local_gateway(provider: str | None = None) -> bool:
+    return normalize_provider(provider) == LOCAL_GATEWAY
+
+
+def is_cloud_provider(provider: str | None = None) -> bool:
+    return normalize_provider(provider) in CLOUD_PROVIDERS
 
 
 AGENT_ROLES = frozenset({"discover", "discovery", "gap", "evolution"})
@@ -85,12 +112,31 @@ def _role_env_key(role: str) -> str | None:
     return mapping.get(role or "")
 
 
+def _role_model_env_key(role: str) -> str | None:
+    """Map pipeline role to ``{ROLE}_LLM_MODEL`` env var name."""
+
+    mapping = {
+        "query": "QUERY_LLM_MODEL",
+        "lint": "LINT_LLM_MODEL",
+        "discovery": "DISCOVERY_LLM_MODEL",
+        "discover": "DISCOVERY_LLM_MODEL",
+        "gap": "GAP_LLM_MODEL",
+        "evolution": "EVOLUTION_LLM_MODEL",
+        "sync": "WIKI_LLM_MODEL",
+        "ingest": "WIKI_LLM_MODEL",
+        "wiki_synthesize": "WIKI_LLM_MODEL",
+        "wiki-synthesize": "WIKI_LLM_MODEL",
+        "synthesize": "WIKI_LLM_MODEL",
+    }
+    return mapping.get(role or "")
+
+
 def provider_for_role(role: str | None = None, explicit: str | None = None) -> str:
     """Resolve provider for pipeline role (wiki/query/lint/etc.).
 
     Priority: explicit CLI arg → ``{ROLE}_LLM_PROVIDER`` → ``AGENT_LLM_PROVIDER``
     (agent roles) → ``QUERY_LLM_PROVIDER`` / ``LINT_LLM_PROVIDER`` → ``LLM_PROVIDER``.
-    Agent roles default to ``gemini`` when ``GEMINI_API_KEY`` is set.
+    Default: ``local-gateway`` (set ``AGENT_LLM_PROVIDER`` / ``LLM_PROVIDER`` explicitly).
     """
 
     if explicit:
@@ -107,10 +153,8 @@ def provider_for_role(role: str | None = None, explicit: str | None = None) -> s
         agent_override = os.environ.get("AGENT_LLM_PROVIDER", "").strip()
         if agent_override:
             return normalize_provider(agent_override)
-        if is_provider_configured("gemini"):
-            return "gemini"
 
-    return normalize_provider(os.environ.get("LLM_PROVIDER") or "mlx")
+    return normalize_provider(os.environ.get("LLM_PROVIDER") or LOCAL_GATEWAY)
 
 
 def is_provider_configured(provider: str) -> bool:
@@ -118,12 +162,14 @@ def is_provider_configured(provider: str) -> bool:
 
     load_env()
     name = normalize_provider(provider)
-    if name == "mlx":
+    if name == LOCAL_GATEWAY:
         return True
     if name == "gemini":
         return bool(os.environ.get("GEMINI_API_KEY", "").strip())
     if name == "openai":
         return bool(os.environ.get("OPENAI_API_KEY", "").strip())
+    if name == "openrouter":
+        return bool(os.environ.get("OPENROUTER_API_KEY", "").strip())
     return False
 
 
@@ -144,8 +190,9 @@ def fallback_provider_chain(
     """Primary provider first, then configured fallbacks (deduped).
 
     Roles:
-    - sync / ingest: ``LLM_FALLBACK_PROVIDERS`` (default cloud after mlx)
-    - query / lint: ``QUERY_FALLBACK_PROVIDERS`` / ``LINT_FALLBACK_PROVIDERS`` (default mlx)
+    - sync / ingest: ``LLM_FALLBACK_PROVIDERS`` (default cloud after local-gateway)
+    - query / lint: ``QUERY_FALLBACK_PROVIDERS`` / ``LINT_FALLBACK_PROVIDERS``
+      (default local-gateway)
     """
 
     load_env()
@@ -171,23 +218,27 @@ def fallback_provider_chain(
         explicit = os.environ.get("QUERY_FALLBACK_PROVIDERS", "").strip()
         if role == "lint":
             explicit = os.environ.get("LINT_FALLBACK_PROVIDERS", "").strip() or explicit
-        default_candidates = ["gemini", "openai"] if primary != "mlx" else []
+        default_candidates = list(DEFAULT_CLOUD_FALLBACKS) if primary != LOCAL_GATEWAY else []
     elif role in AGENT_ROLES:
-        if primary == "mlx":
+        if primary == LOCAL_GATEWAY:
             explicit = (
                 os.environ.get("AGENT_FALLBACK_PROVIDERS", "").strip()
                 or os.environ.get("LLM_FALLBACK_PROVIDERS", "").strip()
             )
-            default_candidates = ["gemini", "openai"]
+            default_candidates = list(DEFAULT_CLOUD_FALLBACKS)
         else:
             explicit = (
                 os.environ.get("AGENT_FALLBACK_PROVIDERS", "").strip()
                 or os.environ.get("QUERY_FALLBACK_PROVIDERS", "").strip()
             )
-            default_candidates = ["gemini", "openai"] if primary != "mlx" else []
+            default_candidates = (
+                list(DEFAULT_CLOUD_FALLBACKS) if primary != LOCAL_GATEWAY else []
+            )
     else:
         explicit = os.environ.get("LLM_FALLBACK_PROVIDERS", "").strip()
-        default_candidates = ["gemini", "openai"] if primary == "mlx" else []
+        default_candidates = (
+            list(DEFAULT_CLOUD_FALLBACKS) if primary == LOCAL_GATEWAY else []
+        )
 
     if explicit:
         candidates = [
@@ -206,8 +257,8 @@ def fallback_provider_chain(
         ):
             chain.append(candidate)
 
-    if mlx_last_resort_allowed() and "mlx" not in chain:
-        chain.append("mlx")
+    if mlx_last_resort_allowed() and LOCAL_GATEWAY not in chain:
+        chain.append(LOCAL_GATEWAY)
 
     return apply_circuit_breaker(chain)
 
@@ -219,7 +270,7 @@ def context_limits(provider: str | None = None) -> tuple[int, int, int]:
     if current == "gemini":
         max_context = int(os.environ.get("MAX_CONTEXT_TOKENS", "100000"))
         reserved_output = int(os.environ.get("RESERVED_OUTPUT_TOKENS", "4096"))
-    elif current == "openai":
+    elif current in ("openai", "openrouter"):
         max_context = int(os.environ.get("MAX_CONTEXT_TOKENS", "128000"))
         reserved_output = int(os.environ.get("RESERVED_OUTPUT_TOKENS", "4096"))
     else:
@@ -239,10 +290,16 @@ def default_output_tokens(provider: str | None = None) -> int:
 
 def chat_completions_url(provider: str | None = None) -> str:
     load_env()
-    explicit = os.environ.get("LLM_URL", "").strip()
     current = provider_name(provider)
     if current == "openai":
+        explicit = os.environ.get("LLM_URL", "").strip()
         return explicit or DEFAULT_OPENAI_URL
+    if current == "openrouter":
+        # Do not fall back to LLM_URL (usually local MLX).
+        return (
+            os.environ.get("OPENROUTER_URL", "").strip() or DEFAULT_OPENROUTER_URL
+        )
+    explicit = os.environ.get("LLM_URL", "").strip()
     return explicit or "http://127.0.0.1:8080/v1/chat/completions"
 
 
@@ -254,42 +311,78 @@ def openai_compatible_api_base(provider: str | None = None) -> str:
     return url
 
 
-def resolve_openai_compatible_model(provider: str | None = None) -> str:
+def resolve_openai_compatible_model(
+    provider: str | None = None, *, role: str | None = None
+) -> str:
     load_env()
     current = provider_name(provider)
+    role_key = _role_model_env_key(role or "")
+    role_model = os.environ.get(role_key, "").strip() if role_key else ""
     configured = os.environ.get("LLM_MODEL", "").strip()
     if current == "openai":
         openai_model = os.environ.get("OPENAI_MODEL", "").strip()
         if openai_model:
             return openai_model
+        if role_model and role_model not in PLACEHOLDER_MODELS:
+            return role_model
         if configured and configured not in PLACEHOLDER_MODELS:
             return configured
         return DEFAULT_OPENAI_MODEL
+    if current == "openrouter":
+        openrouter_model = os.environ.get("OPENROUTER_MODEL", "").strip()
+        if openrouter_model:
+            return openrouter_model
+        if role_model and role_model not in PLACEHOLDER_MODELS:
+            return role_model
+        if configured and configured not in PLACEHOLDER_MODELS:
+            return configured
+        return DEFAULT_OPENROUTER_MODEL
+
+    if role_model and role_model not in PLACEHOLDER_MODELS:
+        return role_model
 
     if configured and configured not in PLACEHOLDER_MODELS:
         return configured
 
-    models_url = f"{openai_compatible_api_base(provider)}/models"
-    try:
-        response = requests.get(models_url, timeout=5)
-        response.raise_for_status()
-        models = response.json().get("data", [])
-        if models:
-            model_id = str(models[0].get("id", "")).strip()
-            if model_id:
-                logger.info("Auto-selected MLX model: %s", model_id)
-                return model_id
-    except Exception as exc:
-        logger.warning("Could not auto-resolve MLX model from %s: %s", models_url, exc)
-
-    return DEFAULT_MLX_MODEL
+    # local-gateway default: gemma4 (OpenRouter via gateway); mlx on failure.
+    return DEFAULT_GATEWAY_MODEL
 
 
-def model_name(provider: str | None = None) -> str:
+def fallback_model_chain(
+    provider: str | None = None, *, role: str | None = None
+) -> list[str]:
+    """Primary gateway model first, then optional mlx fallback (deduped).
+
+    For ``local-gateway``, cloud aliases (gemma4/laguna) fall back to ``mlx``
+    unless ``LLM_MODEL_FALLBACK`` disables it (``0`` / ``off``) or sets another id.
+    """
+
+    primary = resolve_openai_compatible_model(provider, role=role)
+    chain = [primary]
+    if normalize_provider(provider) != LOCAL_GATEWAY:
+        return chain
+
+    load_env()
+    explicit = os.environ.get("LLM_MODEL_FALLBACK", "").strip()
+    if explicit.lower() in {"0", "false", "no", "off", "-"}:
+        return chain
+    if explicit:
+        fallback = explicit
+    elif primary.lower() in GATEWAY_CLOUD_ALIASES:
+        fallback = DEFAULT_GATEWAY_MODEL_FALLBACK
+    else:
+        return chain
+
+    if fallback and fallback.lower() != primary.lower():
+        chain.append(fallback)
+    return chain
+
+
+def model_name(provider: str | None = None, *, role: str | None = None) -> str:
     current = provider_name(provider)
     if current == "gemini":
         return os.environ.get("GEMINI_MODEL", "gemini-2.0-flash-lite")
-    return resolve_openai_compatible_model(provider)
+    return resolve_openai_compatible_model(provider, role=role)
 
 
 def format_request_error(
@@ -417,71 +510,108 @@ def get_openai_compatible_response(
     *,
     max_tokens: int | None = None,
     provider: str | None = None,
+    role: str | None = None,
 ) -> str | None:
-    """Call MLX, OpenAI cloud, DeepSeek, or any OpenAI-compatible chat endpoint."""
+    """Call MLX, OpenAI, OpenRouter, DeepSeek, or any OpenAI-compatible chat endpoint."""
 
     global LAST_LLM_ERROR
     load_env()
-    current = provider_name(provider)
+    current = normalize_provider(provider)
     url = chat_completions_url(provider)
-    model = resolve_openai_compatible_model(provider)
-    api_key = (
-        os.environ.get("OPENAI_API_KEY")
-        or os.environ.get("DEEPSEEK_API_KEY")
-        or ("no-key" if current == "mlx" else "")
-    )
+    models = fallback_model_chain(provider, role=role)
+    if current == "openrouter":
+        api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+    else:
+        api_key = (
+            os.environ.get("OPENAI_API_KEY")
+            or os.environ.get("DEEPSEEK_API_KEY")
+            or ("no-key" if current == LOCAL_GATEWAY else "")
+        )
     if current == "openai" and not api_key:
         logger.error("OPENAI_API_KEY not set.")
+        return None
+    if current == "openrouter" and not api_key:
+        logger.error("OPENROUTER_API_KEY not set.")
         return None
     if max_tokens is None:
         max_tokens = default_output_tokens(provider)
 
-    payload = {
-        "model": model,
-        "messages": messages,
-        "temperature": 0.1,
-        "max_tokens": max_tokens,
-    }
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
+    if current == "openrouter":
+        referer = os.environ.get("OPENROUTER_HTTP_REFERER", "").strip()
+        if referer:
+            headers["HTTP-Referer"] = referer
+        headers["X-Title"] = (
+            os.environ.get("OPENROUTER_APP_TITLE", "").strip() or "self-wiki"
+        )
 
     timeout_seconds = int(os.environ.get("LLM_TIMEOUT_SECONDS", "360"))
     attempts = max(1, int(os.environ.get("LLM_RETRY_ATTEMPTS", "2")))
     backoff_seconds = max(1, int(os.environ.get("LLM_RETRY_BACKOFF_SECONDS", "5")))
 
-    try:
-        for attempt in range(1, attempts + 1):
-            try:
-                response = requests.post(
-                    url,
-                    json=payload,
-                    headers=headers,
-                    timeout=timeout_seconds,
-                )
-                response.raise_for_status()
-                data = response.json()
-                LAST_LLM_ERROR = None
-                return data["choices"][0]["message"]["content"]
-            except (requests.Timeout, requests.ConnectionError) as exc:
-                if attempt >= attempts:
-                    raise exc
+    last_error: str | None = None
+    for model_index, model in enumerate(models):
+        payload = {
+            "model": model,
+            "messages": messages,
+            "temperature": 0.1,
+            "max_tokens": max_tokens,
+        }
+        try:
+            for attempt in range(1, attempts + 1):
+                try:
+                    response = requests.post(
+                        url,
+                        json=payload,
+                        headers=headers,
+                        timeout=timeout_seconds,
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    LAST_LLM_ERROR = None
+                    if model_index > 0:
+                        logger.info(
+                            "LLM model fallback succeeded: %s → %s",
+                            models[0],
+                            model,
+                        )
+                    return data["choices"][0]["message"]["content"]
+                except (requests.Timeout, requests.ConnectionError) as exc:
+                    if attempt >= attempts:
+                        raise exc
+                    logger.warning(
+                        "LLM transient error on attempt %d/%d (model=%s): %s. "
+                        "Retrying in %ss...",
+                        attempt,
+                        attempts,
+                        model,
+                        exc,
+                        backoff_seconds,
+                    )
+                    time.sleep(backoff_seconds)
+        except Exception as exc:
+            last_error = format_request_error(exc, url=url, provider=current)
+            LAST_LLM_ERROR = last_error
+            if model_index + 1 < len(models):
                 logger.warning(
-                    "LLM transient error on attempt %d/%d: %s. Retrying in %ss...",
-                    attempt,
-                    attempts,
-                    exc,
-                    backoff_seconds,
+                    "LLM model %s failed (%s); falling back to %s",
+                    model,
+                    last_error,
+                    models[model_index + 1],
                 )
-                time.sleep(backoff_seconds)
-    except Exception as exc:
-        LAST_LLM_ERROR = format_request_error(exc, url=url, provider=current)
-        if current in ("gemini", "openai"):
-            record_provider_failure(current, LAST_LLM_ERROR)
-        logger.error("LLM Error: %s", LAST_LLM_ERROR)
-        return None
+                continue
+            if current in CLOUD_PROVIDERS:
+                record_provider_failure(current, LAST_LLM_ERROR)
+            logger.error("LLM Error: %s", LAST_LLM_ERROR)
+            return None
 
+    if last_error:
+        LAST_LLM_ERROR = last_error
+        logger.error("LLM Error: %s", LAST_LLM_ERROR)
+    return None
 
 def get_llm_response(
     messages: List[Dict[str, str]],
@@ -489,13 +619,14 @@ def get_llm_response(
     *,
     max_tokens: int | None = None,
     as_last_resort: bool = False,
+    role: str | None = None,
 ) -> str | None:
     current = normalize_provider(provider)
     reject_local_mlx(current, context="LLM call", as_last_resort=as_last_resort)
     if current == "gemini":
         return get_gemini_response(messages, max_output_tokens=max_tokens)
     return get_openai_compatible_response(
-        messages, max_tokens=max_tokens, provider=provider
+        messages, max_tokens=max_tokens, provider=provider, role=role
     )
 
 
@@ -506,6 +637,7 @@ def call_llm(
     provider: str | None = None,
     max_tokens: int | None = None,
     as_last_resort: bool = False,
+    role: str | None = None,
 ) -> str | None:
     messages = [
         {"role": "system", "content": system_instruction},
@@ -518,6 +650,7 @@ def call_llm(
         provider=provider,
         max_tokens=max_tokens,
         as_last_resort=as_last_resort,
+        role=role,
     )
 
 
