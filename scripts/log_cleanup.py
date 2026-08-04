@@ -77,7 +77,7 @@ def rotate_file(
 
 
 def trim_log_md(*, max_entries: int | None = None) -> int:
-    """Keep log.md header and the most recent N ## entries."""
+    """Keep log.md header and the most recent N ## entries (newest-first file)."""
     if not LOG_MD.is_file():
         return 0
 
@@ -87,12 +87,11 @@ def trim_log_md(*, max_entries: int | None = None) -> int:
     if len(matches) <= max_entries:
         return 0
 
-    first_keep = matches[-max_entries].start()
+    # Newest-first: keep the first N entries, drop the older tail
     header = text[: matches[0].start()].rstrip()
-    body = text[first_keep:].lstrip("\n")
-    trimmed = f"{header}\n\n{body}"
-    if not trimmed.endswith("\n"):
-        trimmed += "\n"
+    body_end = matches[max_entries].start()
+    body = text[matches[0].start() : body_end].rstrip()
+    trimmed = f"{header}\n\n{body}\n"
     LOG_MD.write_text(trimmed, encoding="utf-8")
     removed = len(matches) - max_entries
     logger.info("Trimmed log.md: removed %d old entries (kept %d)", removed, max_entries)

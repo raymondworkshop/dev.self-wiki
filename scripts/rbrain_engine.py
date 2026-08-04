@@ -11,6 +11,7 @@ from typing import Any
 
 from config import RBRAIN_OUTPUTS_DIR, WORKSPACE_PATH, workspace_relpath
 from llm_provider import model_name, provider_for_role
+from log_utils import append_log
 from pending_cleanup import cleanup_pending_artifacts
 from prepare_rbrain import prepare_rbrain
 from rbrain_index import ensure_index
@@ -135,4 +136,20 @@ def run_rbrain(
         path = save_output(query, answer, pending["candidates"])
         out["output_path"] = workspace_relpath(path)
         logger.info("Saved rbrain output to %s", path)
+
+    n_cand = len(pending.get("candidates") or [])
+    q_short = query.replace("\n", " ").strip()
+    if len(q_short) > 72:
+        q_short = q_short[:69] + "…"
+    out_rel = out.get("output_path")
+    if out_rel:
+        append_log(
+            "rbrain",
+            f"created output | {q_short} | candidates={n_cand} | {out_rel}",
+        )
+    else:
+        append_log(
+            "rbrain",
+            f"ran (no-save) | {q_short} | candidates={n_cand}",
+        )
     return out

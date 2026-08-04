@@ -73,7 +73,7 @@ def ingest(summary: str = "ingest complete", *, report: bool = False) -> None:
         logger.info("FAST=1: vault unchanged since last ingest; skipping memex rebuild")
         refresh_index()
         build_twin_profile()
-        append_log("ingest", f"{summary} (fast skip)")
+        append_log("ingest", f"updated indexes/twin | {summary} (fast skip)")
         mark_stage_done("ingest")
         _post_ingest_housekeeping()
         return
@@ -87,7 +87,7 @@ def ingest(summary: str = "ingest complete", *, report: bool = False) -> None:
     write_source_stamps(collect_vault_pages())
     refresh_index()
     build_twin_profile()
-    append_log("ingest", summary)
+    append_log("ingest", f"updated indexes/twin/backlinks | {summary}")
     mark_stage_done("ingest")
     _post_ingest_housekeeping()
 

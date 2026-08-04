@@ -7,6 +7,7 @@ import logging
 
 from config import WORKSPACE_PATH, workspace_relpath
 from llm_provider import model_name, provider_for_role
+from log_utils import append_log
 from prepare_rbrain import prepare_rbrain
 from rbrain_engine import run_rbrain
 from rbrain_index import build_index
@@ -19,6 +20,11 @@ def cmd_rbrain_index(args: argparse.Namespace) -> int:
     print(
         f"rbrain-index: {idx['file_count']} files, {idx['paragraph_count']} paragraphs "
         f"(digest={idx.get('digest')})"
+    )
+    verb = "rebuilt" if args.force else "updated"
+    append_log(
+        "rbrain-index",
+        f"{verb} log/rbrain-index.json | files={idx['file_count']} paragraphs={idx['paragraph_count']}",
     )
     return 0
 

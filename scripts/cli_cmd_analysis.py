@@ -37,7 +37,7 @@ def _run_report_stage(command: str, args: argparse.Namespace) -> int:
         pending = write_pending(provider=provider)
         result = run_skill_from_pending(pending, provider=provider)
         cleanup_pending_artifacts(pending)
-        append_log(command, f"{progress_stage} report via {pending.name}")
+        append_log(command, f"created {progress_stage} report via {pending.name}")
         mark_stage_done(progress_stage, output=result.get("output_path"))
         refresh_all()
     except Exception as exc:

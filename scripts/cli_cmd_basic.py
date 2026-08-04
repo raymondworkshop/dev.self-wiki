@@ -9,6 +9,7 @@ from pathlib import Path
 
 from apply_ingest import apply_from_file
 from config import WORKSPACE_PATH
+from log_utils import append_log
 from pending_cleanup import cleanup_pending_pair, json_actions_path
 from run_skill import run_skill_from_pending
 from cli_shared import ingest
@@ -25,8 +26,11 @@ def cmd_run_skill(args: argparse.Namespace) -> int:
         actions_path = json_actions_path(pending)
         count = apply_from_file(actions_path, rel_path=args.raw)
         logger.info("Applied %d page update(s)", count)
+        append_log("run-skill", f"applied actions | pages={count} | {pending.name}")
         if count >= 0 and os.environ.get("PENDING_RETAIN_ON_SUCCESS", "0") != "1":
             cleanup_pending_pair(pending)
+    else:
+        append_log("run-skill", f"ran skill | {pending.name}")
     return 0
 
 
@@ -36,6 +40,7 @@ def cmd_apply_ingest(args: argparse.Namespace) -> int:
         actions = WORKSPACE_PATH / actions
     count = apply_from_file(actions, rel_path=args.raw)
     logger.info("Applied %d page update(s)", count)
+    # apply_from_file already logs wiki created/updated detail
     if count >= 0 and args.pending:
         pending = Path(args.pending)
         if not pending.is_absolute():

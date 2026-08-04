@@ -32,7 +32,7 @@ class TestApplyIngest(unittest.TestCase):
                         }
                     ],
                 }
-                updated = apply_actions(data, rel_path="_posts/example.md")
+                updated = apply_actions(data, rel_path="_posts/example.md", log=False)
                 self.assertEqual(updated, 1)
                 page_path = wiki_dir / "Test Theme.md"
                 self.assertTrue(page_path.is_file())
@@ -59,8 +59,8 @@ class TestApplyIngest(unittest.TestCase):
                         }
                     ],
                 }
-                first = apply_actions(data, rel_path="_posts/a.md")
-                second = apply_actions(data, rel_path="_posts/a.md")
+                first = apply_actions(data, rel_path="_posts/a.md", log=False)
+                second = apply_actions(data, rel_path="_posts/a.md", log=False)
                 self.assertEqual(first, 1)
                 self.assertEqual(second, 1)
                 text = (wiki_dir / "Dup Theme.md").read_text(encoding="utf-8")

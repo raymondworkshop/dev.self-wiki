@@ -9,7 +9,7 @@ from build_twin_profile import build_twin_profile
 from config import WORKSPACE_PATH
 from ingest_profiles import resolve_profile
 from llm_provider import model_name, provider_for_role
-from log_utils import append_log
+from log_utils import append_log, short_text
 from pending_cleanup import cleanup_pending_artifacts
 from prepare_lint import merge_lint_into_audit, write_pending as write_lint_pending
 from prepare_query import prepare_query
@@ -48,6 +48,12 @@ def cmd_query(args: argparse.Namespace) -> int:
     print(result["answer"])
     if result.get("output_path"):
         logger.info("Saved to %s", result["output_path"])
+        append_log(
+            "query",
+            f"created output | {short_text(result['query'])} → {result['output_path']}",
+        )
+    else:
+        append_log("query", f"ran (no-save) | {short_text(args.query)}")
     return 0
 
 
@@ -64,14 +70,16 @@ def cmd_lint(args: argparse.Namespace) -> int:
     result = run_skill_from_pending(pending_path, provider=llm_provider)
     merge_lint_into_audit(result["text"])
     cleanup_pending_artifacts(pending_path)
-    append_log("lint", "Global cognitive lint merged into audit.md")
+    append_log("lint", "updated audit.md | global cognitive lint merged")
     logger.info("Lint complete; audit.md updated")
     return 0
 
 
 def cmd_twin(args: argparse.Namespace) -> int:
     path = build_twin_profile()
-    logger.info("Twin profile: %s", path.relative_to(WORKSPACE_PATH))
+    rel = path.relative_to(WORKSPACE_PATH)
+    logger.info("Twin profile: %s", rel)
+    append_log("twin", f"updated {rel}")
     return 0
 
 
@@ -83,12 +91,20 @@ def cmd_promote(args: argparse.Namespace) -> int:
     )
     if result.get("applied"):
         logger.info("Promoted to %s", result["target"])
+        append_log(
+            "promote",
+            f"updated wiki | {result['output']} → {result['target']}",
+        )
     else:
         logger.info(
             "Dry run: would promote %s → %s (%d bytes)",
             result["output"],
             result["target"],
             result["bytes"],
+        )
+        append_log(
+            "promote",
+            f"dry-run (no write) | {result['output']} → {result['target']}",
         )
         if result.get("preview"):
             print(result["preview"])
