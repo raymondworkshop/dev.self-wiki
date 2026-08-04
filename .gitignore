@@ -8,3 +8,6 @@ scripts/memex/__pycache__/
 dist/
 .wrangler/
 launchd/
+log/rbrain-index.json
+log/pending/
+

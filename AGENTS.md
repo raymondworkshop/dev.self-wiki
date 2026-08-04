@@ -74,13 +74,14 @@ Skills: [discovery.md](skills/discovery.md) · [gap.md](skills/gap.md) · [evolu
 
 Backfill: `make wiki-synthesize WAVE=theme_links LIMIT=50 INGEST=1`
 
-### Audit · Query · Promote
+### Audit · Query · rbrain · Promote
 
 | Command | Behavior |
 |---------|----------|
 | `make audit` | Structure, red links, duplicate themes, L2 guidance |
 | `make audit LINT=1` | Above + `skills/lint.md` — cross-page contradictions. **Flag Cognitive Shift** when new insight contradicts old principle |
-| `make query` | retrieve → `query.md` → save with provenance ([query-profiles.yaml](skills/query-profiles.yaml)) |
+| `make query` | retrieve wiki → `query.md` → save with provenance ([query-profiles.yaml](skills/query-profiles.yaml)) |
+| `make rbrain` | retrieve **raw/** paragraphs only → `skills/rbrain.md` → verbatim cites; `make rbrain-index` / `make rbrain-serve` |
 | `make promote … CONFIRM=1` | When answer has `[Cognitive Shift]` or user confirms; merges under `### Promoted from query`. Target: existing L1 — not ad-hoc L2 from one query |
 
 ---

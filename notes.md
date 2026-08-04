@@ -5,7 +5,11 @@
 - todo  
     +  Twin chatbot = outward "chat like me" persona (ideal: others talk to a version of you)  
     + Socratic query = inward self-awareness (limits, motivations, inconsistencies, blind spots)  
+        - Q&A from wiki/
 
+-  rbrain — `make rbrain` / `make rbrain-serve` (raw-only + verbatim cites)
+    - Q&A from raw/ 
+    - 专有数据当唯一事实库 → 可审计问答 → 支撑法律 / 金融 / 医疗的合规与风控  
     
 - add memex in self-wiki, remove compression step
 

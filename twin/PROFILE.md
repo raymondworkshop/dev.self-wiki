@@ -1,10 +1,10 @@
 ---
 title: Digital Twin Profile
-last_updated: 2026-07-27T17:16:41
+last_updated: 2026-08-04T14:50:53
 description: Compact snapshot of Level-2 principles (internal twin, not public Reid AI).
 level: 2
 tags: [type/principle, twin/profile]
-compiled_at: 2026-07-27T17:16:41
+compiled_at: 2026-08-04T14:50:53
 principle_count: 5
 principle_count_shown: 5
 principles_index: twin/principles.json
@@ -50,5 +50,5 @@ _No Contradicts edges in wiki backlinks yet._
 
 ## Compiled
 
-- 2026-07-27: Regenerated from `self-wiki/wiki/` via ingest (`make sync` / `python scripts/cli.py twin`).
+- 2026-08-04: Regenerated from `self-wiki/wiki/` via ingest (`make sync` / `python scripts/cli.py twin`).
 - Query runtime reads `twin/principles.json` with query-aware selection in `prepare_query` (deterministic, not LLM-generated).

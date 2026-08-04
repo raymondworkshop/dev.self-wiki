@@ -37,8 +37,11 @@ PENDING_DIR = LOG_DIR / "pending"
 LAUNCHD_DIR = WORKSPACE_PATH / "launchd"
 SKILLS_DIR = WORKSPACE_PATH / "skills"
 QUERY_SKILL = SKILLS_DIR / "query.md"
+RBRAIN_SKILL = SKILLS_DIR / "rbrain.md"
 LINT_SKILL = SKILLS_DIR / "lint.md"
 QUERY_PROFILES = SKILLS_DIR / "query-profiles.yaml"
+RBRAIN_INDEX_JSON = LOG_DIR / "rbrain-index.json"
+RBRAIN_OUTPUTS_DIR = OUTPUTS_DIR / "rbrain"
 
 
 def _resolve_operating_manual() -> Path:

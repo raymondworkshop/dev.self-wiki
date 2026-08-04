@@ -2,37 +2,22 @@
 
 Personal wiki, second brain, and Socratic Mirror.
 
-## workflow
+## Workflow
 
 Drop notes into `self-wiki/raw/`, then:
 
 ```bash
 make sync
-make query Q="what are my values?"
+make query Q="what are my values?"          # wiki Socratic mirror
+make rbrain Q="what are my core values?"    # raw-only facts + verbatim cites
 make audit LINT=1
 ```
 
-`make query` prints a `make promote …` hint when the answer flags `[Cognitive Shift]` or `[Socratic Observation]` (disable with `PROMOTE_SUGGEST=0`).
+`make query` suggests `make promote …` when the answer flags `[Cognitive Shift]` or `[Socratic Observation]` (`PROMOTE_SUGGEST=0` to disable).
 
-Weekly (optional):
+`make rbrain` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/rbrain.md`). Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. HTTP: `make rbrain-serve` (`POST /ask`, `GET /source?id=raw/…#pN`).
 
-```bash
-make reflect
-```
-
-Also useful: `make site` · `make publish` · `make help`
-
-### Publish (Cloudflare Pages)
-
-Production URL is `https://<CLOUDFLARE_PAGES_PROJECT>.pages.dev`.
-
-One-time setup:
-
-```bash
-npm i -g wrangler && wrangler login
-wrangler pages project create self-mirror --production-branch=main
-make publish
-```
+Weekly: `make reflect` · also `make site` · `make publish` · `make help`
 
 ## Setup (once)
 
@@ -52,52 +37,41 @@ ALLOW_PYTHON_LLM=1
 ALLOW_LOCAL_LLM=1
 ```
 
-`LLM_PROVIDER=mlx` is still accepted as a legacy alias for `local-gateway`.
-
-Gateway model aliases (same URL; set `LLM_MODEL`):
-
-| Alias | Upstream (via gateway) | Notes |
-|-------|------------------------|--------|
+| Alias | Upstream | Notes |
+|-------|----------|--------|
 | `mlx` | local Qwen3.5 | fast / private / fallback |
-| `gemma4` | `google/gemma-4-31b-it` (paid) | **default** for wiki query/sync (quality) |
-| `laguna` | `poolside/laguna-m.1` | paid coding only — not for wiki synthesize |
+| `gemma4` | `google/gemma-4-31b-it` | **default** (quality) |
+| `laguna` | `poolside/laguna-m.1` | coding only — not for wiki |
 
-Recommended: `LLM_MODEL=gemma4` + `LLM_MODEL_FALLBACK=mlx`. Gateway uses **`reasoning=high`**, floor **4096** / cap **8192** tokens, and **does not overwrite** skill system prompts. Legacy `nemotron` still routes to gemma4.
+`LLM_PROVIDER=mlx` is a legacy alias for `local-gateway`. Prefer `gemma4` + `mlx` fallback. Gateway uses `reasoning=high`, 4096–8192 tokens, and keeps skill system prompts. Legacy `nemotron` → gemma4.
 
-Or OpenAI / OpenRouter (if you prefer direct cloud API over the gateway):
-
-```bash
-OPENROUTER_API_KEY=your-key-here
-LLM_PROVIDER=openrouter
-```
-
-Gemini is still supported in code but **not recommended in HK** (geo-block). Default: **local-gateway** + **gemma4**.
-
+Gemini works in code but is not recommended in HK (geo-block).
 
 ## Model
 
 `raw/` → `wiki/` → `make ingest` → `twin/PROFILE.md`
 
-- `raw/`: source truth (append only)
-- `wiki/`: themes and principles
-- trust layer (`ingest`): memex graph, backlinks, index, twin
+- `raw/` — source truth (append only)
+- `wiki/` — themes and principles
+- ingest — memex graph, backlinks, index, twin
 
 Ingest can be Composer-first (Cursor skills) or batch (`make sync`).
 
-## Advanced commands
+## Advanced
 
 `make wiki-synthesize` · `make wiki-synthesize-apple-notes` · `make fix-provenance` · `make ingest` · `make progress` · `make wiki-synth-status` · `make agents` · `make promote FILE=… TARGET=… CONFIRM=1` · `make doctor-config` · `make test`
 
-Override provider: `LLM_PROVIDER=openrouter make sync` · `LLM_MODEL=laguna make query` · `QUERY_LLM_MODEL=gemma4` (query default via gateway) · check: `make doctor-config`
+Overrides: `LLM_PROVIDER=openrouter make sync` · `LLM_MODEL=laguna make query` · `QUERY_LLM_MODEL=gemma4`
 
-## Safety rules
+## Safety
 
-- Never do `raw/` → `wiki/` in one step.
+- Never jump `raw/` → `wiki/` in one step.
 - After manual wiki edits, run `make ingest`.
-- Do `discover` before `gap` (or just run `make agents`).
+- Run `discover` before `gap` (or `make agents`).
 - Do not edit `raw/` via automation.
 
 Standards: [AGENTS.md](AGENTS.md) · design: [design.md](design.md)
 
-## License  
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## License
+
+MIT — see [LICENSE](LICENSE).

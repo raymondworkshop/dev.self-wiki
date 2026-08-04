@@ -1,3 +1,442 @@
 {
-  "topics": {}
+  "topics": {
+    "Communication": {
+      "path": "self-wiki/wiki/Communication.md",
+      "level": 0,
+      "tags": [
+        "topic/language",
+        "agent/composer-batch",
+        "topic/softskills",
+        "topic/work",
+        "topic/communication",
+        "topic/social",
+        "type/synthesis",
+        "topic/relationships"
+      ],
+      "alias": "topic/language",
+      "title": "topic/language"
+    },
+    "职业选择与成长策略": {
+      "path": "self-wiki/wiki/职业选择与成长策略.md",
+      "level": 0,
+      "tags": [
+        "topic/engineering",
+        "topic/startup",
+        "topic/strategy",
+        "topic/growth",
+        "type/synthesis",
+        "topic/communication",
+        "topic/research",
+        "topic/career",
+        "topic/network",
+        "agent/incubate"
+      ],
+      "alias": "",
+      "title": "topic/engineering"
+    },
+    "产品思维与用户价值": {
+      "path": "self-wiki/wiki/产品思维与用户价值.md",
+      "level": 0,
+      "tags": [
+        "type/synthesis",
+        "agent/incubate",
+        "topic/product",
+        "topic/startup",
+        "topic/strategy"
+      ],
+      "alias": "",
+      "title": "type/synthesis"
+    },
+    "幸福与意识探索": {
+      "path": "self-wiki/wiki/幸福与意识探索.md",
+      "level": 0,
+      "tags": [
+        "agent/incubate",
+        "topic/science",
+        "topic/philosophy",
+        "topic/meaning",
+        "topic/aesthetics",
+        "type/synthesis",
+        "topic/psychology",
+        "topic/happiness"
+      ],
+      "alias": "",
+      "title": "agent/incubate"
+    },
+    "利益安全与真实领导": {
+      "path": "self-wiki/wiki/利益安全与真实领导.md",
+      "level": 0,
+      "tags": [
+        "type/principle",
+        "type/shift",
+        "topic/leadership",
+        "topic/communication"
+      ],
+      "alias": "",
+      "title": "type/principle"
+    },
+    "算法与数据结构学习": {
+      "path": "self-wiki/wiki/算法与数据结构学习.md",
+      "level": 0,
+      "tags": [
+        "agent/incubate",
+        "topic/learning",
+        "topic/engineering",
+        "topic/algorithms",
+        "type/synthesis"
+      ],
+      "alias": "",
+      "title": "agent/incubate"
+    },
+    "脆弱性领导": {
+      "path": "self-wiki/wiki/脆弱性领导.md",
+      "level": 0,
+      "tags": [
+        "agent/composer-batch",
+        "topic/softskills",
+        "type/principle",
+        "type/synthesis",
+        "topic/vulnerability",
+        "topic/leadership"
+      ],
+      "alias": "",
+      "title": "agent/composer-batch"
+    },
+    "执行系统与习惯设计": {
+      "path": "self-wiki/wiki/执行系统与习惯设计.md",
+      "level": 0,
+      "tags": [
+        "topic/engineering",
+        "topic/invest",
+        "type/synthesis",
+        "topic/health",
+        "topic/execution",
+        "topic/energy",
+        "topic/habits",
+        "agent/incubate",
+        "topic/self",
+        "topic/learning",
+        "topic/systems"
+      ],
+      "alias": "",
+      "title": "topic/engineering"
+    },
+    "知识系统与自我维基": {
+      "path": "self-wiki/wiki/知识系统与自我维基.md",
+      "level": 0,
+      "tags": [
+        "topic/systems",
+        "type/synthesis",
+        "topic/learning",
+        "topic/wiki",
+        "type/principle",
+        "agent/composer-batch"
+      ],
+      "alias": "",
+      "title": "topic/systems"
+    },
+    "Self-Perception and Validation": {
+      "path": "self-wiki/wiki/Self-Perception and Validation.md",
+      "level": 0,
+      "tags": [
+        "topic/culture",
+        "type/synthesis",
+        "agent/composer-batch",
+        "topic/psychology",
+        "topic/motivation",
+        "topic/confidence",
+        "topic/self"
+      ],
+      "alias": "",
+      "title": "topic/culture"
+    },
+    "亲密关系与家庭经营": {
+      "path": "self-wiki/wiki/亲密关系与家庭经营.md",
+      "level": 0,
+      "tags": [
+        "topic/relationship",
+        "type/synthesis",
+        "agent/incubate",
+        "topic/family",
+        "topic/relationships"
+      ],
+      "alias": "",
+      "title": "topic/relationship"
+    },
+    "先利益后逻辑": {
+      "path": "self-wiki/wiki/先利益后逻辑.md",
+      "level": 0,
+      "tags": [
+        "agent/composer-batch",
+        "topic/incentive",
+        "topic/communication",
+        "topic/politics",
+        "type/principle",
+        "topic/career",
+        "topic/social",
+        "type/synthesis",
+        "topic/leadership"
+      ],
+      "alias": "",
+      "title": "agent/composer-batch"
+    },
+    "价值观与身份认同演化": {
+      "path": "self-wiki/wiki/价值观与身份认同演化.md",
+      "level": 0,
+      "tags": [
+        "topic/identity",
+        "agent/incubate",
+        "topic/values",
+        "topic/self",
+        "topic/career",
+        "type/synthesis",
+        "type/shift",
+        "topic/leadership",
+        "topic/integrity"
+      ],
+      "alias": "",
+      "title": "topic/identity"
+    },
+    "能量与注意力账本": {
+      "path": "self-wiki/wiki/能量与注意力账本.md",
+      "level": 0,
+      "tags": [
+        "topic/productivity",
+        "topic/work",
+        "topic/habits",
+        "topic/self-growth",
+        "type/synthesis",
+        "topic/wealth",
+        "topic/energy"
+      ],
+      "alias": "",
+      "title": "topic/productivity"
+    },
+    "写作表达与叙事能力": {
+      "path": "self-wiki/wiki/写作表达与叙事能力.md",
+      "level": 0,
+      "tags": [
+        "topic/language",
+        "topic/leadership",
+        "topic/writing",
+        "topic/learning",
+        "type/synthesis",
+        "topic/communication",
+        "agent/incubate"
+      ],
+      "alias": "",
+      "title": "topic/language"
+    },
+    "事业发展与工程实践": {
+      "path": "self-wiki/wiki/事业发展与工程实践.md",
+      "level": 0,
+      "tags": [
+        "topic/engineering",
+        "topic/startup",
+        "type/synthesis",
+        "topic/ai",
+        "topic/career",
+        "agent/incubate",
+        "topic/business"
+      ],
+      "alias": "",
+      "title": "topic/engineering"
+    },
+    "主动性与领导管理": {
+      "path": "self-wiki/wiki/主动性与领导管理.md",
+      "level": 0,
+      "tags": [
+        "type/synthesis",
+        "topic/leadership",
+        "topic/initiative",
+        "topic/agency",
+        "topic/career",
+        "agent/incubate"
+      ],
+      "alias": "",
+      "title": "type/synthesis"
+    },
+    "Friendship": {
+      "path": "self-wiki/wiki/Friendship.md",
+      "level": 0,
+      "tags": [
+        "topic/values",
+        "type/synthesis",
+        "agent/composer-batch",
+        "topic/social",
+        "topic/relationships",
+        "topic/career",
+        "topic/friendship"
+      ],
+      "alias": "topic/values",
+      "title": "topic/values"
+    },
+    "工程实践与系统学习": {
+      "path": "self-wiki/wiki/工程实践与系统学习.md",
+      "level": 0,
+      "tags": [
+        "topic/opensource",
+        "topic/engineering",
+        "agent/incubate",
+        "topic/ai",
+        "topic/programming",
+        "type/synthesis",
+        "topic/learning",
+        "topic/tools",
+        "topic/nlp"
+      ],
+      "alias": "",
+      "title": "topic/opensource"
+    },
+    "关系边界与协作方式": {
+      "path": "self-wiki/wiki/关系边界与协作方式.md",
+      "level": 0,
+      "tags": [
+        "topic/relationship",
+        "topic/boundaries",
+        "type/synthesis",
+        "topic/communication",
+        "topic/collaboration",
+        "topic/career",
+        "agent/incubate",
+        "topic/relationships"
+      ],
+      "alias": "",
+      "title": "topic/relationship"
+    },
+    "Leadership and Management": {
+      "path": "self-wiki/wiki/Leadership and Management.md",
+      "level": 0,
+      "tags": [
+        "topic/self",
+        "agent/composer-batch",
+        "topic/career",
+        "topic/leadership",
+        "topic/work",
+        "topic/hiring",
+        "type/synthesis",
+        "topic/management"
+      ],
+      "alias": "",
+      "title": "topic/self"
+    },
+    "情绪调节与心理韧性": {
+      "path": "self-wiki/wiki/情绪调节与心理韧性.md",
+      "level": 0,
+      "tags": [
+        "topic/antifragile",
+        "topic/emotions",
+        "topic/psychology",
+        "topic/self-care",
+        "type/synthesis",
+        "topic/wellbeing",
+        "topic/self",
+        "topic/resilience",
+        "agent/incubate",
+        "topic/values"
+      ],
+      "alias": "",
+      "title": "topic/antifragile"
+    },
+    "公民话语与职场策略": {
+      "path": "self-wiki/wiki/公民话语与职场策略.md",
+      "level": 0,
+      "tags": [
+        "topic/citizenship",
+        "agent/composer-batch",
+        "topic/softskills",
+        "topic/politics",
+        "topic/career",
+        "topic/discourse",
+        "type/synthesis",
+        "topic/invest",
+        "type/shift"
+      ],
+      "alias": "",
+      "title": "topic/citizenship"
+    },
+    "连结式关系": {
+      "path": "self-wiki/wiki/连结式关系.md",
+      "level": 0,
+      "tags": [
+        "topic/connection",
+        "type/synthesis",
+        "agent/composer-batch",
+        "topic/self-growth",
+        "topic/network",
+        "topic/social",
+        "topic/softskills",
+        "type/principle",
+        "topic/relationships"
+      ],
+      "alias": "",
+      "title": "topic/connection"
+    },
+    "阅读与书摘笔记": {
+      "path": "self-wiki/wiki/阅读与书摘笔记.md",
+      "level": 0,
+      "tags": [
+        "topic/writing",
+        "type/synthesis",
+        "topic/literature",
+        "agent/incubate",
+        "topic/reading",
+        "topic/learning"
+      ],
+      "alias": "",
+      "title": "topic/writing"
+    },
+    "绽放与个性化路径": {
+      "path": "self-wiki/wiki/绽放与个性化路径.md",
+      "level": 0,
+      "tags": [
+        "topic/growth",
+        "agent/composer-batch",
+        "topic/creativity",
+        "topic/self-growth",
+        "topic/projects",
+        "topic/career",
+        "topic/meaning",
+        "type/synthesis",
+        "topic/self"
+      ],
+      "alias": "",
+      "title": "topic/growth"
+    },
+    "商业算盘与激励": {
+      "path": "self-wiki/wiki/商业算盘与激励.md",
+      "level": 0,
+      "tags": [
+        "topic/incentive",
+        "type/synthesis",
+        "topic/leadership",
+        "agent/composer-batch",
+        "topic/wealth",
+        "topic/career",
+        "type/principle",
+        "topic/invest",
+        "topic/business"
+      ],
+      "alias": "",
+      "title": "topic/incentive"
+    },
+    "学习方法与认知升级": {
+      "path": "self-wiki/wiki/学习方法与认知升级.md",
+      "level": 0,
+      "tags": [
+        "agent/incubate",
+        "topic/creativity",
+        "topic/learning",
+        "topic/antifragile",
+        "topic/science",
+        "topic/engineering",
+        "topic/statistics",
+        "topic/language",
+        "type/synthesis",
+        "topic/cognition"
+      ],
+      "alias": "",
+      "title": "agent/incubate"
+    }
+  }
 }

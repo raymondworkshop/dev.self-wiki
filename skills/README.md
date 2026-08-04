@@ -4,6 +4,7 @@
 |-------|---------|--------|
 | [wiki-synthesize.md](wiki-synthesize.md) | `make sync` / `make wiki-synthesize` | JSON actions → `wiki/` |
 | [query.md](query.md) | `make query` | `outputs/` answer |
+| [rbrain.md](rbrain.md) | `make rbrain` / `make rbrain-serve` | raw-only answer → `outputs/rbrain/` |
 | [lint.md](lint.md) | `make audit LINT=1` | merge into `audit.md` |
 | [discovery.md](discovery.md) | `make discover` | `discovery/` report |
 | [gap.md](gap.md) | `make gap` | `gap/` report |
