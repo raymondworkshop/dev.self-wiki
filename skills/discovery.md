@@ -35,6 +35,8 @@ Every finding keeps the full provenance block (do not omit for prettiness):
 1. [[raw/...]] → [[raw/...]]
 2. [[wiki/...]] — optional Evolution line
 
+Use plain Unicode `→` (and `≠` etc.) — never LaTeX (`$\rightarrow$`, `$\neq$`); Obsidian often shows those literally.
+
 **Method:** [Literal] | [cross-raw] | [wiki Evolution delta] | [AI Synthesis] | [Socratic Observation]
 
 > [!quote] Raw excerpt

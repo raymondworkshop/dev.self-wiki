@@ -21,13 +21,13 @@ SITE_PORT ?= 8787
 SITE_DIR  ?= dist
 
 .PHONY: help ingest memex audit progress register-reference sync \
-	fix-provenance wiki-synthesize wiki-synthesize-apple-notes wiki-synth-status \
+	fix-provenance fix-obsidian-md wiki-synthesize wiki-synthesize-apple-notes wiki-synth-status \
 	discover gap evolution agents reflect promote query rbrain rbrain-index rbrain-serve test \
 	doctor-config incubate-themes publish site
 
 help:
 	@echo "Daily:  sync · ingest · site · publish · query · rbrain · audit · reflect"
-	@echo "Pipeline:  wiki-synthesize · ingest · progress · fix-provenance"
+	@echo "Pipeline:  wiki-synthesize · ingest · progress · fix-provenance "
 	@echo "Memex:  make memex CMD=\"stats|missing|backlinks PAGE\""
 	@echo "Agents:  discover · gap · evolution · agents"
 	@echo "Other:  promote · register-reference · test · doctor-config · incubate-themes"
@@ -85,6 +85,9 @@ endif
 fix-provenance:
 	$(PY) scripts/fix_provenance_links.py $(if $(DRY),--dry-run)
 	$(if $(DRY),,$(INGEST_ENV) $(CLI) ingest)
+
+fix-obsidian-md:
+	$(PY) scripts/md_obsidian_sanitize.py $(PATHS)
 
 # --- agents ---
 discover gap evolution:

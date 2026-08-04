@@ -90,6 +90,7 @@ tags: [type/synthesis, agent/gap]
 - **Group gaps** under clusters (e.g. 张力整合, Wiki与原则, 操作化).
 - **Reading list**: add `Closes` column mapping to Gn.
 - **Obsidian callouts** (`[!summary]`, `[!warning]`, `[!question]`).
+- Use plain Unicode `→` / `≠` / `↔` / `Δ` — never LaTeX (`$\rightarrow$`, `$\neq$`, `$\Delta$`); Obsidian often shows those literally.
 - Never drop From finding, Why explore, Keywords, or reading rows.
 
 Omit empty sections. **Never** wrap output in markdown code fences.

@@ -96,6 +96,7 @@ tags: [type/synthesis, agent/evolution]
 - **Group changes** (管道与 raw, Wiki 复利层, Agent 报告与 twin).
 - Optional summary table inside large changes (e.g. F→wiki mapping).
 - **Obsidian callouts** for summary, tip, learning strategy.
+- Use plain Unicode `→` / `≠` / `↔` / `Δ` — never LaTeX (`$\rightarrow$`, `$\neq$`, `$\Delta$`); Obsidian often shows those literally.
 - Never drop Metrics rows or Evidence chain lines.
 
 Omit empty sections. **Never** wrap output in markdown code fences.
