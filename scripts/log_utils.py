@@ -11,7 +11,7 @@ LOG_ENTRY_RE = re.compile(r"^## \[[^\]]+\] .+$", re.MULTILINE)
 
 HEADER = (
     "# Self-Wiki Log\n\n"
-    "Operational record (ingest, sync, query, rbrain, promote, agents, …). "
+    "Operational record (ingest, sync, query, rdatabase, promote, agents, …). "
     "Newest entries first. Prefer verbs: created / updated / deleted / ran.\n\n"
 )
 

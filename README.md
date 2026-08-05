@@ -9,13 +9,13 @@ Drop notes into `self-wiki/raw/`, then:
 ```bash
 make sync
 make query Q="what are my values?"          # wiki Socratic mirror
-make rbrain Q="what are my core values?"    # raw-only facts + verbatim cites
+make rdatabase Q="what are my core values?"    # raw-only facts + verbatim cites
 make audit LINT=1
 ```
 
 `make query` suggests `make promote …` when the answer flags `[Cognitive Shift]` or `[Socratic Observation]` (`PROMOTE_SUGGEST=0` to disable).
 
-`make rbrain` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/rbrain.md`). Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. HTTP: `make rbrain-serve` (`POST /ask`, `GET /source?id=raw/…#pN`).
+`make rdatabase` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/rdatabase.md`). Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. HTTP: `make rdatabase-serve` (`POST /ask`, `GET /source?id=raw/…#pN`).
 
 Weekly: `make reflect` · also `make site` · `make publish` · `make help`
 

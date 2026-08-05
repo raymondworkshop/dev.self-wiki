@@ -1,7 +1,7 @@
 ---
 title: Digital Twin Profile
 last_updated: 2026-07-20T17:36:42
-description: Compact snapshot of Level-2 principles (internal twin, not public Reid AI).
+description: Compact snapshot of Level-2 principles (internal twin; rbrain chat = later).
 level: 2
 tags: [type/principle, twin/profile]
 compiled_at: 2026-07-20T17:36:42

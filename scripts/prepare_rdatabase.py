@@ -1,4 +1,4 @@
-"""Build pending JSON for rbrain skill (deterministic retrieval, no LLM)."""
+"""Build pending JSON for rdatabase skill (deterministic retrieval, no LLM)."""
 
 from __future__ import annotations
 
@@ -8,16 +8,16 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from config import PENDING_DIR, RBRAIN_SKILL, WORKSPACE_PATH
-from rbrain_index import ensure_index
-from rbrain_retrieval import build_retrieval_pack
+from config import PENDING_DIR, RDATABASE_SKILL, WORKSPACE_PATH
+from rdatabase_index import ensure_index
+from rdatabase_retrieval import build_retrieval_pack
 from skill_registry import resolve_skill
 
 
 def _slug(query: str, max_len: int = 48) -> str:
     safe = re.sub(r"[^a-zA-Z0-9\u4e00-\u9fff]+", "-", query).strip("-")
     safe = re.sub(r"-+", "-", safe)
-    return (safe[:max_len] or "rbrain").lower()
+    return (safe[:max_len] or "rdatabase").lower()
 
 
 def build_user_message(pack: dict) -> str:
@@ -46,12 +46,12 @@ def build_pending(
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     slug = _slug(query)
     digest = hashlib.md5(query.encode("utf-8")).hexdigest()[:8]
-    pending_name = f"rbrain-{slug}-{digest}-{stamp}.json"
-    answer_name = f"rbrain-answer-{slug}-{digest}-{stamp}.md"
+    pending_name = f"rdatabase-{slug}-{digest}-{stamp}.json"
+    answer_name = f"rdatabase-answer-{slug}-{digest}-{stamp}.md"
 
     pending = {
-        "kind": "rbrain",
-        "skill": resolve_skill("rbrain", str(RBRAIN_SKILL.relative_to(WORKSPACE_PATH))),
+        "kind": "rdatabase",
+        "skill": resolve_skill("rdatabase", str(RDATABASE_SKILL.relative_to(WORKSPACE_PATH))),
         "query": query,
         "language": pack["language"],
         "query_terms": pack["query_terms"],
@@ -81,7 +81,7 @@ def write_pending(
     return path
 
 
-def prepare_rbrain(
+def prepare_rdatabase(
     query: str,
     *,
     index: dict | None = None,

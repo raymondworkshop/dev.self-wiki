@@ -98,7 +98,7 @@ def _role_env_key(role: str) -> str | None:
 
     mapping = {
         "query": "QUERY_LLM_PROVIDER",
-        "rbrain": "RBRAIN_LLM_PROVIDER",
+        "rdatabase": "RDATABASE_LLM_PROVIDER",
         "lint": "LINT_LLM_PROVIDER",
         "discovery": "DISCOVERY_LLM_PROVIDER",
         "discover": "DISCOVERY_LLM_PROVIDER",
@@ -118,7 +118,7 @@ def _role_model_env_key(role: str) -> str | None:
 
     mapping = {
         "query": "QUERY_LLM_MODEL",
-        "rbrain": "RBRAIN_LLM_MODEL",
+        "rdatabase": "RDATABASE_LLM_MODEL",
         "lint": "LINT_LLM_MODEL",
         "discovery": "DISCOVERY_LLM_MODEL",
         "discover": "DISCOVERY_LLM_MODEL",

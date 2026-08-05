@@ -1,4 +1,4 @@
-"""rbrain pipeline: ensure index → prepare → run-skill(rbrain) → save."""
+"""rdatabase pipeline: ensure index → prepare → run-skill(rdatabase) → save."""
 
 from __future__ import annotations
 
@@ -9,13 +9,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from config import RBRAIN_OUTPUTS_DIR, WORKSPACE_PATH, workspace_relpath
+from config import RDATABASE_OUTPUTS_DIR, WORKSPACE_PATH, workspace_relpath
 from llm_provider import model_name, provider_for_role
 from log_utils import append_log
 from pending_cleanup import cleanup_pending_artifacts
-from prepare_rbrain import prepare_rbrain
-from rbrain_index import ensure_index
-from rbrain_retrieval import print_retrieval_debug
+from prepare_rdatabase import prepare_rdatabase
+from rdatabase_index import ensure_index
+from rdatabase_retrieval import print_retrieval_debug
 from run_skill import run_skill_from_pending
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 def sanitize_filename(question: str, max_len: int = 80) -> str:
     safe = re.sub(r"[^a-zA-Z0-9\u4e00-\u9fff]+", "-", question).strip("-")
     safe = re.sub(r"-+", "-", safe)
-    return safe[:max_len] or "rbrain"
+    return safe[:max_len] or "rdatabase"
 
 
 def yaml_string(value: str) -> str:
@@ -32,12 +32,12 @@ def yaml_string(value: str) -> str:
 
 
 def save_output(question: str, answer: str, candidates: list[dict[str, Any]]) -> Path:
-    RBRAIN_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+    RDATABASE_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     now = datetime.now()
     date_str = now.strftime("%Y-%m-%d")
     last_updated = now.isoformat(timespec="seconds")
     safe_q = sanitize_filename(question)
-    out = RBRAIN_OUTPUTS_DIR / f"{safe_q}-{date_str}.md"
+    out = RDATABASE_OUTPUTS_DIR / f"{safe_q}-{date_str}.md"
 
     sources_md = "\n".join(
         f"- [[{c['path']}]] · #p{c['para']} · L{c['start_line']}–L{c['end_line']} "
@@ -48,9 +48,9 @@ def save_output(question: str, answer: str, candidates: list[dict[str, Any]]) ->
     note = f"""---
 last_updated: {last_updated}
 title: {yaml_string(question)}
-description: {yaml_string(f"rbrain raw-only Q&A for: {question}")}
+description: {yaml_string(f"rdatabase raw-only Q&A for: {question}")}
 level: 0
-tags: [type/synthesis, rbrain]
+tags: [type/synthesis, rdatabase]
 date: {date_str}
 question: {yaml_string(question)}
 scope: self-wiki/raw
@@ -72,13 +72,13 @@ scope: self-wiki/raw
 
 ## Evolution
 
-- {date_str}: Created by `rbrain` from keyword-ranked `raw/` paragraphs.
+- {date_str}: Created by `rdatabase` from keyword-ranked `raw/` paragraphs.
 """
     out.write_text(note, encoding="utf-8")
     return out
 
 
-def run_rbrain(
+def run_rdatabase(
     query: str,
     *,
     provider: str | None = None,
@@ -86,9 +86,9 @@ def run_rbrain(
     save: bool = True,
     force_index: bool = False,
 ) -> dict[str, Any]:
-    llm_provider = provider_for_role("rbrain", provider)
+    llm_provider = provider_for_role("rdatabase", provider)
     index = ensure_index(force=force_index)
-    pending, pending_path = prepare_rbrain(query, index=index, provider=llm_provider)
+    pending, pending_path = prepare_rdatabase(query, index=index, provider=llm_provider)
 
     if debug_retrieval:
         print_retrieval_debug(
@@ -103,9 +103,9 @@ def run_rbrain(
         )
 
     logger.info(
-        "rbrain LLM: provider=%s model=%s",
+        "rdatabase LLM: provider=%s model=%s",
         llm_provider,
-        model_name(llm_provider, role="rbrain"),
+        model_name(llm_provider, role="rdatabase"),
     )
     result = run_skill_from_pending(pending_path, provider=llm_provider, write_output=True)
     answer = result["text"]
@@ -115,7 +115,7 @@ def run_rbrain(
         "query": query,
         "answer": answer,
         "provider": llm_provider,
-        "model": model_name(llm_provider, role="rbrain"),
+        "model": model_name(llm_provider, role="rdatabase"),
         "language": pending["language"],
         "query_terms": pending["query_terms"],
         "candidates": pending["candidates"],
@@ -135,7 +135,7 @@ def run_rbrain(
     if save:
         path = save_output(query, answer, pending["candidates"])
         out["output_path"] = workspace_relpath(path)
-        logger.info("Saved rbrain output to %s", path)
+        logger.info("Saved rdatabase output to %s", path)
 
     n_cand = len(pending.get("candidates") or [])
     q_short = query.replace("\n", " ").strip()
@@ -144,12 +144,12 @@ def run_rbrain(
     out_rel = out.get("output_path")
     if out_rel:
         append_log(
-            "rbrain",
+            "rdatabase",
             f"created output | {q_short} | candidates={n_cand} | {out_rel}",
         )
     else:
         append_log(
-            "rbrain",
+            "rdatabase",
             f"ran (no-save) | {q_short} | candidates={n_cand}",
         )
     return out

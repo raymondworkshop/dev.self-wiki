@@ -1,4 +1,4 @@
-"""Build deterministic paragraph index over self-wiki/raw/ for rbrain."""
+"""Build deterministic paragraph index over self-wiki/raw/ for rdatabase."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from config import RBRAIN_INDEX_JSON, RAW_DIR, WORKSPACE_PATH, workspace_relpath
+from config import RDATABASE_INDEX_JSON, RAW_DIR, WORKSPACE_PATH, workspace_relpath
 
 logger = logging.getLogger(__name__)
 
@@ -118,9 +118,9 @@ def build_paragraphs_for_file(path: Path) -> list[dict[str, Any]]:
 
 
 def load_index() -> dict[str, Any]:
-    if not RBRAIN_INDEX_JSON.exists():
+    if not RDATABASE_INDEX_JSON.exists():
         return {"version": 1, "built_at": None, "files": {}, "paragraphs": []}
-    return json.loads(RBRAIN_INDEX_JSON.read_text(encoding="utf-8"))
+    return json.loads(RDATABASE_INDEX_JSON.read_text(encoding="utf-8"))
 
 
 def get_paragraph(para_id: str, index: dict[str, Any] | None = None) -> dict[str, Any] | None:
@@ -149,9 +149,9 @@ def index_is_stale(index: dict[str, Any] | None = None) -> bool:
 
 
 def build_index(*, force: bool = False) -> dict[str, Any]:
-    existing = load_index() if RBRAIN_INDEX_JSON.exists() else None
+    existing = load_index() if RDATABASE_INDEX_JSON.exists() else None
     if existing and not force and not index_is_stale(existing):
-        logger.info("rbrain index up to date: %s", RBRAIN_INDEX_JSON)
+        logger.info("rdatabase index up to date: %s", RDATABASE_INDEX_JSON)
         return existing
 
     files_meta: dict[str, Any] = {}
@@ -180,16 +180,16 @@ def build_index(*, force: bool = False) -> dict[str, Any]:
         "files": files_meta,
         "paragraphs": paragraphs,
     }
-    RBRAIN_INDEX_JSON.parent.mkdir(parents=True, exist_ok=True)
-    RBRAIN_INDEX_JSON.write_text(
+    RDATABASE_INDEX_JSON.parent.mkdir(parents=True, exist_ok=True)
+    RDATABASE_INDEX_JSON.write_text(
         json.dumps(index, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
     logger.info(
-        "Wrote rbrain index: %s files, %s paragraphs → %s",
+        "Wrote rdatabase index: %s files, %s paragraphs → %s",
         index["file_count"],
         index["paragraph_count"],
-        RBRAIN_INDEX_JSON,
+        RDATABASE_INDEX_JSON,
     )
     return index
 
@@ -202,13 +202,13 @@ def main() -> int:
     import argparse
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    parser = argparse.ArgumentParser(description="Build rbrain paragraph index over raw/")
+    parser = argparse.ArgumentParser(description="Build rdatabase paragraph index over raw/")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
     idx = build_index(force=args.force)
     print(
-        f"rbrain-index: {idx['file_count']} files, {idx['paragraph_count']} paragraphs "
-        f"→ {workspace_relpath(RBRAIN_INDEX_JSON)}"
+        f"rdatabase-index: {idx['file_count']} files, {idx['paragraph_count']} paragraphs "
+        f"→ {workspace_relpath(RDATABASE_INDEX_JSON)}"
     )
     return 0
 

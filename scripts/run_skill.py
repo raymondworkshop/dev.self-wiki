@@ -19,12 +19,11 @@ from llm_provider import (
     model_name,
     provider_name,
 )
-from md_obsidian_sanitize import sanitize_obsidian_markdown
 from provider_circuit import is_circuit_open, record_provider_failure
 
 logger = logging.getLogger(__name__)
 
-TEXT_KINDS = frozenset({"query", "lint", "discovery", "gap", "evolution", "rbrain"})
+TEXT_KINDS = frozenset({"query", "lint", "discovery", "gap", "evolution", "rdatabase"})
 
 INGEST_COMPACT_RETRY_SUFFIX = """
 
@@ -183,8 +182,8 @@ def run_skill_from_pending(
     skill_role = (
         "query"
         if kind == "query"
-        else "rbrain"
-        if kind == "rbrain"
+        else "rdatabase"
+        if kind == "rdatabase"
         else "lint"
         if kind == "lint"
         else "discovery"
@@ -255,7 +254,6 @@ def run_skill_from_pending(
     should_write = write_output if write_output is not None else write_actions
 
     if kind in TEXT_KINDS:
-        response_text = sanitize_obsidian_markdown(response_text)
         out_path = None
         if should_write:
             out_path = _write_text_output(pending, pending_path, response_text)

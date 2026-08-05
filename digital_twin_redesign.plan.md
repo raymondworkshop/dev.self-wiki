@@ -330,7 +330,7 @@ audit: compliance → lint skill → append log
 | skills 与 GEMINI 双源漂移 | GEMINI 只保留 philosophy + resolver 表；具体 prompt 只在 skills |
 | 删 `_self-wiki/` 丢数据 | 先 `diff -rq _self-wiki self-wiki`；独有文件 migrate 后 archive |
 
-Reid AI（[notes.md](notes.md)）保留为**参照**：长期语料 → 一致人格；v1 不实现对外代表。
+rbrain（[notes.md](notes.md)）保留为**参照**：长期语料 → 一致人格 / 声音；v1 不实现对外代表。
 
 ---
 
@@ -455,7 +455,7 @@ dev.self-wiki/
 { "actions": [{ "target_title": "...", "confidence_score": 0.9, "new_body_content": "...", "tags": [] }] }
 ```
 
-**`twin/PROFILE.md`**（内部孪生核心，非 Reid 对外）：
+**`twin/PROFILE.md`**（内部孪生核心；rbrain 对外 chat = later）：
 - 从 `level: 2` + `type/principle` 页 **确定性聚合**（backliner + YAML 扫描），不由单次 query 幻觉生成
 - 区块：Operating principles / Active tensions（来自 backliner `Contradicts`）/ Recent shifts（`type/shift`）/ 最后编译时间
 - Query：runtime 读 PROFILE + evidence pack（`prepare-query` 组装）；经 `run_skill(query)` 或 Cursor 执行
@@ -820,6 +820,6 @@ flowchart LR
 - query-web 改造、promote、`_self-wiki` 清理
 
 **全量 v1 仍不做：**
-- Reid 式对外代表
+- rbrain 对外代表
 - 向量 RAG
 - 逐页 LLM audit（651×）

@@ -7,8 +7,8 @@ wiki_synthesize:
 query:
   default: "skills/query.md"
 
-rbrain:
-  default: "skills/rbrain.md"
+rdatabase:
+  default: "skills/rdatabase.md"
 
 lint:
   default: "skills/lint.md"

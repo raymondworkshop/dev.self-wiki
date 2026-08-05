@@ -1,6 +1,6 @@
 {
-  "compiled_at": "2026-08-04T14:50:53",
-  "principle_count": 5,
+  "compiled_at": "2026-08-05T18:31:54",
+  "principle_count": 6,
   "confidence_floor": 0.7,
   "level_min": 2,
   "principles": [
@@ -91,6 +91,20 @@
         "topic/social",
         "type/synthesis",
         "topic/leadership"
+      ]
+    },
+    {
+      "title": "利益安全与真实领导",
+      "rel": "self-wiki/wiki/利益安全与真实领导.md",
+      "level": 2,
+      "confidence": 0.82,
+      "summary": "**Operating rule:** 先让对方在利益与自尊叙事里站稳，再暴露不确定与探询；策略性的「护自尊」若缺少真实与脆弱，会沦为操纵；脆弱若跳过对方的 self-interest，则像裸逻辑一样伤人。",
+      "last_updated": "2026-07-03T00:00:00",
+      "tags": [
+        "type/principle",
+        "type/shift",
+        "topic/leadership",
+        "topic/communication"
       ]
     }
   ]

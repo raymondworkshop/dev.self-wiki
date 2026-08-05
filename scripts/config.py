@@ -37,11 +37,11 @@ PENDING_DIR = LOG_DIR / "pending"
 LAUNCHD_DIR = WORKSPACE_PATH / "launchd"
 SKILLS_DIR = WORKSPACE_PATH / "skills"
 QUERY_SKILL = SKILLS_DIR / "query.md"
-RBRAIN_SKILL = SKILLS_DIR / "rbrain.md"
+RDATABASE_SKILL = SKILLS_DIR / "rdatabase.md"
 LINT_SKILL = SKILLS_DIR / "lint.md"
 QUERY_PROFILES = SKILLS_DIR / "query-profiles.yaml"
-RBRAIN_INDEX_JSON = LOG_DIR / "rbrain-index.json"
-RBRAIN_OUTPUTS_DIR = OUTPUTS_DIR / "rbrain"
+RDATABASE_INDEX_JSON = LOG_DIR / "rdatabase-index.json"
+RDATABASE_OUTPUTS_DIR = OUTPUTS_DIR / "rdatabase"
 
 
 def _resolve_operating_manual() -> Path:
@@ -62,6 +62,7 @@ INDEX_JSON = LOG_DIR / "INDEX.json"
 AUDIT_MD = VAULT_DIR / "audit.md"
 TWIN_PROFILE = WORKSPACE_PATH / "twin" / "PROFILE.md"
 TWIN_PRINCIPLES_JSON = WORKSPACE_PATH / "twin" / "principles.json"
+TWIN_SELF_HYPOTHESES = WORKSPACE_PATH / "twin" / "Self-Hypotheses.md"
 TWIN_DIR = TWIN_PROFILE.parent
 
 

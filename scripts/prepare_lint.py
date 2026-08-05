@@ -94,11 +94,8 @@ def write_pending() -> Path:
 
 
 def merge_lint_into_audit(lint_text: str) -> Path:
-    from md_obsidian_sanitize import sanitize_obsidian_markdown
-
     marker = "### ⚖️ Cognitive Lint (Global)"
     placeholder = "### ⚖️ Cognitive Shifts & [Socratic Observations]"
-    lint_text = sanitize_obsidian_markdown(lint_text)
 
     if AUDIT_MD.exists():
         content = AUDIT_MD.read_text(encoding="utf-8")

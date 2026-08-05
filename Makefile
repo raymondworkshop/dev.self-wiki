@@ -22,11 +22,11 @@ SITE_DIR  ?= dist
 
 .PHONY: help ingest memex audit progress register-reference sync \
 	fix-provenance fix-obsidian-md wiki-synthesize wiki-synthesize-apple-notes wiki-synth-status \
-	discover gap evolution agents reflect promote query rbrain rbrain-index rbrain-serve test \
+	discover gap evolution agents reflect promote query rdatabase rdatabase-index rdatabase-serve test \
 	doctor-config incubate-themes publish site
 
 help:
-	@echo "Daily:  sync · ingest · site · publish · query · rbrain · audit · reflect"
+	@echo "Daily:  sync · ingest · site · publish · query · rdatabase · audit · reflect"
 	@echo "Pipeline:  wiki-synthesize · ingest · progress · fix-provenance "
 	@echo "Memex:  make memex CMD=\"stats|missing|backlinks PAGE\""
 	@echo "Agents:  discover · gap · evolution · agents"
@@ -37,9 +37,9 @@ help:
 	@echo "  make sync SKIP_INGEST=1  # wiki-synthesize only, skip ingest"
 	@echo "  make ingest [FAST=1]   # memex · index · twin (no LLM)"
 	@echo "  make query Q=\"what are my values?\"   # wiki Socratic mirror"
-	@echo "  make rbrain Q=\"what are my core values?\"  # raw-only facts + verbatim cites"
-	@echo "  make rbrain-index      # rebuild log/rbrain-index.json"
-	@echo "  make rbrain-serve      # HTTP :8791  POST /ask  GET /source"
+	@echo "  make rdatabase Q=\"what are my core values?\"  # raw-only facts + verbatim cites"
+	@echo "  make rdatabase-index      # rebuild log/rdatabase-index.json"
+	@echo "  make rdatabase-serve      # HTTP :8791  POST /ask  GET /source"
 	@echo "  make audit LINT=1"
 	@echo "  make agents            # discover → gap → evolution"
 	@echo "  make reflect           # agents + ingest + audit LINT=1"
@@ -87,7 +87,7 @@ fix-provenance:
 	$(if $(DRY),,$(INGEST_ENV) $(CLI) ingest)
 
 fix-obsidian-md:
-	$(PY) scripts/md_obsidian_sanitize.py $(PATHS)
+	$(PY) scripts/md_obsidian_sanitize.py $(if $(PATHS),$(PATHS),self-wiki/wiki)
 
 # --- agents ---
 discover gap evolution:
@@ -109,19 +109,19 @@ else
 	@read -p "Query: " q; $(LLM_ENV) $(CLI) query "$$q" $(CLI_PROVIDER_ARG)
 endif
 
-rbrain-index:
-	$(CLI) rbrain-index $(if $(FORCE),--force)
+rdatabase-index:
+	$(CLI) rdatabase-index $(if $(FORCE),--force)
 
-rbrain:
+rdatabase:
 ifdef Q
-	$(LLM_ENV) $(CLI) rbrain "$(Q)" $(CLI_PROVIDER_ARG) $(if $(DEBUG),--debug-retrieval) $(if $(FORCE),--force-index)
+	$(LLM_ENV) $(CLI) rdatabase "$(Q)" $(CLI_PROVIDER_ARG) $(if $(DEBUG),--debug-retrieval) $(if $(FORCE),--force-index)
 else
-	@read -p "rbrain: " q; $(LLM_ENV) $(CLI) rbrain "$$q" $(CLI_PROVIDER_ARG)
+	@read -p "rdatabase: " q; $(LLM_ENV) $(CLI) rdatabase "$$q" $(CLI_PROVIDER_ARG)
 endif
 
-RBRAIN_PORT ?= 8791
-rbrain-serve:
-	$(LLM_ENV) $(PY) scripts/rbrain_server.py --host 127.0.0.1 --port $(RBRAIN_PORT)
+RDATABASE_PORT ?= 8791
+rdatabase-serve:
+	$(LLM_ENV) $(PY) scripts/rdatabase_server.py --host 127.0.0.1 --port $(RDATABASE_PORT)
 
 publish:
 	$(INGEST_ENV) $(PY) scripts/publish_wiki.py \

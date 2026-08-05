@@ -36,7 +36,7 @@ class LogCleanupTests(unittest.TestCase):
             log_utils.LOG_MD = log_md
 
             log_utils.append_log("ingest", "older")
-            log_utils.append_log("rbrain", "newer")
+            log_utils.append_log("rdatabase", "newer")
             text = log_md.read_text(encoding="utf-8")
             newer_pos = text.index("newer")
             older_pos = text.index("older")

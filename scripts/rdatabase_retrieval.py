@@ -1,4 +1,4 @@
-"""Deterministic rbrain retrieval: keyword rank over raw paragraphs (no LLM, no vectors)."""
+"""Deterministic rdatabase retrieval: keyword rank over raw paragraphs (no LLM, no vectors)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import re
 from typing import Any
 
 from llm_provider import context_limits, is_cloud_provider
-from rbrain_index import ensure_index, load_index
+from rdatabase_index import ensure_index, load_index
 
 logger = logging.getLogger(__name__)
 
@@ -216,7 +216,7 @@ def build_retrieval_pack(
 
 
 def print_retrieval_debug(pack: dict[str, Any]) -> None:
-    print("rbrain retrieval debug", flush=True)
+    print("rdatabase retrieval debug", flush=True)
     print(f"  language: {pack.get('language')}", flush=True)
     print(f"  terms: {', '.join(pack.get('query_terms') or [])}", flush=True)
     print(
@@ -237,7 +237,7 @@ def main() -> int:
     import argparse
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    parser = argparse.ArgumentParser(description="Debug rbrain keyword retrieval")
+    parser = argparse.ArgumentParser(description="Debug rdatabase keyword retrieval")
     parser.add_argument("query")
     parser.add_argument("--provider", default=None)
     parser.add_argument("--top-k", type=int, default=None)

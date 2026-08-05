@@ -1,4 +1,4 @@
-"""Thin rbrain HTTP service: POST /ask, GET /source, GET /health (stdlib only)."""
+"""Thin rdatabase HTTP service: POST /ask, GET /source, GET /health (stdlib only)."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from urllib.parse import parse_qs, unquote, urlparse
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
 from config import RAW_DIR, WORKSPACE_PATH
-from rbrain_engine import run_rbrain
-from rbrain_index import ensure_index, get_paragraph
+from rdatabase_engine import run_rdatabase
+from rdatabase_index import ensure_index, get_paragraph
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +50,8 @@ def _resolve_para_id(raw_id: str) -> str:
     return pid
 
 
-class RbrainHandler(BaseHTTPRequestHandler):
-    server_version = "rbrain/1.0"
+class RdatabaseHandler(BaseHTTPRequestHandler):
+    server_version = "rdatabase/1.0"
 
     def log_message(self, fmt: str, *args) -> None:
         logger.info("%s - " + fmt, self.address_string(), *args)
@@ -75,7 +75,7 @@ class RbrainHandler(BaseHTTPRequestHandler):
                 200,
                 {
                     "ok": True,
-                    "service": "rbrain",
+                    "service": "rdatabase",
                     "paragraph_count": idx.get("paragraph_count"),
                     "built_at": idx.get("built_at"),
                 },
@@ -120,7 +120,7 @@ class RbrainHandler(BaseHTTPRequestHandler):
             body = _html_page(
                 para["id"],
                 f"""
-<h1>rbrain source</h1>
+<h1>rdatabase source</h1>
 <p class="meta">
   <code>{html.escape(para['id'])}</code><br/>
   file: <code>{html.escape(para['file'])}</code> ·
@@ -156,9 +156,9 @@ class RbrainHandler(BaseHTTPRequestHandler):
             return
         debug = bool(payload.get("debug_retrieval"))
         try:
-            result = run_rbrain(q, debug_retrieval=debug, save=True)
+            result = run_rdatabase(q, debug_retrieval=debug, save=True)
         except Exception as exc:  # noqa: BLE001
-            logger.exception("rbrain /ask failed")
+            logger.exception("rdatabase /ask failed")
             self._send_json(500, {"error": str(exc)})
             return
         self._send_json(
@@ -177,13 +177,13 @@ class RbrainHandler(BaseHTTPRequestHandler):
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    parser = argparse.ArgumentParser(description="rbrain HTTP service")
+    parser = argparse.ArgumentParser(description="rdatabase HTTP service")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8791)
     args = parser.parse_args()
     ensure_index()
-    httpd = ThreadingHTTPServer((args.host, args.port), RbrainHandler)
-    logger.info("rbrain listening on http://%s:%s", args.host, args.port)
+    httpd = ThreadingHTTPServer((args.host, args.port), RdatabaseHandler)
+    logger.info("rdatabase listening on http://%s:%s", args.host, args.port)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

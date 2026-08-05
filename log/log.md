@@ -1,12 +1,13 @@
 # Self-Wiki Log
 
-Operational record of ingest, query, rbrain, and lint. Newest entries first.
+Operational record of ingest, query, rdatabase, and lint. Newest entries first.
 
-## [2026-08-04] meta | expanded log coverage | query/promote/twin/sync/wiki/rbrain-index + wiki created/updated
+## [2026-08-05] twin | updated twin/PROFILE.md
+## [2026-08-04] meta | expanded log coverage | query/promote/twin/sync/wiki/rdatabase-index + wiki created/updated
 ## [2026-08-04] wiki | updated=1 (Dup Theme) | raw=_posts/a.md
 ## [2026-08-04] wiki | created=1 (Dup Theme) | raw=_posts/a.md
 ## [2026-08-04] wiki | created=1 (Test Theme) | raw=_posts/example.md
-## [2026-08-04] rbrain | log order smoke | newest-first
+## [2026-08-04] rdatabase | log order smoke | newest-first
 ## [2026-08-04] lint | Global cognitive lint merged into audit.md
 ## [2026-08-04] ingest | ingest complete
 ## [2026-08-04] evolution | evolution report via evolution-20260804-144355.json

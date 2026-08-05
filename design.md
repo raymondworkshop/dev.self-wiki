@@ -86,11 +86,11 @@ Skip `raw/twitter/**` for wiki-synthesize. Provider: `LLM_PROVIDER` (default `lo
 raw → wiki:  orchestrator → prepare_wiki_synthesize → run_skill → apply_ingest → wiki/
 trust:       memex graph → wiki backlinks → refresh_index → build_twin_profile → log.md
 query:       prepare_query → run_skill → save output
-rbrain:      rbrain_index → prepare_rbrain → run_skill → outputs/rbrain/ (+ HTTP /ask /source)
+rdatabase:      rdatabase_index → prepare_rdatabase → run_skill → outputs/rdatabase/ (+ HTTP /ask /source)
 reflect:     discover → gap → evolution → ingest → audit LINT=1
 ```
 
-**LLM calls:** 1× wiki-synthesize per raw file (or chunk) · 1× query per question · 1× rbrain per question · optional 1× lint.
+**LLM calls:** 1× wiki-synthesize per raw file (or chunk) · 1× query per question · 1× rdatabase per question · optional 1× lint.
 
 ---
 

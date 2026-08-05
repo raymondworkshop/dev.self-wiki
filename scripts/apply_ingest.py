@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from log_utils import append_log, short_text
+from md_obsidian_sanitize import sanitize_obsidian_markdown
 from models import WikiPage
 from wiki_themes import load_existing_themes
 
@@ -67,7 +68,7 @@ def apply_actions(
             if existing_level >= 2 and "type/principle" in tags:
                 page.front_matter["level"] = existing_level
 
-        body_content = action.get("new_body_content", "")
+        body_content = sanitize_obsidian_markdown(action.get("new_body_content", ""))
         cleaned_body = "\n".join(
             re.sub(r"^>\s*", "", line) for line in body_content.splitlines()
         )

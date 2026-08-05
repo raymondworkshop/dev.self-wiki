@@ -3,13 +3,20 @@
 
 ##### ideas  
 - todo  
-    +  Twin chatbot = outward "chat like me" persona (ideal: others talk to a version of you)  
-    + Socratic query = inward self-awareness (limits, motivations, inconsistencies, blind spots)  
-        - Q&A from wiki/
+    + rbrain — 慢慢让 AI 知道自己是谁、记住自己、长出自己的**写文章风格**  
+        - 「声音」= prose voice（文章怎么写），不是口语腔调
+        - 写出来越来越是「我自己」——不是装出来的角色
+        - process: raw → wiki → PROFILE 定信念骨架；写风从自己的 raw 文章范例复利
+        - 对外代表 = 长成之后的副产物（later / optional）
+        - ≠ rdatabase（事实库问答）；≠ Socratic query（向内照镜子）
 
--  rbrain — `make rbrain` / `make rbrain-serve` (raw-only + verbatim cites)
+
+-  rdatabase — `make rdatabase` / `make rdatabase-serve` (raw-only + verbatim cites)
     - Q&A from raw/ 
     - 专有数据当唯一事实库 → 可审计问答 → 支撑法律 / 金融 / 医疗的合规与风控  
+
+- Socratic query = inward self-awareness (limits, motivations, inconsistencies, blind spots)  
+    - Q&A from wiki/
     
 - add memex in self-wiki, remove compression step
 
