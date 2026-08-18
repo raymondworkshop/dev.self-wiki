@@ -1,10 +1,10 @@
 ---
 title: Digital Twin Profile
-last_updated: 2026-08-05T18:31:54
+last_updated: 2026-08-17T12:14:14
 description: Compact snapshot of Level-2 principles (internal twin; rbrain chat = later).
 level: 2
 tags: [type/principle, twin/profile]
-compiled_at: 2026-08-05T18:31:54
+compiled_at: 2026-08-17T12:14:14
 principle_count: 6
 principle_count_shown: 5
 principle_deduped: 5
@@ -68,6 +68,6 @@ _Deterministic heuristic from tension-marked wiki openings; label as [AI Synthes
 
 ## Compiled
 
-- 2026-08-05: Regenerated from `self-wiki/wiki/` via ingest (`make sync` / `python scripts/cli.py twin`).
+- 2026-08-17: Regenerated from `self-wiki/wiki/` via ingest (`make sync` / `python scripts/cli.py twin`).
 - Catalog: `twin/principles.json` — 6 principles, 5 after near-dup fold (1 related), 2 judged hypotheses, 0 Contradicts, 1 coexistences, 9 evolution, 3 shifts.
 - Query runtime reads `twin/principles.json` with query-aware selection in `prepare_query` (deterministic, not LLM-generated).

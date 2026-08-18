@@ -2,6 +2,16 @@
 
 Operational record of ingest, query, rdatabase, and lint. Newest entries first.
 
+## [2026-08-17] lint | updated audit.md | global cognitive lint merged
+## [2026-08-17] ingest | updated indexes/twin/backlinks | ingest complete
+## [2026-08-17] evolution | created evolution report via evolution-20260817-120725.json
+## [2026-08-17] gap | created gap report via gap-20260817-120629.json
+## [2026-08-17] discover | created discover report via discover-20260817-120523.json
+## [2026-08-12] lint | updated audit.md | global cognitive lint merged
+## [2026-08-12] ingest | updated indexes/twin/backlinks | ingest complete
+## [2026-08-12] evolution | created evolution report via evolution-20260812-105608.json
+## [2026-08-12] gap | created gap report via gap-20260812-105313.json
+## [2026-08-12] discover | created discover report via discover-20260812-104835.json
 ## [2026-08-05] twin | updated twin/PROFILE.md
 ## [2026-08-04] meta | expanded log coverage | query/promote/twin/sync/wiki/rdatabase-index + wiki created/updated
 ## [2026-08-04] wiki | updated=1 (Dup Theme) | raw=_posts/a.md
