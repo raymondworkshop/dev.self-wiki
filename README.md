@@ -1,6 +1,6 @@
 # dev.self-wiki
 
-Personal wiki, second brain, and Socratic Mirror.
+Personal wiki, and Socratic Mirror.
 
 ## Workflow
 
