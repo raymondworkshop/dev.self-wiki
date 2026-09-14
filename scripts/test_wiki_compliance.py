@@ -1,3 +1,4 @@
+import os
 import re
 import unittest
 from unittest import mock
@@ -232,28 +233,28 @@ class TestLLMProvider(unittest.TestCase):
             {
                 "LLM_PROVIDER": "mlx",
                 "LLM_MODEL": "mlx",
-                "QUERY_LLM_MODEL": "gemma4",
+                "QUERY_LLM_MODEL": "ultra",
             },
             clear=False,
         ):
-            self.assertEqual(model_name("mlx", role="query"), "gemma4")
+            self.assertEqual(model_name("mlx", role="query"), "ultra")
             self.assertEqual(model_name("mlx", role="wiki_synthesize"), "mlx")
             self.assertEqual(model_name("mlx"), "mlx")
 
-    def test_fallback_model_chain_gemma4_then_mlx(self):
+    def test_fallback_model_chain_ultra_then_mlx(self):
         from llm_provider import fallback_model_chain
 
         with mock.patch.dict(
             "os.environ",
             {
                 "LLM_PROVIDER": "local-gateway",
-                "LLM_MODEL": "gemma4",
+                "LLM_MODEL": "ultra",
                 "LLM_MODEL_FALLBACK": "",
             },
             clear=False,
         ):
             self.assertEqual(
-                fallback_model_chain("local-gateway"), ["gemma4", "mlx"]
+                fallback_model_chain("local-gateway"), ["ultra", "mlx"]
             )
 
     def test_fallback_model_chain_can_disable(self):
@@ -263,14 +264,14 @@ class TestLLMProvider(unittest.TestCase):
             "os.environ",
             {
                 "LLM_PROVIDER": "local-gateway",
-                "LLM_MODEL": "gemma4",
+                "LLM_MODEL": "ultra",
                 "LLM_MODEL_FALLBACK": "0",
             },
             clear=False,
         ):
-            self.assertEqual(fallback_model_chain("local-gateway"), ["gemma4"])
+            self.assertEqual(fallback_model_chain("local-gateway"), ["ultra"])
 
-    def test_default_gateway_model_is_gemma4(self):
+    def test_default_gateway_model_is_mlx(self):
         from llm_provider import model_name
 
         with mock.patch.dict(
@@ -279,10 +280,61 @@ class TestLLMProvider(unittest.TestCase):
                 "LLM_PROVIDER": "local-gateway",
                 "LLM_MODEL": "",
                 "QUERY_LLM_MODEL": "",
+                "LLM_CLOUD_MODEL": "",
             },
             clear=False,
         ):
-            self.assertEqual(model_name("local-gateway"), "gemma4")
+            self.assertEqual(model_name("local-gateway"), "mlx")
+
+    def test_cloud_alias_uses_llm_cloud_model(self):
+        from llm_provider import fallback_model_chain, model_name
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "local-gateway",
+                "LLM_MODEL": "cloud",
+                "LLM_CLOUD_MODEL": "gpt",
+                "LLM_MODEL_FALLBACK": "",
+            },
+            clear=False,
+        ):
+            self.assertEqual(model_name("local-gateway"), "gpt")
+            self.assertEqual(
+                fallback_model_chain("local-gateway"), ["gpt", "mlx"]
+            )
+
+    def test_mlx_does_not_auto_escalate_to_cloud(self):
+        from llm_provider import fallback_model_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "local-gateway",
+                "LLM_MODEL": "mlx",
+                "LLM_CLOUD_MODEL": "gpt",
+                "LLM_MODEL_FALLBACK": "",
+            },
+            clear=False,
+        ):
+            self.assertEqual(fallback_model_chain("local-gateway"), ["mlx"])
+
+    def test_fallback_cloud_alias(self):
+        from llm_provider import fallback_model_chain
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "local-gateway",
+                "LLM_MODEL": "mlx",
+                "LLM_CLOUD_MODEL": "ultra",
+                "LLM_MODEL_FALLBACK": "cloud",
+            },
+            clear=False,
+        ):
+            self.assertEqual(
+                fallback_model_chain("local-gateway"), ["mlx", "ultra"]
+            )
 
     def test_provider_for_role_agent_defaults_to_local_gateway_when_only_gemini_key(
         self,
@@ -363,16 +415,35 @@ class TestLLMProvider(unittest.TestCase):
             )
 
     def test_context_limits_are_provider_aware(self):
-        gemini_context, gemini_reserved, _ = context_limits("gemini")
-        mlx_context, mlx_reserved, _ = context_limits("mlx")
-        openai_context, openai_reserved, _ = context_limits("openai")
-        openrouter_context, openrouter_reserved, _ = context_limits("openrouter")
-        self.assertGreater(gemini_context, mlx_context)
-        self.assertGreater(gemini_reserved, mlx_reserved)
-        self.assertGreater(openai_context, mlx_context)
-        self.assertGreater(openai_reserved, mlx_reserved)
-        self.assertGreater(openrouter_context, mlx_context)
-        self.assertGreater(openrouter_reserved, mlx_reserved)
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "local-gateway",
+                "LLM_MODEL": "mlx",
+                "QUERY_LLM_MODEL": "",
+                "LLM_CLOUD_MODEL": "",
+            },
+            clear=False,
+        ):
+            os.environ.pop("MAX_CONTEXT_TOKENS", None)
+            os.environ.pop("RESERVED_OUTPUT_TOKENS", None)
+            os.environ.pop("PROMPT_SAFETY_MARGIN", None)
+
+            gemini_context, gemini_reserved, _ = context_limits("gemini")
+            mlx_context, mlx_reserved, _ = context_limits("mlx")
+            openai_context, openai_reserved, _ = context_limits("openai")
+            openrouter_context, openrouter_reserved, _ = context_limits("openrouter")
+            self.assertGreater(gemini_context, mlx_context)
+            self.assertGreater(gemini_reserved, mlx_reserved)
+            self.assertGreater(openai_context, mlx_context)
+            self.assertGreater(openai_reserved, mlx_reserved)
+            self.assertGreater(openrouter_context, mlx_context)
+            self.assertGreater(openrouter_reserved, mlx_reserved)
+
+            with mock.patch.dict("os.environ", {"LLM_MODEL": "gpt"}, clear=False):
+                gw_context, gw_reserved, _ = context_limits("local-gateway")
+                self.assertEqual(gw_context, openai_context)
+                self.assertEqual(gw_reserved, openai_reserved)
 
     def test_extract_json_object_from_model_text(self):
         parsed = extract_json_object('```json\n{"actions": []}\n```')

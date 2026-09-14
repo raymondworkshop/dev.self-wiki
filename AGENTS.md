@@ -11,7 +11,7 @@
 | **Composer (default)** | `wiki-synthesize`, `discovery/`, `gap/`, `evolution/` via `skills/` | — |
 | **Python** | `register-reference`, `ingest`, `audit` — deterministic | LLM |
 | **Cloud API (optional)** | `make query`, `make audit LINT=1` (`LLM_PROVIDER=openai|openrouter`) | Primary path |
-| **local-gateway** (dev.local-ai) | Only with `ALLOW_LOCAL_LLM=1`; last resort via `LLM_MLX_LAST_RESORT=1` (default). Models: `mlx` \| `gemma4` (`google/gemma-4-31b-it`) \| `laguna` (`poolside/laguna-m.1`) | Primary |
+| **local-gateway** (dev.local-ai) | Only with `ALLOW_LOCAL_LLM=1`; last resort via `LLM_MLX_LAST_RESORT=1` (default). Models: `gpt` (default) → `mlx` fallback; `cloud`→`LLM_CLOUD_MODEL`; `ultra` opt-in | Primary |
 
 `make wiki-synthesize` / `make sync` LLM batch: opt-in only (`ALLOW_PYTHON_LLM=1`). Prefer Composer for quality.
 
@@ -124,7 +124,7 @@ This wiki is a **Reasoning Engine** and a **Socratic Mirror**. We treat LLMs as 
 
 - **Dual-Model Workflow**:
   - **Gemini (Strategic)**: Performs high-level architectural design, system auditing, and knowledge synthesis strategy.
-  - **local-gateway (dev.local-ai)**: Optional batch path when `ALLOW_LOCAL_LLM=1`; gateway models `mlx` | `gemma4` (`google/gemma-4-31b-it`) | `laguna` (`poolside/laguna-m.1`).
+  - **local-gateway (dev.local-ai)**: Optional batch path when `ALLOW_LOCAL_LLM=1`; gateway models `gpt` (default) → `mlx` | `cloud`→`LLM_CLOUD_MODEL` | `ultra` opt-in.
 
 - **Goal**: Foster self-discovery, emotional regulation, and deep cognitive engagement through iterative distillation.
 - **Principle**: High signal-to-noise ratio. Every word must earn its place in the context window.

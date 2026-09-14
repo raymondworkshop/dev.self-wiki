@@ -3,10 +3,11 @@
 Composer-first: ingest/discovery prefer Composer or cloud; local-gateway is last-resort fallback.
 Query/lint use cloud API (gemini/openai/openrouter) when configured.
 Local gateway as primary: ALLOW_LOCAL_LLM=1. As fallback when cloud fails: LLM_MLX_LAST_RESORT=1 (default).
-Provider ``local-gateway`` talks to LLM_URL (dev.local-ai); model aliases: mlx | gemma4 | laguna.
-Upstream defaults (gateway): gemma4 → ``google/gemma-4-31b-it``, laguna → ``poolside/laguna-m.1``.
-Default model is ``gemma4``; on failure, ``LLM_MODEL_FALLBACK`` retries ``mlx`` (default for cloud aliases).
-Legacy alias ``nemotron`` still routes to gemma4 on the gateway.
+Provider ``local-gateway`` talks to LLM_URL (dev.local-ai); model aliases: mlx | ultra | gpt | cloud.
+Default model is ``mlx`` (local / private). Preferred cloud via ``LLM_CLOUD_MODEL`` (default ``gpt``);
+set ``LLM_MODEL=cloud`` or ``QUERY_LLM_MODEL=cloud`` to use it. Alias ``cloud`` expands to that value.
+Cloud aliases (ultra/gpt/flash) fall back to ``mlx`` unless ``LLM_MODEL_FALLBACK`` disables or overrides.
+Legacy alias ``nemotron`` still routes to ultra on the gateway.
 Legacy provider name ``mlx`` normalizes to ``local-gateway``.
 """
 
@@ -31,10 +32,12 @@ from provider_circuit import (
 
 logger = logging.getLogger(__name__)
 LAST_LLM_ERROR: str | None = None
-DEFAULT_GATEWAY_MODEL = "gemma4"
+DEFAULT_GATEWAY_MODEL = "mlx"
 DEFAULT_GATEWAY_MODEL_FALLBACK = "mlx"
+DEFAULT_CLOUD_MODEL = "gpt"
 # Gateway aliases that route through OpenRouter (dev.local-ai); fall back to local mlx.
-GATEWAY_CLOUD_ALIASES = frozenset({"gemma4", "nemotron", "laguna", "openrouter"})
+GATEWAY_CLOUD_ALIASES = frozenset({"ultra", "gpt", "flash", "nemotron", "openrouter"})
+CLOUD_MODEL_ALIASES = frozenset({"cloud", "remote"})
 PLACEHOLDER_MODELS = {"", "mlx-model", "local-model"}
 
 LOCAL_GATEWAY = "local-gateway"
@@ -265,16 +268,35 @@ def fallback_provider_chain(
     return apply_circuit_breaker(chain)
 
 
-def context_limits(provider: str | None = None) -> tuple[int, int, int]:
+def _gateway_uses_cloud_model(provider: str | None = None, *, role: str | None = None) -> bool:
+    """True when local-gateway primary model is an OpenRouter alias (gpt/ultra/…)."""
+
+    if normalize_provider(provider) != LOCAL_GATEWAY:
+        return False
+    model = resolve_openai_compatible_model(provider, role=role).strip().lower()
+    if model in GATEWAY_CLOUD_ALIASES or model in CLOUD_MODEL_ALIASES:
+        return True
+    # Fully-qualified OpenRouter ids (e.g. openai/gpt-oss-120b)
+    return "/" in model and not model.startswith("mlx")
+
+
+def context_limits(
+    provider: str | None = None, *, role: str | None = None
+) -> tuple[int, int, int]:
     """Return max context, reserved output, and max prompt token budgets."""
 
-    current = provider_name(provider)
+    current = normalize_provider(provider)
+    # local-gateway + gpt/ultra shares OpenRouter budgets (not tiny mlx defaults).
+    use_cloud_budget = current in CLOUD_PROVIDERS or (
+        current == LOCAL_GATEWAY and _gateway_uses_cloud_model(provider, role=role)
+    )
     if current == "gemini":
         max_context = int(os.environ.get("MAX_CONTEXT_TOKENS", "100000"))
         reserved_output = int(os.environ.get("RESERVED_OUTPUT_TOKENS", "4096"))
-    elif current in ("openai", "openrouter"):
+    elif use_cloud_budget:
         max_context = int(os.environ.get("MAX_CONTEXT_TOKENS", "128000"))
-        reserved_output = int(os.environ.get("RESERVED_OUTPUT_TOKENS", "4096"))
+        # Match gateway ULTRA_MIN_TOKENS headroom for medium-reasoning gpt-oss.
+        reserved_output = int(os.environ.get("RESERVED_OUTPUT_TOKENS", "8192"))
     else:
         max_context = int(os.environ.get("MAX_CONTEXT_TOKENS", "8092"))
         reserved_output = int(os.environ.get("RESERVED_OUTPUT_TOKENS", "1200"))
@@ -283,10 +305,12 @@ def context_limits(provider: str | None = None) -> tuple[int, int, int]:
     return max_context, reserved_output, max_prompt
 
 
-def default_output_tokens(provider: str | None = None) -> int:
+def default_output_tokens(
+    provider: str | None = None, *, role: str | None = None
+) -> int:
     """Default completion budget when callers omit max_tokens."""
 
-    _, reserved_output, _ = context_limits(provider)
+    _, reserved_output, _ = context_limits(provider, role=role)
     return reserved_output
 
 
@@ -311,6 +335,27 @@ def openai_compatible_api_base(provider: str | None = None) -> str:
     if url.endswith(suffix):
         return url[: -len(suffix)]
     return url
+
+
+def preferred_cloud_model() -> str:
+    """Gateway cloud alias from ``LLM_CLOUD_MODEL`` (ultra | gpt; default gpt)."""
+
+    load_env()
+    configured = os.environ.get("LLM_CLOUD_MODEL", "").strip()
+    if configured and configured.lower() not in PLACEHOLDER_MODELS:
+        return configured
+    return DEFAULT_CLOUD_MODEL
+
+
+def resolve_gateway_model_id(raw: str) -> str:
+    """Expand ``cloud`` / ``remote`` to ``LLM_CLOUD_MODEL``; pass other ids through."""
+
+    value = (raw or "").strip()
+    if not value:
+        return value
+    if value.lower() in CLOUD_MODEL_ALIASES:
+        return preferred_cloud_model()
+    return value
 
 
 def resolve_openai_compatible_model(
@@ -341,22 +386,24 @@ def resolve_openai_compatible_model(
         return DEFAULT_OPENROUTER_MODEL
 
     if role_model and role_model not in PLACEHOLDER_MODELS:
-        return role_model
+        return resolve_gateway_model_id(role_model)
 
     if configured and configured not in PLACEHOLDER_MODELS:
-        return configured
+        return resolve_gateway_model_id(configured)
 
-    # local-gateway default: gemma4 (OpenRouter via gateway); mlx on failure.
+    # local-gateway default: mlx (private); use LLM_MODEL=cloud for LLM_CLOUD_MODEL.
     return DEFAULT_GATEWAY_MODEL
 
 
 def fallback_model_chain(
     provider: str | None = None, *, role: str | None = None
 ) -> list[str]:
-    """Primary gateway model first, then optional mlx fallback (deduped).
+    """Primary gateway model first, then optional fallback (deduped).
 
-    For ``local-gateway``, cloud aliases (gemma4/laguna) fall back to ``mlx``
-    unless ``LLM_MODEL_FALLBACK`` disables it (``0`` / ``off``) or sets another id.
+    For ``local-gateway``:
+    - cloud aliases (ultra/gpt/flash) fall back to ``mlx`` unless disabled
+    - ``LLM_MODEL_FALLBACK=cloud`` expands to ``LLM_CLOUD_MODEL``
+    - primary ``mlx`` does not auto-escalate to cloud (set fallback explicitly)
     """
 
     primary = resolve_openai_compatible_model(provider, role=role)
@@ -369,7 +416,7 @@ def fallback_model_chain(
     if explicit.lower() in {"0", "false", "no", "off", "-"}:
         return chain
     if explicit:
-        fallback = explicit
+        fallback = resolve_gateway_model_id(explicit)
     elif primary.lower() in GATEWAY_CLOUD_ALIASES:
         fallback = DEFAULT_GATEWAY_MODEL_FALLBACK
     else:
@@ -378,7 +425,6 @@ def fallback_model_chain(
     if fallback and fallback.lower() != primary.lower():
         chain.append(fallback)
     return chain
-
 
 def model_name(provider: str | None = None, *, role: str | None = None) -> str:
     current = provider_name(provider)
@@ -550,7 +596,8 @@ def get_openai_compatible_response(
             os.environ.get("OPENROUTER_APP_TITLE", "").strip() or "self-wiki"
         )
 
-    timeout_seconds = int(os.environ.get("LLM_TIMEOUT_SECONDS", "360"))
+    # Slightly longer than gateway OPENROUTER_TIMEOUT_SECONDS (default 420).
+    timeout_seconds = int(os.environ.get("LLM_TIMEOUT_SECONDS", "600"))
     attempts = max(1, int(os.environ.get("LLM_RETRY_ATTEMPTS", "2")))
     backoff_seconds = max(1, int(os.environ.get("LLM_RETRY_BACKOFF_SECONDS", "5")))
 
@@ -573,6 +620,27 @@ def get_openai_compatible_response(
                     )
                     response.raise_for_status()
                     data = response.json()
+                    choice = (data.get("choices") or [{}])[0] or {}
+                    message = choice.get("message") or {}
+                    content = message.get("content") or choice.get("text") or ""
+                    if isinstance(content, str):
+                        content = content.strip()
+                    else:
+                        content = str(content or "").strip()
+                    # Reasoning models (gpt-oss) often return null content when the
+                    # completion budget is spent on thinking (finish_reason=length).
+                    if not content:
+                        finish = choice.get("finish_reason") or choice.get(
+                            "native_finish_reason"
+                        )
+                        usage = data.get("usage") or {}
+                        details = usage.get("completion_tokens_details") or {}
+                        raise ValueError(
+                            "empty message content "
+                            f"(finish_reason={finish!r}, "
+                            f"completion_tokens={usage.get('completion_tokens')}, "
+                            f"reasoning_tokens={details.get('reasoning_tokens')})"
+                        )
                     LAST_LLM_ERROR = None
                     if model_index > 0:
                         logger.info(
@@ -580,7 +648,7 @@ def get_openai_compatible_response(
                             models[0],
                             model,
                         )
-                    return data["choices"][0]["message"]["content"]
+                    return content
                 except (requests.Timeout, requests.ConnectionError) as exc:
                     if attempt >= attempts:
                         raise exc

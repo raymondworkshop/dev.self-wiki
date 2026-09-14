@@ -31,7 +31,8 @@ Minimal `.env` (local LLM via [dev.local-ai](../dev.local-ai) gateway `:8080`):
 ```bash
 LLM_PROVIDER=local-gateway
 LLM_URL=http://127.0.0.1:8080/v1/chat/completions
-LLM_MODEL=gemma4
+LLM_MODEL=gpt
+LLM_CLOUD_MODEL=gpt
 LLM_MODEL_FALLBACK=mlx
 ALLOW_PYTHON_LLM=1
 ALLOW_LOCAL_LLM=1
@@ -39,11 +40,12 @@ ALLOW_LOCAL_LLM=1
 
 | Alias | Upstream | Notes |
 |-------|----------|--------|
-| `mlx` | local Qwen3.5 | fast / private / fallback |
-| `gemma4` | `google/gemma-4-31b-it` | **default** (quality) |
-| `laguna` | `poolside/laguna-m.1` | coding only — not for wiki |
+| `gpt` | `openai/gpt-oss-120b` | **default** — Western + ZDR |
+| `mlx` | local Qwen3.5 | fallback when gpt fails |
+| `cloud` | expands to `LLM_CLOUD_MODEL` | same as `gpt` unless you change it |
+| `ultra` | Nemotron 3 Ultra `:free` | opt-in only (weaker privacy) |
 
-`LLM_PROVIDER=mlx` is a legacy alias for `local-gateway`. Prefer `gemma4` + `mlx` fallback. Gateway uses `reasoning=high`, 4096–8192 tokens, and keeps skill system prompts. Legacy `nemotron` → gemma4.
+`LLM_PROVIDER=mlx` is a legacy alias for `local-gateway`. Default is `gpt` → `mlx` (myblog raw via symlink stays off ultra). Use `LLM_MODEL=ultra make query` only when you accept free-provider privacy. Gateway cloud paths use `reasoning=medium`, ~8192 tokens, and keep skill system prompts. Legacy `nemotron` → ultra.
 
 Gemini works in code but is not recommended in HK (geo-block).
 
@@ -61,7 +63,7 @@ Ingest can be Composer-first (Cursor skills) or batch (`make sync`).
 
 `make wiki-synthesize` · `make wiki-synthesize-apple-notes` · `make fix-provenance` · `make ingest` · `make progress` · `make wiki-synth-status` · `make agents` · `make promote FILE=… TARGET=… CONFIRM=1` · `make doctor-config` · `make test`
 
-Overrides: `LLM_PROVIDER=openrouter make sync` · `LLM_MODEL=laguna make query` · `QUERY_LLM_MODEL=gemma4`
+Overrides: `LLM_PROVIDER=openrouter make sync` · `LLM_MODEL=cloud make query` · `QUERY_LLM_MODEL=ultra`
 
 ## Safety
 
