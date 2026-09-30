@@ -6,6 +6,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -21,6 +22,11 @@ _INDEX_CACHE: dict[str, Any] | None = None
 _INDEX_CACHE_MTIME_NS: int | None = None
 _INDEX_BY_ID: dict[str, dict[str, Any]] | None = None
 _LAST_ENSURE_MONO: float = 0.0
+
+# Ephemeral upload paragraphs (this process only; for /source after /ask).
+_EPHEMERAL_BY_ID: dict[str, dict[str, Any]] = {}
+MAX_UPLOAD_CHARS = 1_500_000
+UPLOAD_PATH_PREFIX = "upload/"
 
 
 def _kind_for_rel(rel: str) -> str:
@@ -123,6 +129,81 @@ def split_paragraphs(content: str) -> list[tuple[int, int, str]]:
         buf.append(line)
     flush()
     return blocks
+
+
+def _safe_upload_filename(name: str | None) -> str:
+    raw = (name or "upload.md").strip().replace("\\", "/").split("/")[-1]
+    raw = re.sub(r"[^\w.\- \u4e00-\u9fff]+", "_", raw, flags=re.UNICODE).strip("._ ")
+    if not raw:
+        raw = "upload.md"
+    if not re.search(r"\.(md|markdown|txt|text)$", raw, re.I):
+        raw = f"{raw}.md"
+    return raw[:120]
+
+
+def paragraphs_from_upload(
+    content: str,
+    *,
+    filename: str | None = None,
+) -> list[dict[str, Any]]:
+    """Split pasted/uploaded text into ephemeral paragraphs (not written to disk)."""
+    text = (content or "").replace("\r\n", "\n").replace("\r", "\n")
+    if not text.strip():
+        raise ValueError("upload is empty")
+    if len(text) > MAX_UPLOAD_CHARS:
+        raise ValueError(
+            f"upload too large ({len(text)} chars; max {MAX_UPLOAD_CHARS})"
+        )
+    file_name = _safe_upload_filename(filename)
+    path = f"{UPLOAD_PATH_PREFIX}{file_name}"
+    units: list[dict[str, Any]] = []
+    for idx, (start, end, chunk) in enumerate(split_paragraphs(text), start=1):
+        units.append(
+            {
+                "id": f"{path}#p{idx}",
+                "path": path,
+                "file": file_name,
+                "para": idx,
+                "start_line": start,
+                "end_line": end,
+                "text": chunk,
+                "kind": "upload",
+            }
+        )
+    if not units:
+        raise ValueError("upload produced no paragraphs")
+    return units
+
+
+def register_ephemeral_paragraphs(paragraphs: list[dict[str, Any]]) -> None:
+    for p in paragraphs:
+        pid = p.get("id")
+        if pid:
+            _EPHEMERAL_BY_ID[pid] = p
+    overflow = len(_EPHEMERAL_BY_ID) - 8000
+    if overflow > 0:
+        for key in list(_EPHEMERAL_BY_ID.keys())[:overflow]:
+            _EPHEMERAL_BY_ID.pop(key, None)
+
+
+def ephemeral_index_from_upload(
+    content: str,
+    *,
+    filename: str | None = None,
+) -> dict[str, Any]:
+    paragraphs = paragraphs_from_upload(content, filename=filename)
+    register_ephemeral_paragraphs(paragraphs)
+    path = paragraphs[0]["path"]
+    return {
+        "version": 1,
+        "built_at": datetime.now().isoformat(timespec="seconds"),
+        "ephemeral": True,
+        "file_count": 1,
+        "paragraph_count": len(paragraphs),
+        "files": {},
+        "paragraphs": paragraphs,
+        "upload_path": path,
+    }
 
 
 def iter_raw_md_files() -> list[Path]:
@@ -298,6 +379,11 @@ def load_index() -> dict[str, Any]:
 
 
 def get_paragraph(para_id: str, index: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    if para_id in _EPHEMERAL_BY_ID:
+        return _EPHEMERAL_BY_ID[para_id]
+    for pid, p in _EPHEMERAL_BY_ID.items():
+        if pid.endswith(para_id) or para_id.endswith(pid):
+            return p
     if index is None:
         load_index()
         if _INDEX_BY_ID is not None:

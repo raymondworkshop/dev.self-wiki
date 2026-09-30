@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 # Source tier: authored posts ≫ personal notes ≫ twitter bookmarks.
 KIND_BOOST = {
     "post": 48,
+    "upload": 40,
     "apple-notes": 12,
     "raw": 16,
     "twitter": -55,

@@ -251,5 +251,33 @@ class QueryLiteralTermsTests(unittest.TestCase):
         self.assertLessEqual(len(ids), 8)
 
 
+class UploadEphemeralTests(unittest.TestCase):
+    def test_paragraphs_from_upload_and_get(self) -> None:
+        from trace_index import (
+            ephemeral_index_from_upload,
+            get_paragraph,
+            paragraphs_from_upload,
+        )
+
+        content = "第一段談自由。\n\n第二段談金錢。\n\n第三段無關。"
+        paras = paragraphs_from_upload(content, filename="notes.md")
+        self.assertEqual(len(paras), 3)
+        self.assertTrue(paras[0]["path"].startswith("upload/"))
+        self.assertEqual(paras[0]["kind"], "upload")
+        idx = ephemeral_index_from_upload(content, filename="notes.md")
+        hit = get_paragraph(idx["paragraphs"][0]["id"])
+        self.assertIsNotNone(hit)
+        self.assertIn("自由", hit["text"])
+        pack = build_retrieval_pack(
+            "什麼是自由？",
+            index=idx,
+            provider="local-gateway",
+            top_k=8,
+            scope=idx["upload_path"],
+        )
+        self.assertTrue(pack["candidates"])
+        self.assertTrue(all(c["path"].startswith("upload/") for c in pack["candidates"]))
+
+
 if __name__ == "__main__":
     unittest.main()

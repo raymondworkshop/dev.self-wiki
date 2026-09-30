@@ -398,13 +398,19 @@ def _home_page(*, paragraph_count: int | None, built_at: str | None) -> bytes:
 <textarea id="q" placeholder="什麼是自由？愛呢？"></textarea>
 <label for="scope" style="margin-top:1rem">Scope (optional)</label>
 <input id="scope" type="text" placeholder="a-free-man  or  raw/_posts/2026-03-01-a-free-man.md" style="width:100%;padding:0.75rem 1rem;border:1px solid var(--line);border-radius:12px;font:inherit;font-size:1rem;background:var(--card)"/>
+<label for="upload" style="margin-top:1rem">Upload (optional)</label>
+<div class="row" style="margin-top:0.35rem;gap:0.75rem;align-items:center">
+  <input id="upload" type="file" accept=".md,.markdown,.txt,.text,text/plain,text/markdown"/>
+  <button id="uploadClear" type="button" style="display:none">Clear file</button>
+</div>
+<p id="uploadMeta" class="hint" style="margin-top:0.35rem"></p>
 <fieldset class="model-row" id="modelRow">
   <legend>Model</legend>
   <label class="pick"><input type="radio" name="model" value="gpt" checked/> gpt <span style="color:var(--soft);font-weight:400">(cloud · faster on long packs)</span></label>
   <label class="pick"><input type="radio" name="model" value="mlx"/> mlx <span style="color:var(--soft);font-weight:400">(local · private)</span></label>
   <p class="model-hint">Choice is remembered on this device.</p>
 </fieldset>
-<p class="hint">Leave scope empty for all raw/ · or @a-free-man at end of question · Enter to ask</p>
+<p class="hint">Leave scope empty for all raw/ · or @a-free-man · or upload .md/.txt (temp, not saved to vault) · Enter to ask</p>
 <div class="row">
   <button id="ask" type="button">Ask</button>
   <span id="status"></span>
@@ -442,12 +448,61 @@ def _home_page(*, paragraph_count: int | None, built_at: str | None) -> bytes:
 <script>
 const qEl = document.getElementById('q');
 const scopeEl = document.getElementById('scope');
+const uploadEl = document.getElementById('upload');
+const uploadClearBtn = document.getElementById('uploadClear');
+const uploadMetaEl = document.getElementById('uploadMeta');
 const askBtn = document.getElementById('ask');
 const statusEl = document.getElementById('status');
 const answerEl = document.getElementById('answer');
 const answerCard = document.getElementById('answerCard');
 const sourcesEl = document.getElementById('sources');
 const sourcesCard = document.getElementById('sourcesCard');
+
+let uploadText = null;
+let uploadName = null;
+const MAX_UPLOAD_BYTES = 1500000;
+
+function setUploadMeta(msg) {{
+  if (uploadMetaEl) uploadMetaEl.textContent = msg || '';
+  if (uploadClearBtn) uploadClearBtn.style.display = uploadText ? 'inline-block' : 'none';
+}}
+
+function clearUpload() {{
+  uploadText = null;
+  uploadName = null;
+  if (uploadEl) uploadEl.value = '';
+  setUploadMeta('');
+}}
+
+uploadEl?.addEventListener('change', async () => {{
+  const f = uploadEl.files && uploadEl.files[0];
+  if (!f) {{ clearUpload(); return; }}
+  if (f.size > MAX_UPLOAD_BYTES) {{
+    clearUpload();
+    statusEl.textContent = 'File too large (max ~1.5MB text).';
+    statusEl.className = 'err';
+    return;
+  }}
+  const name = f.name || 'upload.md';
+  if (!/\\.(md|markdown|txt|text)$/i.test(name)) {{
+    clearUpload();
+    statusEl.textContent = 'Use .md / .txt only.';
+    statusEl.className = 'err';
+    return;
+  }}
+  try {{
+    uploadText = await f.text();
+    uploadName = name;
+    setUploadMeta('Loaded ' + name + ' · ' + uploadText.length + ' chars (temp scope; not saved to vault)');
+    statusEl.textContent = '';
+    statusEl.className = '';
+  }} catch (err) {{
+    clearUpload();
+    statusEl.textContent = String(err.message || err);
+    statusEl.className = 'err';
+  }}
+}});
+uploadClearBtn?.addEventListener('click', clearUpload);
 
 function escapeHtml(s) {{
   return String(s)
@@ -504,14 +559,14 @@ function sourceLink(href, label, className, title) {{
 function linkifyCites(escaped) {{
   // Compact cite: show #pN · Lx–Ly; full path in title tooltip.
   let s = escaped.replace(
-    /(?:\\(?\\s*(?:Source:\\s*)?)?\\[\\[(raw\\/[^\\]]+)\\]\\]\\s*·\\s*(#p\\d+)\\s*·\\s*L(\\d+)\\s*[–—-]\\s*L?(\\d+)\\)?/g,
+    /(?:\\(?\\s*(?:Source:\\s*)?)?\\[\\[((?:raw|upload)\\/[^\\]]+)\\]\\]\\s*·\\s*(#p\\d+)\\s*·\\s*L(\\d+)\\s*[–—-]\\s*L?(\\d+)\\)?/g,
     (_, path, pTag, a, b) => {{
       const href = sourceHref(path, pTag, a, b);
       const short = pTag + ' · L' + a + '–' + b;
       return sourceLink(href, short, 'cite', '[[' + path + ']]');
     }}
   );
-  s = s.replace(/\\[\\[(raw\\/[^\\]]+)\\]\\]/g, (_, path) => {{
+  s = s.replace(/\\[\\[((?:raw|upload)\\/[^\\]]+)\\]\\]/g, (_, path) => {{
     const leaf = path.split('/').pop() || path;
     return sourceLink(sourceHref(path), leaf, 'wikilink', '[[' + path + ']]');
   }});
@@ -663,16 +718,23 @@ async function ask() {{
   }}
   askBtn.disabled = true;
   statusEl.className = '';
-  let thinking = scope ? ('Thinking in ' + scope + '…') : 'Thinking…';
+  let thinking = uploadName
+    ? ('Thinking in upload/' + uploadName + '…')
+    : (scope ? ('Thinking in ' + scope + '…') : 'Thinking…');
   thinking += ' · ' + model;
   statusEl.textContent = thinking;
   answerCard.hidden = true;
   sourcesCard.hidden = true;
   try {{
+    const body = {{ q, scope: uploadText ? null : (scope || null), model }};
+    if (uploadText) {{
+      body.upload = uploadText;
+      body.upload_filename = uploadName || 'upload.md';
+    }}
     const res = await fetch('/ask', {{
       method: 'POST',
       headers: {{ 'Content-Type': 'application/json' }},
-      body: JSON.stringify({{ q, scope: scope || null, model }}),
+      body: JSON.stringify(body),
     }});
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || res.statusText);
@@ -867,7 +929,7 @@ class TraceHandler(BaseHTTPRequestHandler):
                         "service": "trace",
                         "paragraph_count": idx.get("paragraph_count"),
                         "built_at": idx.get("built_at"),
-                        "ask": 'POST /ask {"q": "...", "model": "mlx|gpt"}',
+                        "ask": 'POST /ask {"q": "...", "model": "mlx|gpt", "scope"?: "...", "upload"?: "…", "upload_filename"?: "note.md"}',
                     },
                 )
                 return
@@ -947,10 +1009,28 @@ class TraceHandler(BaseHTTPRequestHandler):
         scope = (payload.get("scope") or payload.get("path") or "").strip() or None
         debug = bool(payload.get("debug_retrieval"))
         model = (payload.get("model") or "").strip() or "gpt"
+        upload_text = payload.get("upload") or payload.get("document") or payload.get("text")
+        if upload_text is not None:
+            upload_text = str(upload_text)
+        upload_filename = (
+            payload.get("upload_filename")
+            or payload.get("filename")
+            or payload.get("name")
+            or None
+        )
         try:
             result = run_trace(
-                q, debug_retrieval=debug, save=True, scope=scope, model=model
+                q,
+                debug_retrieval=debug,
+                save=True,
+                scope=scope,
+                model=model,
+                upload_text=upload_text,
+                upload_filename=upload_filename,
             )
+        except ValueError as exc:
+            self._send_json(400, {"error": str(exc)})
+            return
         except Exception as exc:  # noqa: BLE001
             logger.exception("trace /ask failed")
             self._send_json(500, {"error": str(exc)})

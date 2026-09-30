@@ -16,7 +16,7 @@ from llm_provider import model_name, provider_for_role
 from log_utils import append_log
 from pending_cleanup import cleanup_pending_artifacts
 from prepare_trace import prepare_trace
-from trace_index import ensure_index, get_paragraph
+from trace_index import ensure_index, ephemeral_index_from_upload, get_paragraph
 from trace_retrieval import print_retrieval_debug
 from run_skill import run_skill_from_pending
 
@@ -240,6 +240,8 @@ def run_trace(
     force_index: bool = False,
     scope: str | None = None,
     model: str | None = None,
+    upload_text: str | None = None,
+    upload_filename: str | None = None,
 ) -> dict[str, Any]:
     chosen = normalize_trace_model(model)
     with _trace_model_override(chosen):
@@ -250,6 +252,8 @@ def run_trace(
             save=save,
             force_index=force_index,
             scope=scope,
+            upload_text=upload_text,
+            upload_filename=upload_filename,
         )
 
 
@@ -261,9 +265,17 @@ def _run_trace_body(
     save: bool = True,
     force_index: bool = False,
     scope: str | None = None,
+    upload_text: str | None = None,
+    upload_filename: str | None = None,
 ) -> dict[str, Any]:
     llm_provider = provider_for_role("trace", provider)
-    index = ensure_index(force=force_index)
+    if upload_text is not None and str(upload_text).strip():
+        index = ephemeral_index_from_upload(
+            str(upload_text), filename=upload_filename
+        )
+        scope = index.get("upload_path") or scope
+    else:
+        index = ensure_index(force=force_index)
     pending, pending_path = prepare_trace(
         query, index=index, provider=llm_provider, scope=scope
     )
