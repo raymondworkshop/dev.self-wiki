@@ -577,6 +577,23 @@ def build_index(*, force: bool = False) -> dict[str, Any]:
     walk_md_count = count_raw_md_files()
     current_fps = {_index_file_key(path): file_fingerprint(path) for path in paths}
 
+    # raw/_posts is often a symlink (e.g. myblog). A transient walk of 0 must not
+    # wipe a healthy index via incremental "remove all".
+    existing_n = 0
+    if existing:
+        existing_n = int(
+            existing.get("paragraph_count")
+            or len(existing.get("paragraphs") or [])
+            or 0
+        )
+    if existing_n > 0 and not paths and not force:
+        logger.error(
+            "trace index: walk returned 0 files but existing index has %s paragraphs; "
+            "keeping existing (check raw/_posts symlink). Use --force to wipe.",
+            existing_n,
+        )
+        return _set_index_cache(existing)
+
     if (
         existing
         and not force
