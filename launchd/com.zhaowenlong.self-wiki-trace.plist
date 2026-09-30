@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.zhaowenlong.self-wiki-trace</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/zsh</string>
+		<string>/Users/zhaowenlong/workspace/dev.self-wiki/scripts/launchd-trace.sh</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/Users/zhaowenlong/workspace/dev.self-wiki</string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+		<key>ALLOW_PYTHON_LLM</key>
+		<string>1</string>
+		<key>ALLOW_LOCAL_LLM</key>
+		<string>1</string>
+		<key>LLM_PROVIDER</key>
+		<string>local-gateway</string>
+		<key>TRACE_LLM_MODEL</key>
+		<string>mlx</string>
+		<key>TRACE_HOST</key>
+		<string>0.0.0.0</string>
+		<key>TRACE_PORT</key>
+		<string>8791</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>StandardOutPath</key>
+	<string>/Users/zhaowenlong/workspace/dev.self-wiki/launchd/launchd-trace.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/zhaowenlong/workspace/dev.self-wiki/launchd/launchd-trace.err.log</string>
+</dict>
+</plist>

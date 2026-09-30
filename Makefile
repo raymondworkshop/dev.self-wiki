@@ -23,6 +23,7 @@ SITE_DIR  ?= dist
 .PHONY: help ingest memex audit progress register-reference sync \
 	fix-provenance fix-obsidian-md wiki-synthesize wiki-synthesize-apple-notes wiki-synth-status \
 	discover gap evolution agents reflect promote query trace trace-index trace-serve \
+	trace-start trace-stop trace-restart trace-logs \
 	rdatabase rdatabase-index rdatabase-serve test \
 	doctor-config incubate-themes publish site
 
@@ -38,10 +39,12 @@ help:
 	@echo "  make sync SKIP_INGEST=1  # wiki-synthesize only, skip ingest"
 	@echo "  make ingest [FAST=1]   # memex · index · twin (no LLM)"
 	@echo "  make query Q=\"what are my values?\"   # wiki Socratic mirror"
-	@echo "  make trace Q=\"what are my core values?\"  # raw-only facts + verbatim cites"
+	@echo "  make trace Q=\"what are my core values?\"  # raw-only + cites (default mlx)"
 	@echo "  make trace Q=\"什麼是自由？\" SCOPE=a-free-man  # answer from one note only"
 	@echo "  make trace-index [FORCE=1]   # rebuild log/trace-index.json"
-	@echo "  make trace-serve [PORT=8791] # HTTP UI + POST /ask (+ optional scope)"
+	@echo "  make trace-serve [PORT=8791] # foreground HTTP (dev)"
+	@echo "  make trace-start | stop | restart | logs  # launchd daemon :8791"
+	@echo "  TRACE_LLM_MODEL=gpt make trace Q=...   # use cloud instead of mlx"
 	@echo "  make audit LINT=1"
 	@echo "  make agents            # discover → gap → evolution"
 	@echo "  make reflect           # agents + ingest + audit LINT=1"
@@ -118,15 +121,19 @@ endif
 trace-index:
 	$(CLI) trace-index $(if $(FORCE),--force)
 
+# Local mlx by default (raw cites stay private); override: TRACE_LLM_MODEL=gpt make trace …
+TRACE_LLM_MODEL ?= mlx
+
 trace:
 ifdef Q
-	$(LLM_ENV) $(CLI) trace "$(Q)" $(CLI_PROVIDER_ARG) \
+	$(LLM_ENV) TRACE_LLM_MODEL=$(TRACE_LLM_MODEL) $(CLI) trace "$(Q)" $(CLI_PROVIDER_ARG) \
 	  $(if $(SCOPE),--scope "$(SCOPE)") \
 	  $(if $(DEBUG),--debug-retrieval) $(if $(FORCE),--force-index)
 else
-	@read -p "trace: " q; $(LLM_ENV) $(CLI) trace "$$q" $(CLI_PROVIDER_ARG) $(if $(SCOPE),--scope "$(SCOPE)")
+	@read -p "trace: " q; $(LLM_ENV) TRACE_LLM_MODEL=$(TRACE_LLM_MODEL) $(CLI) trace "$$q" $(CLI_PROVIDER_ARG) $(if $(SCOPE),--scope "$(SCOPE)")
 endif
 
+TRACE_HOST ?= 0.0.0.0
 TRACE_PORT ?= 8791
 # Skip vault rescan for this many seconds after a warm ensure_index (hot /ask path).
 export TRACE_INDEX_TRUST_SECONDS ?= 180
@@ -138,17 +145,43 @@ export TRACE_MAX_PER_NOTES ?= 4
 export TRACE_MAX_PER_TWITTER ?= 2
 # Larger pack when SCOPE=… / UI scope / @file (single-doc mode).
 export TRACE_SCOPE_TOP_K ?= 64
+
+TRACE_PLIST_SRC := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))/launchd/com.zhaowenlong.self-wiki-trace.plist
+TRACE_PLIST := $(HOME)/Library/LaunchAgents/com.zhaowenlong.self-wiki-trace.plist
+TRACE_LABEL := com.zhaowenlong.self-wiki-trace
+
 trace-serve:
-	$(LLM_ENV) TRACE_INDEX_TRUST_SECONDS=$(TRACE_INDEX_TRUST_SECONDS) \
+	$(LLM_ENV) TRACE_LLM_MODEL=$(TRACE_LLM_MODEL) \
+	  TRACE_INDEX_TRUST_SECONDS=$(TRACE_INDEX_TRUST_SECONDS) \
 	  TRACE_TOP_K=$(TRACE_TOP_K) TRACE_SCOPE_TOP_K=$(TRACE_SCOPE_TOP_K) \
 	  TRACE_MAX_PER_POST=$(TRACE_MAX_PER_POST) TRACE_MAX_PER_NOTES=$(TRACE_MAX_PER_NOTES) \
 	  TRACE_MAX_PER_TWITTER=$(TRACE_MAX_PER_TWITTER) \
-	  $(PY) scripts/trace_server.py --host 127.0.0.1 --port $(TRACE_PORT)
+	  $(PY) scripts/trace_server.py --host $(TRACE_HOST) --port $(TRACE_PORT)
+
+trace-start trace-restart:
+	@mkdir -p "$(dir $(TRACE_PLIST_SRC))"
+	cp "$(TRACE_PLIST_SRC)" "$(TRACE_PLIST)"
+	launchctl unload "$(TRACE_PLIST)" 2>/dev/null || true
+	launchctl load "$(TRACE_PLIST)"
+	launchctl kickstart -k "gui/$$(id -u)/$(TRACE_LABEL)"
+	@echo "trace daemon on http://0.0.0.0:$(TRACE_PORT)/ (Tailscale: http://100.90.225.26:$(TRACE_PORT)/)"
+	@echo "logs: launchd/launchd-trace*.log"
+
+trace-stop:
+	launchctl unload "$(TRACE_PLIST)" 2>/dev/null || true
+	@echo "trace daemon unloaded"
+
+trace-logs:
+	@tail -f launchd/launchd-trace.log launchd/launchd-trace.err.log
 
 # Back-compat aliases (formerly rdatabase)
 rdatabase: trace
 rdatabase-index: trace-index
 rdatabase-serve: trace-serve
+rdatabase-start: trace-start
+rdatabase-stop: trace-stop
+rdatabase-restart: trace-restart
+rdatabase-logs: trace-logs
 
 publish:
 	$(INGEST_ENV) $(PY) scripts/publish_wiki.py \

@@ -81,7 +81,7 @@ Backfill: `make wiki-synthesize WAVE=theme_links LIMIT=50 INGEST=1`
 | `make audit` | Structure, red links, duplicate themes, L2 guidance |
 | `make audit LINT=1` | Above + `skills/lint.md` — cross-page contradictions. **Flag Cognitive Shift** when new insight contradicts old principle |
 | `make query` | retrieve wiki → `query.md` → save with provenance ([query-profiles.yaml](skills/query-profiles.yaml)) |
-| `make trace` | retrieve **raw/** paragraphs only (skip generated `raw/qa/`) → `skills/trace.md` → verbatim cites; `make trace-index` / `make trace-serve` |
+| `make trace` | retrieve **raw/** paragraphs only (skip generated `raw/qa/`) → `skills/trace.md` → verbatim cites; `make trace-index` / `make trace-start` (launchd :8791) / `make trace-serve` |
 | `make promote … CONFIRM=1` | When answer has `[Cognitive Shift]` or user confirms; merges under `### Promoted from query`. Target: existing L1 — not ad-hoc L2 from one query |
 
 ---

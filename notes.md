@@ -11,7 +11,10 @@
         - ≠ trace（事实库问答）；≠ Socratic query（向内照镜子）
 
 
--  trace — `make trace` / `make trace-serve` (raw-only + verbatim cites)
+-  trace — `make trace` / `make trace-start` (launchd :8791) / `make trace-serve` (fg); default mlx
+  > make trace-start | stop | restart | logs
+  > plist: ~/Library/LaunchAgents/com.zhaowenlong.self-wiki-trace.plist
+  > UI http://127.0.0.1:8791/ · Tailscale http://100.90.225.26:8791/
     - Q&A from raw/ 
     - 专有数据当唯一事实库 → 可审计问答 → 支撑法律 / 金融 / 医疗的合规与风控  
 

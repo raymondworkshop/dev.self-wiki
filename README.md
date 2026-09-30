@@ -9,13 +9,13 @@ Drop notes into `self-wiki/raw/`, then:
 ```bash
 make sync
 make query Q="what are my values?"          # wiki Socratic mirror
-make trace Q="what are my core values?"    # raw-only facts + verbatim cites
+make trace Q="what are my core values?"    # raw-only facts + cites (default mlx)
 make audit LINT=1
 ```
 
 `make query` suggests `make promote …` when the answer flags `[Cognitive Shift]` or `[Socratic Observation]` (`PROMOTE_SUGGEST=0` to disable).
 
-`make trace` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/trace.md`). Follows symlink dirs (e.g. `raw/_posts`), skips generated `raw/qa/`, and drops identical content copies (e.g. `raw/twitter` vs `_posts/twitter`). Index rebuild is incremental (only changed files; `FORCE=1` for full). Chinese queries use 2–3-gram terms. Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. HTTP: `make trace-serve` → UI at `http://127.0.0.1:8791/` (`POST /ask`, `GET /source?id=raw/…#pN`, `GET /health`).
+`make trace` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/trace.md`). Follows symlink dirs (e.g. `raw/_posts`), skips generated `raw/qa/`, and drops identical content copies (e.g. `raw/twitter` vs `_posts/twitter`). Index rebuild is incremental (only changed files; `FORCE=1` for full). Chinese queries use 2–3-gram terms. Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. Default LLM: **mlx**. HTTP: `make trace-start` (launchd daemon) or `make trace-serve` (foreground) → `http://127.0.0.1:8791/` / Tailscale `http://100.90.225.26:8791/` (`POST /ask`, `GET /source?id=raw/…#pN`, `GET /health`; bind `0.0.0.0`, no auth).
 
 Weekly: `make reflect` · also `make site` · `make publish` · `make help`
 
@@ -63,7 +63,7 @@ Ingest can be Composer-first (Cursor skills) or batch (`make sync`).
 
 `make wiki-synthesize` · `make wiki-synthesize-apple-notes` · `make fix-provenance` · `make ingest` · `make progress` · `make wiki-synth-status` · `make agents` · `make promote FILE=… TARGET=… CONFIRM=1` · `make doctor-config` · `make test`
 
-Overrides: `LLM_PROVIDER=openrouter make sync` · `LLM_MODEL=cloud make query` · `QUERY_LLM_MODEL=ultra`
+Overrides: `LLM_PROVIDER=openrouter make sync` · `LLM_MODEL=cloud make query` · `QUERY_LLM_MODEL=ultra` · `TRACE_LLM_MODEL=gpt make trace`
 
 ## Safety
 

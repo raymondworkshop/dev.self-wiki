@@ -7,7 +7,8 @@ scripts/memex/__pycache__/
 .obsidian
 dist/
 .wrangler/
-launchd/
+launchd/*.log
+launchd/*.err.log
 log/trace-index.json
 log/pending/
 
