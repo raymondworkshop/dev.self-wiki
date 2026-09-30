@@ -28,7 +28,9 @@ tail -f launchd/launchd-weekly.err.log
 
 ## Trace HTTP (`com.zhaowenlong.self-wiki-trace`)
 
-Always-on `trace_server.py` on `0.0.0.0:8791` (UI + `POST /ask`). Default LLM: **mlx**.
+**Standalone product** (peer to Echo `:5050`): always-on `trace_server.py` on `0.0.0.0:8791`.
+Default LLM: **mlx**. PWA (Add to Home Screen on iPhone).
+
 Tailscale: `http://100.90.225.26:8791/` (no auth — Tailscale-only).
 
 ```bash
@@ -42,6 +44,7 @@ make trace-logs       # tail launchd/launchd-trace*.log
 |------|---------|
 | `launchd/launchd-trace.log` | stdout |
 | `launchd/launchd-trace.err.log` | stderr |
+| `scripts/trace_static/` | PWA manifest + icons |
 
 Needs working [dev.local-ai](../../dev.local-ai) gateway (`mlx` on `:8080`) and `.env` with `ALLOW_LOCAL_LLM=1`.
 

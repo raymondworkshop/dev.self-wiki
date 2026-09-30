@@ -2,6 +2,7 @@
 
 Operational record of ingest, query, trace, and lint. Newest entries first.
 
+## [2026-09-30] trace-index | rebuilt log/trace-index.json | files=1054 paragraphs=95420
 ## [2026-09-30] trace-index | updated log/trace-index.json | files=1054 paragraphs=95420
 ## [2026-09-30] trace | created output | 什麼是自由？ scope=2026-03-01-a-free-man.md | candidates=32 | self-wiki/outputs/trace/什麼是自由-2026-09-30.md
 ## [2026-09-30] trace | created output | 什麼是自由？ | candidates=32 | self-wiki/outputs/trace/什麼是自由-2026-09-30.md

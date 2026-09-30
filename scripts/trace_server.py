@@ -21,6 +21,14 @@ from trace_index import ensure_index, get_paragraph
 logger = logging.getLogger(__name__)
 
 _CTX_LINES = 12
+STATIC_DIR = Path(__file__).resolve().parent / "trace_static"
+_STATIC_FILES = {
+    "/manifest.webmanifest": ("manifest.webmanifest", "application/manifest+json"),
+    "/favicon.svg": ("favicon.svg", "image/svg+xml"),
+    "/icon-192.png": ("icon-192.png", "image/png"),
+    "/icon-512.png": ("icon-512.png", "image/png"),
+    "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png"),
+}
 
 
 def _html_page(title: str, body: str, *, extra_head: str = "") -> bytes:
@@ -28,7 +36,15 @@ def _html_page(title: str, body: str, *, extra_head: str = "") -> bytes:
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#1c1917"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Trace"/>
+<meta name="description" content="Ask your raw notes — verbatim cites only. Peer product to Echo."/>
+<link rel="manifest" href="/manifest.webmanifest"/>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
 <title>{html.escape(title)}</title>
 <style>
 :root {{
@@ -52,6 +68,8 @@ body {{
   max-width: 44rem;
   margin: 0 auto;
   padding: 2.5rem 1.35rem 4rem;
+  padding-top: calc(2.5rem + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
   line-height: 1.7;
   font-size: 17px;
   color: var(--ink);
@@ -59,13 +77,44 @@ body {{
     radial-gradient(1200px 500px at 50% -10%, #fff 0%, transparent 55%),
     var(--bg);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }}
 h1.brand {{
   font-family: var(--sans);
   font-size: 1.35rem;
   font-weight: 650;
   letter-spacing: -0.03em;
-  margin: 0 0 0.15rem;
+  margin: 0;
+}}
+.products {{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  margin: 0 0 0.5rem;
+}}
+.products a, .products .brand {{
+  padding: 0.35rem 0.65rem;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+}}
+.products a {{
+  color: var(--muted);
+  font-size: 1.05rem;
+}}
+.products a:hover {{
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, white);
+}}
+.products .brand.is-active {{
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 10%, white);
+  font-size: 1.15rem;
 }}
 .meta {{
   color: var(--muted);
@@ -75,6 +124,33 @@ h1.brand {{
   font-weight: 400;
 }}
 .meta a {{ color: var(--muted); }}
+.peer {{
+  display: none;
+}}
+.a2hs {{
+  display: none;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--accent) 8%, white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: var(--ink);
+  line-height: 1.45;
+}}
+.a2hs p {{ margin: 0; flex: 1; }}
+.a2hs button {{
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.1rem 0.35rem;
+}}
 label {{
   display: block;
   font-family: var(--sans);
@@ -274,8 +350,15 @@ def _home_page(*, paragraph_count: int | None, built_at: str | None) -> bytes:
     if built_at:
         meta += f" · index {html.escape(str(built_at))}"
     body = f"""
-<h1 class="brand">trace</h1>
-<p class="meta">verbatim raw Q&amp;A · {meta}</p>
+<nav class="products" aria-label="Products">
+  <a href="http://100.90.225.26:5050/">Echo</a>
+  <span class="brand is-active">Trace</span>
+</nav>
+<p class="meta">verbatim raw Q&amp;A · {meta} · local mlx</p>
+<div class="a2hs" id="a2hs" role="status">
+  <p>Add to Home Screen: Share <span aria-hidden="true">□↑</span> → <strong>Add to Home Screen</strong></p>
+  <button type="button" id="a2hs-dismiss" aria-label="Dismiss">×</button>
+</div>
 <label for="q">Question</label>
 <textarea id="q" placeholder="什麼是自由？愛呢？"></textarea>
 <label for="scope" style="margin-top:1rem">Scope (optional)</label>
@@ -295,6 +378,26 @@ def _home_page(*, paragraph_count: int | None, built_at: str | None) -> bytes:
     <div id="sources"></div>
   </details>
 </div>
+<script>
+(function () {{
+  try {{
+    if (sessionStorage.getItem('trace-hide-a2hs') === '1') return;
+  }} catch (e) {{}}
+  const ua = navigator.userAgent || '';
+  const iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = window.navigator.standalone === true;
+  const safari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  if (iOS && safari && !standalone) {{
+    const el = document.getElementById('a2hs');
+    if (el) el.style.display = 'flex';
+  }}
+  document.getElementById('a2hs-dismiss')?.addEventListener('click', () => {{
+    const el = document.getElementById('a2hs');
+    if (el) el.style.display = 'none';
+    try {{ sessionStorage.setItem('trace-hide-a2hs', '1'); }} catch (e) {{}}
+  }});
+}})();
+</script>
 <script>
 const qEl = document.getElementById('q');
 const scopeEl = document.getElementById('scope');
@@ -523,7 +626,7 @@ qEl.addEventListener('keydown', (e) => {{
 restoreResult();
 </script>
 """
-    return _html_page("trace", body)
+    return _html_page("Trace", body)
 
 
 def _resolve_para_id(raw_id: str) -> str:
@@ -659,6 +762,16 @@ class TraceHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
+        static = _STATIC_FILES.get(parsed.path)
+        if static:
+            name, ctype = static
+            path = STATIC_DIR / name
+            if not path.is_file():
+                self._send_json(404, {"error": "static missing", "path": name})
+                return
+            data = path.read_bytes()
+            self._send(200, data, ctype)
+            return
         if parsed.path == "/health":
             idx = ensure_index()
             self._send_json(

@@ -15,7 +15,7 @@ make audit LINT=1
 
 `make query` suggests `make promote …` when the answer flags `[Cognitive Shift]` or `[Socratic Observation]` (`PROMOTE_SUGGEST=0` to disable).
 
-`make trace` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/trace.md`). Follows symlink dirs (e.g. `raw/_posts`), skips generated `raw/qa/`, and drops identical content copies (e.g. `raw/twitter` vs `_posts/twitter`). Index rebuild is incremental (only changed files; `FORCE=1` for full). Chinese queries use 2–3-gram terms. Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. Default LLM: **mlx**. HTTP: `make trace-start` (launchd daemon) or `make trace-serve` (foreground) → `http://127.0.0.1:8791/` / Tailscale `http://100.90.225.26:8791/` (`POST /ask`, `GET /source?id=raw/…#pN`, `GET /health`; bind `0.0.0.0`, no auth).
+`make trace` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/trace.md`). Follows symlink dirs (e.g. `raw/_posts`), skips generated `raw/qa/`, and drops identical content copies (e.g. `raw/twitter` vs `_posts/twitter`). Index rebuild is incremental (only changed files; `FORCE=1` for full). Chinese queries use 2–3-gram terms. Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. Default LLM: **mlx**. **Trace** is a standalone product (peer to Echo `:5050`): `make trace-start` → Tailscale `http://100.90.225.26:8791/` (PWA; `POST /ask`, `GET /source?id=raw/…#pN`, `GET /health`; bind `0.0.0.0`, no auth).
 
 Weekly: `make reflect` · also `make site` · `make publish` · `make help`
 
