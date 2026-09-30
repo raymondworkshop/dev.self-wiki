@@ -22,7 +22,7 @@
 		<key>LLM_PROVIDER</key>
 		<string>local-gateway</string>
 		<key>TRACE_LLM_MODEL</key>
-		<string>mlx</string>
+		<string>gpt</string>
 		<key>TRACE_HOST</key>
 		<string>0.0.0.0</string>
 		<key>TRACE_PORT</key>

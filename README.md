@@ -63,7 +63,7 @@ Ingest can be Composer-first (Cursor skills) or batch (`make sync`).
 
 `make wiki-synthesize` · `make wiki-synthesize-apple-notes` · `make fix-provenance` · `make ingest` · `make progress` · `make wiki-synth-status` · `make agents` · `make promote FILE=… TARGET=… CONFIRM=1` · `make doctor-config` · `make test`
 
-Overrides: `LLM_PROVIDER=openrouter make sync` · `LLM_MODEL=cloud make query` · `QUERY_LLM_MODEL=ultra` · `TRACE_LLM_MODEL=gpt make trace`
+Overrides: `LLM_PROVIDER=openrouter make sync` · `LLM_MODEL=cloud make query` · `QUERY_LLM_MODEL=ultra` · `TRACE_LLM_MODEL=mlx make trace`
 
 ## Safety
 

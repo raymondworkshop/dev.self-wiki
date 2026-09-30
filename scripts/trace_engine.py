@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 from config import TRACE_OUTPUTS_DIR, WORKSPACE_PATH, workspace_relpath
 from llm_provider import model_name, provider_for_role
@@ -19,6 +21,35 @@ from trace_retrieval import print_retrieval_debug
 from run_skill import run_skill_from_pending
 
 logger = logging.getLogger(__name__)
+
+_ALLOWED_TRACE_MODELS = frozenset({"mlx", "gpt", "ultra", "cloud"})
+
+
+@contextmanager
+def _trace_model_override(model: str | None) -> Iterator[None]:
+    """Temporarily set TRACE_LLM_MODEL for one ask (gateway alias: mlx|gpt|ultra|cloud)."""
+    if not model:
+        yield
+        return
+    key = "TRACE_LLM_MODEL"
+    previous = os.environ.get(key)
+    os.environ[key] = model
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = previous
+
+
+def normalize_trace_model(raw: str | None) -> str | None:
+    if not raw:
+        return None
+    value = str(raw).strip().lower()
+    if value in _ALLOWED_TRACE_MODELS:
+        return value
+    return None
 
 # [[raw/…]] · #p12  or  raw/…#p12
 _CITE_WIKILINK_RE = re.compile(
@@ -201,6 +232,28 @@ scope: {scope_yaml}
 
 
 def run_trace(
+    query: str,
+    *,
+    provider: str | None = None,
+    debug_retrieval: bool = False,
+    save: bool = True,
+    force_index: bool = False,
+    scope: str | None = None,
+    model: str | None = None,
+) -> dict[str, Any]:
+    chosen = normalize_trace_model(model)
+    with _trace_model_override(chosen):
+        return _run_trace_body(
+            query,
+            provider=provider,
+            debug_retrieval=debug_retrieval,
+            save=save,
+            force_index=force_index,
+            scope=scope,
+        )
+
+
+def _run_trace_body(
     query: str,
     *,
     provider: str | None = None,

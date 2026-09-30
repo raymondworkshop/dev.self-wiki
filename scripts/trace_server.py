@@ -174,6 +174,41 @@ textarea {{
 }}
 textarea:focus {{ outline: 2px solid color-mix(in srgb, var(--accent) 35%, white); outline-offset: 1px; border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }}
 .hint {{ margin: 0.45rem 0 0; font-size: 0.88rem; color: var(--soft); font-family: var(--sans); }}
+.model-row {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.1rem;
+  align-items: center;
+  margin: 0.85rem 0 0.25rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}}
+.model-row legend {{
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+  padding: 0;
+  margin: 0 0.35rem 0 0;
+}}
+.model-row label.pick {{
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--ink);
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0;
+}}
+.model-row input {{
+  accent-color: var(--accent);
+}}
+.model-hint {{
+  width: 100%;
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--soft);
+}}
 .row {{
   display: flex;
   gap: 0.85rem;
@@ -354,7 +389,7 @@ def _home_page(*, paragraph_count: int | None, built_at: str | None) -> bytes:
   <a href="http://100.90.225.26:5050/">Echo</a>
   <span class="brand is-active">Trace</span>
 </nav>
-<p class="meta">verbatim raw Q&amp;A · {meta} · local mlx</p>
+<p class="meta">verbatim raw Q&amp;A · {meta} · default gpt</p>
 <div class="a2hs" id="a2hs" role="status">
   <p>Add to Home Screen: Share <span aria-hidden="true">□↑</span> → <strong>Add to Home Screen</strong></p>
   <button type="button" id="a2hs-dismiss" aria-label="Dismiss">×</button>
@@ -363,6 +398,12 @@ def _home_page(*, paragraph_count: int | None, built_at: str | None) -> bytes:
 <textarea id="q" placeholder="什麼是自由？愛呢？"></textarea>
 <label for="scope" style="margin-top:1rem">Scope (optional)</label>
 <input id="scope" type="text" placeholder="a-free-man  or  raw/_posts/2026-03-01-a-free-man.md" style="width:100%;padding:0.75rem 1rem;border:1px solid var(--line);border-radius:12px;font:inherit;font-size:1rem;background:var(--card)"/>
+<fieldset class="model-row" id="modelRow">
+  <legend>Model</legend>
+  <label class="pick"><input type="radio" name="model" value="gpt" checked/> gpt <span style="color:var(--soft);font-weight:400">(cloud · faster on long packs)</span></label>
+  <label class="pick"><input type="radio" name="model" value="mlx"/> mlx <span style="color:var(--soft);font-weight:400">(local · private)</span></label>
+  <p class="model-hint">Choice is remembered on this device.</p>
+</fieldset>
 <p class="hint">Leave scope empty for all raw/ · or @a-free-man at end of question · Enter to ask</p>
 <div class="row">
   <button id="ask" type="button">Ask</button>
@@ -417,6 +458,33 @@ function escapeHtml(s) {{
 }}
 
 const SESSION_KEY = 'trace.lastResult';
+const MODEL_KEY = 'trace.model';
+
+function selectedModel() {{
+  const el = document.querySelector('input[name="model"]:checked');
+  return (el && el.value) || 'gpt';
+}}
+
+function setModel(value) {{
+  const v = (value === 'mlx') ? 'mlx' : 'gpt';
+  const el = document.querySelector('input[name="model"][value="' + v + '"]');
+  if (el) el.checked = true;
+}}
+
+(function restoreModel() {{
+  try {{
+    const saved = localStorage.getItem(MODEL_KEY);
+    if (saved) setModel(saved);
+    else setModel('gpt');
+  }} catch (_) {{
+    setModel('gpt');
+  }}
+  document.querySelectorAll('input[name="model"]').forEach((el) => {{
+    el.addEventListener('change', () => {{
+      try {{ localStorage.setItem(MODEL_KEY, selectedModel()); }} catch (_) {{}}
+    }});
+  }});
+}})();
 
 function sourceHref(path, pTag, start, end) {{
   const id = pTag ? (path + pTag) : path;
@@ -587,6 +655,7 @@ function renderAnswer(md) {{
 async function ask() {{
   const q = (qEl.value || '').trim();
   const scope = (scopeEl && scopeEl.value || '').trim();
+  const model = selectedModel();
   if (!q) {{
     statusEl.textContent = 'Enter a question.';
     statusEl.className = 'err';
@@ -594,14 +663,16 @@ async function ask() {{
   }}
   askBtn.disabled = true;
   statusEl.className = '';
-  statusEl.textContent = scope ? ('Thinking in ' + scope + '…') : 'Thinking…';
+  let thinking = scope ? ('Thinking in ' + scope + '…') : 'Thinking…';
+  thinking += ' · ' + model;
+  statusEl.textContent = thinking;
   answerCard.hidden = true;
   sourcesCard.hidden = true;
   try {{
     const res = await fetch('/ask', {{
       method: 'POST',
       headers: {{ 'Content-Type': 'application/json' }},
-      body: JSON.stringify({{ q, scope: scope || null }}),
+      body: JSON.stringify({{ q, scope: scope || null, model }}),
     }});
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || res.statusText);
@@ -796,7 +867,7 @@ class TraceHandler(BaseHTTPRequestHandler):
                         "service": "trace",
                         "paragraph_count": idx.get("paragraph_count"),
                         "built_at": idx.get("built_at"),
-                        "ask": 'POST /ask {"q": "..."}',
+                        "ask": 'POST /ask {"q": "...", "model": "mlx|gpt"}',
                     },
                 )
                 return
@@ -875,8 +946,11 @@ class TraceHandler(BaseHTTPRequestHandler):
             return
         scope = (payload.get("scope") or payload.get("path") or "").strip() or None
         debug = bool(payload.get("debug_retrieval"))
+        model = (payload.get("model") or "").strip() or "gpt"
         try:
-            result = run_trace(q, debug_retrieval=debug, save=True, scope=scope)
+            result = run_trace(
+                q, debug_retrieval=debug, save=True, scope=scope, model=model
+            )
         except Exception as exc:  # noqa: BLE001
             logger.exception("trace /ask failed")
             self._send_json(500, {"error": str(exc)})

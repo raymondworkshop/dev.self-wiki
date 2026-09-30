@@ -44,7 +44,7 @@ help:
 	@echo "  make trace-index [FORCE=1]   # rebuild log/trace-index.json"
 	@echo "  make trace-serve [PORT=8791] # foreground HTTP (dev)"
 	@echo "  make trace-start | stop | restart | logs  # launchd daemon :8791"
-	@echo "  TRACE_LLM_MODEL=gpt make trace Q=...   # use cloud instead of mlx"
+	@echo "  TRACE_LLM_MODEL=mlx make trace Q=...   # local privacy instead of gpt"
 	@echo "  make audit LINT=1"
 	@echo "  make agents            # discover → gap → evolution"
 	@echo "  make reflect           # agents + ingest + audit LINT=1"
@@ -121,8 +121,8 @@ endif
 trace-index:
 	$(CLI) trace-index $(if $(FORCE),--force)
 
-# Local mlx by default (raw cites stay private); override: TRACE_LLM_MODEL=gpt make trace …
-TRACE_LLM_MODEL ?= mlx
+# gpt by default (faster on long packs); privacy: TRACE_LLM_MODEL=mlx make trace …
+TRACE_LLM_MODEL ?= gpt
 
 trace:
 ifdef Q
