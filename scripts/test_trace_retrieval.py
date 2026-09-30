@@ -10,6 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
 from trace_retrieval import (
+    apply_neighbor_boost,
+    build_retrieval_pack,
     effective_kind,
     parse_query_and_scope,
     query_literal_terms,
@@ -187,6 +189,66 @@ class QueryLiteralTermsTests(unittest.TestCase):
         q2, scope2 = parse_query_and_scope("什麼是自由？", scope="raw/_posts/x.md")
         self.assertEqual(scope2, "raw/_posts/x.md")
         self.assertIsNone(parse_query_and_scope("無範圍")[1])
+
+    def test_neighbor_boost_admits_adjacent(self) -> None:
+        path = "raw/_posts/2026-03-01-a-free-man.md"
+        paras = []
+        for i, text in enumerate(
+            ["前言無關", "中間談自由與選擇", "緊接上下文", "更遠也不談", "尾巴"],
+            start=1,
+        ):
+            paras.append(
+                {
+                    "id": f"{path}#p{i}",
+                    "path": path,
+                    "file": "2026-03-01-a-free-man.md",
+                    "para": i,
+                    "start_line": i * 10,
+                    "end_line": i * 10 + 3,
+                    "kind": "post",
+                    "text": text,
+                }
+            )
+        scored = [(90, paras[1])]  # #p2 hit
+        boosted = apply_neighbor_boost(scored, paras, radius=2)
+        ids = {p["id"] for _, p in boosted}
+        self.assertIn(f"{path}#p2", ids)
+        self.assertIn(f"{path}#p1", ids)
+        self.assertIn(f"{path}#p3", ids)
+        self.assertIn(f"{path}#p4", ids)  # p2±2
+        self.assertNotIn(f"{path}#p5", ids)
+
+    def test_scoped_pack_does_not_pad_unrelated(self) -> None:
+        path = "raw/_posts/demo.md"
+        paragraphs = []
+        for i in range(1, 21):
+            text = "討論自由的本質" if i == 5 else f"無關段落編號 {i} 完全沒有關鍵詞"
+            paragraphs.append(
+                {
+                    "id": f"{path}#p{i}",
+                    "path": path,
+                    "file": "demo.md",
+                    "para": i,
+                    "start_line": i,
+                    "end_line": i,
+                    "kind": "post",
+                    "text": text,
+                }
+            )
+        idx = {"paragraphs": paragraphs, "built_at": "test"}
+        pack = build_retrieval_pack(
+            "什麼是自由？",
+            index=idx,
+            provider="local-gateway",
+            top_k=16,
+            scope="demo",
+        )
+        ids = [c["id"] for c in pack["candidates"]]
+        self.assertTrue(ids, "expected at least the hit (+ neighbors)")
+        self.assertIn(f"{path}#p5", ids)
+        # No whole-file pad: far-away unrelated paragraphs stay out.
+        self.assertNotIn(f"{path}#p20", ids)
+        self.assertLessEqual(len(ids), 8)
 
 
 if __name__ == "__main__":

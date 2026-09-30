@@ -39,7 +39,7 @@ help:
 	@echo "  make sync SKIP_INGEST=1  # wiki-synthesize only, skip ingest"
 	@echo "  make ingest [FAST=1]   # memex · index · twin (no LLM)"
 	@echo "  make query Q=\"what are my values?\"   # wiki Socratic mirror"
-	@echo "  make trace Q=\"what are my core values?\"  # raw-only + cites (default mlx)"
+	@echo "  make trace Q=\"what are my core values?\"  # raw-only + cites (default gpt)"
 	@echo "  make trace Q=\"什麼是自由？\" SCOPE=a-free-man  # answer from one note only"
 	@echo "  make trace-index [FORCE=1]   # rebuild log/trace-index.json"
 	@echo "  make trace-serve [PORT=8791] # foreground HTTP (dev)"
@@ -143,8 +143,8 @@ export TRACE_TOP_K ?= 32
 export TRACE_MAX_PER_POST ?= 10
 export TRACE_MAX_PER_NOTES ?= 4
 export TRACE_MAX_PER_TWITTER ?= 2
-# Larger pack when SCOPE=… / UI scope / @file (single-doc mode).
-export TRACE_SCOPE_TOP_K ?= 64
+# Smaller precise pack when SCOPE=… / UI scope / @file (single-doc mode).
+export TRACE_SCOPE_TOP_K ?= 16
 
 TRACE_PLIST_SRC := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))/launchd/com.zhaowenlong.self-wiki-trace.plist
 TRACE_PLIST := $(HOME)/Library/LaunchAgents/com.zhaowenlong.self-wiki-trace.plist

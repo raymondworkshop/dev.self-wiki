@@ -9,13 +9,13 @@ Drop notes into `self-wiki/raw/`, then:
 ```bash
 make sync
 make query Q="what are my values?"          # wiki Socratic mirror
-make trace Q="what are my core values?"    # raw-only facts + cites (default mlx)
+make trace Q="what are my core values?"    # raw-only facts + cites (default gpt)
 make audit LINT=1
 ```
 
 `make query` suggests `make promote …` when the answer flags `[Cognitive Shift]` or `[Socratic Observation]` (`PROMOTE_SUGGEST=0` to disable).
 
-`make trace` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/trace.md`). Follows symlink dirs (e.g. `raw/_posts`), skips generated `raw/qa/`, and drops identical content copies (e.g. `raw/twitter` vs `_posts/twitter`). Index rebuild is incremental (only changed files; `FORCE=1` for full). Chinese queries use 2–3-gram terms. Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. Default LLM: **mlx**. **Trace** is a standalone product (peer to Echo `:5050`): `make trace-start` → Tailscale `http://100.90.225.26:8791/` (PWA; `POST /ask`, `GET /source?id=raw/…#pN`, `GET /health`; bind `0.0.0.0`, no auth).
+`make trace` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/trace.md`). Follows symlink dirs (e.g. `raw/_posts`), skips generated `raw/qa/`, and drops identical content copies (e.g. `raw/twitter` vs `_posts/twitter`). Index rebuild is incremental (only changed files; `FORCE=1` for full). Chinese queries use 2–3-gram terms. Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. Default LLM: **gpt**. Scoped (`SCOPE=` / `@file`): top‑16 keyword hits + ±2 neighbors (no whole-file pad). **Trace** is a standalone product (peer to Echo `:5050`): `make trace-start` → Tailscale `http://100.90.225.26:8791/` (PWA; `POST /ask`, `GET /source?id=raw/…#pN`, `GET /health`; bind `0.0.0.0`, no auth).
 
 Weekly: `make reflect` · also `make site` · `make publish` · `make help`
 

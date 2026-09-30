@@ -526,6 +526,70 @@ def format_evidence_block(para: dict[str, Any]) -> str:
     )
 
 
+def apply_neighbor_boost(
+    scored: list[tuple[int, dict[str, Any]]],
+    paragraphs: list[dict[str, Any]],
+    *,
+    radius: int = 2,
+) -> list[tuple[int, dict[str, Any]]]:
+    """Raise / admit ±radius siblings of keyword hits (same path).
+
+    Neighbors get a fraction of the seed score so pack stays on-topic without
+    dumping the whole file in reading order.
+    """
+    if not scored or radius < 1:
+        return scored
+    by_key: dict[tuple[str, int], dict[str, Any]] = {}
+    for p in paragraphs:
+        path = (p.get("path") or "").replace("\\", "/")
+        try:
+            n = int(p.get("para") or 0)
+        except (TypeError, ValueError):
+            continue
+        if path and n > 0:
+            by_key[(path, n)] = p
+
+    best: dict[str, tuple[int, dict[str, Any]]] = {}
+    for score, para in scored:
+        pid = para.get("id") or ""
+        if not pid:
+            continue
+        prev = best.get(pid)
+        if prev is None or score > prev[0]:
+            best[pid] = (score, para)
+
+    seeds = list(best.values())
+    for seed_score, seed in seeds:
+        path = (seed.get("path") or "").replace("\\", "/")
+        try:
+            n = int(seed.get("para") or 0)
+        except (TypeError, ValueError):
+            continue
+        if not path or n <= 0:
+            continue
+        # Neighbors are context, not equals of the hit.
+        neighbor_score = max(8, seed_score // 3)
+        for delta in range(-radius, radius + 1):
+            if delta == 0:
+                continue
+            nb = by_key.get((path, n + delta))
+            if not nb:
+                continue
+            text = nb.get("text") or ""
+            if _looks_like_frontmatter(text):
+                continue
+            pid = nb.get("id") or ""
+            if not pid:
+                continue
+            prev = best.get(pid)
+            if prev is None or neighbor_score > prev[0]:
+                best[pid] = (neighbor_score, nb)
+
+    out = list(best.values())
+    out.sort(key=lambda x: (-x[0], x[1].get("path", ""), x[1].get("para", 0)))
+    return out
+
+
 def build_retrieval_pack(
     query: str,
     *,
@@ -554,9 +618,15 @@ def build_retrieval_pack(
             if s > 0:
                 scored.append((s, para))
         elif scoped:
-            # Doc-only mode with empty/generic question: keep reading order.
+            # Doc-only + empty/generic question: skim in reading order (capped later).
             scored.append((1, para))
     scored.sort(key=lambda x: (-x[0], x[1].get("path", ""), x[1].get("para", 0)))
+
+    # Single-doc: admit ±2 neighbors of hits instead of padding the whole file.
+    if scoped and terms:
+        radius_raw = os.environ.get("TRACE_SCOPE_NEIGHBOR_RADIUS", "").strip()
+        radius = int(radius_raw) if radius_raw.isdigit() else 2
+        scored = apply_neighbor_boost(scored, paragraphs, radius=radius)
 
     env_k = os.environ.get("TRACE_TOP_K", "").strip()
     scope_k = os.environ.get("TRACE_SCOPE_TOP_K", "").strip()
@@ -567,8 +637,8 @@ def build_retrieval_pack(
     elif env_k.isdigit():
         limit = max(1, int(env_k))
     elif scoped:
-        # Single-doc / folder reads can take a larger pack.
-        limit = 80 if is_cloud_provider(provider) else 64
+        # Precise packs beat dumping the whole note into the LLM.
+        limit = 16 if is_cloud_provider(provider) else 12
     else:
         limit = 40 if is_cloud_provider(provider) else 32
 
@@ -654,17 +724,6 @@ def build_retrieval_pack(
     pool = scored if scoped else scored[: max(limit * 20, 200)]
     for score, para in pool:
         try_add(score, para, honor_caps=not scoped)
-
-    # Scoped doc: fill remaining budget with unread paragraphs in file order.
-    if scoped and len(selected) < limit:
-        by_order = sorted(
-            paragraphs,
-            key=lambda p: (p.get("path") or "", p.get("para") or 0, p.get("start_line") or 0),
-        )
-        for para in by_order:
-            if len(selected) >= limit:
-                break
-            try_add(0, para, honor_caps=False)
 
     if scoped and scope_token and not scope_paths:
         evidence_block = (

@@ -29,7 +29,7 @@ tail -f launchd/launchd-weekly.err.log
 ## Trace HTTP (`com.zhaowenlong.self-wiki-trace`)
 
 **Standalone product** (peer to Echo `:5050`): always-on `trace_server.py` on `0.0.0.0:8791`.
-Default LLM: **mlx**. PWA (Add to Home Screen on iPhone).
+Default LLM: **gpt** (override `TRACE_LLM_MODEL=mlx`). Scoped asks: top‑16 hits + ±2 neighbors (no whole-file pad).
 
 Tailscale: `http://100.90.225.26:8791/` (no auth — Tailscale-only).
 
