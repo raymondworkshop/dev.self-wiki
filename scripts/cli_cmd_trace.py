@@ -1,4 +1,4 @@
-"""rdatabase CLI command handlers."""
+"""trace CLI command handlers."""
 
 from __future__ import annotations
 
@@ -8,30 +8,30 @@ import logging
 from config import WORKSPACE_PATH, workspace_relpath
 from llm_provider import model_name, provider_for_role
 from log_utils import append_log
-from prepare_rdatabase import prepare_rdatabase
-from rdatabase_engine import run_rdatabase
-from rdatabase_index import build_index
+from prepare_trace import prepare_trace
+from trace_engine import run_trace
+from trace_index import build_index
 
 logger = logging.getLogger(__name__)
 
 
-def cmd_rdatabase_index(args: argparse.Namespace) -> int:
+def cmd_trace_index(args: argparse.Namespace) -> int:
     idx = build_index(force=args.force)
     print(
-        f"rdatabase-index: {idx['file_count']} files, {idx['paragraph_count']} paragraphs "
+        f"trace-index: {idx['file_count']} files, {idx['paragraph_count']} paragraphs "
         f"(digest={idx.get('digest')})"
     )
     verb = "rebuilt" if args.force else "updated"
     append_log(
-        "rdatabase-index",
-        f"{verb} log/rdatabase-index.json | files={idx['file_count']} paragraphs={idx['paragraph_count']}",
+        "trace-index",
+        f"{verb} log/trace-index.json | files={idx['file_count']} paragraphs={idx['paragraph_count']}",
     )
     return 0
 
 
-def cmd_prepare_rdatabase(args: argparse.Namespace) -> int:
-    pending, path = prepare_rdatabase(args.query, provider=args.provider)
-    logger.info("Prepared rdatabase pending: %s", workspace_relpath(path))
+def cmd_prepare_trace(args: argparse.Namespace) -> int:
+    pending, path = prepare_trace(args.query, provider=args.provider)
+    logger.info("Prepared trace pending: %s", workspace_relpath(path))
     logger.info(
         "language=%s candidates=%s terms=%s",
         pending["language"],
@@ -41,14 +41,14 @@ def cmd_prepare_rdatabase(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_rdatabase(args: argparse.Namespace) -> int:
-    llm_provider = provider_for_role("rdatabase", args.provider)
+def cmd_trace(args: argparse.Namespace) -> int:
+    llm_provider = provider_for_role("trace", args.provider)
     logger.info(
-        "rdatabase LLM: provider=%s model=%s",
+        "trace LLM: provider=%s model=%s",
         llm_provider,
-        model_name(llm_provider, role="rdatabase"),
+        model_name(llm_provider, role="trace"),
     )
-    result = run_rdatabase(
+    result = run_trace(
         args.query,
         provider=args.provider,
         debug_retrieval=args.debug_retrieval,

@@ -9,13 +9,13 @@ Drop notes into `self-wiki/raw/`, then:
 ```bash
 make sync
 make query Q="what are my values?"          # wiki Socratic mirror
-make rdatabase Q="what are my core values?"    # raw-only facts + verbatim cites
+make trace Q="what are my core values?"    # raw-only facts + verbatim cites
 make audit LINT=1
 ```
 
 `make query` suggests `make promote …` when the answer flags `[Cognitive Shift]` or `[Socratic Observation]` (`PROMOTE_SUGGEST=0` to disable).
 
-`make rdatabase` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/rdatabase.md`). Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. HTTP: `make rdatabase-serve` (`POST /ask`, `GET /source?id=raw/…#pN`).
+`make trace` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/trace.md`). Follows symlink dirs (e.g. `raw/_posts`), skips generated `raw/qa/`, and drops identical content copies (e.g. `raw/twitter` vs `_posts/twitter`). Index rebuild is incremental (only changed files; `FORCE=1` for full). Chinese queries use 2–3-gram terms. Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. HTTP: `make trace-serve` → UI at `http://127.0.0.1:8791/` (`POST /ask`, `GET /source?id=raw/…#pN`, `GET /health`).
 
 Weekly: `make reflect` · also `make site` · `make publish` · `make help`
 

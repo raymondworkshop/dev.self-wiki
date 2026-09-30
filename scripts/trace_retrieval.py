@@ -1,4 +1,4 @@
-"""Deterministic rdatabase retrieval: keyword rank over raw paragraphs (no LLM, no vectors)."""
+"""Deterministic trace retrieval: keyword rank over raw paragraphs (no LLM, no vectors)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import re
 from typing import Any
 
 from llm_provider import context_limits, is_cloud_provider
-from rdatabase_index import ensure_index, load_index
+from trace_index import ensure_index, load_index
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +76,38 @@ EN_STOPWORDS = frozenset(
     }
 )
 
+# Light Chinese function/question fragments — keep retrieval on content words.
+ZH_STOPWORDS = frozenset(
+    {
+        "我的",
+        "你的",
+        "他的",
+        "她的",
+        "我们",
+        "你们",
+        "他们",
+        "什么",
+        "怎么",
+        "如何",
+        "是否",
+        "哪个",
+        "哪些",
+        "为什么",
+        "一个",
+        "一些",
+        "这个",
+        "那个",
+        "还有",
+        "以及",
+        "或者",
+        "是什么",
+        "有哪些",
+        "怎么样",
+        "是不是",
+        "可不可以",
+    }
+)
+
 
 def estimate_tokens(text: str) -> int:
     return max(1, len(text) // 3)
@@ -87,14 +119,61 @@ def detect_language(query: str) -> str:
     return "English"
 
 
+def _chinese_ngrams(run: str) -> list[str]:
+    """Bigrams + trigrams over a contiguous Han run (order: longer first)."""
+    chars = [c for c in run if "\u4e00" <= c <= "\u9fff"]
+    if len(chars) < 2:
+        return []
+    out: list[str] = []
+    if len(chars) >= 3:
+        for i in range(len(chars) - 2):
+            out.append("".join(chars[i : i + 3]))
+    for i in range(len(chars) - 1):
+        out.append("".join(chars[i : i + 2]))
+    return out
+
+
 def query_literal_terms(query: str) -> list[str]:
-    terms = [
-        p.lower()
-        for p in re.findall(r"[a-zA-Z]+|[\u4e00-\u9fff]+", query)
-        if len(p.strip()) > 1
-    ]
-    filtered = [t for t in terms if t not in EN_STOPWORDS]
-    return filtered or terms
+    """English words + Chinese short phrases / 2–3-grams (not whole questions as one term)."""
+    terms: list[str] = []
+    seen: set[str] = set()
+
+    def add(token: str) -> None:
+        t = token.lower().strip()
+        if len(t) <= 1 or t in seen:
+            return
+        if t in EN_STOPWORDS or t in ZH_STOPWORDS:
+            return
+        seen.add(t)
+        terms.append(t)
+
+    for word in re.findall(r"[a-zA-Z]+", query):
+        add(word)
+
+    for run in re.findall(r"[\u4e00-\u9fff]+", query):
+        if len(run) <= 1:
+            continue
+        # Keep short contiguous phrases as exact terms (e.g. 价值观, 亲密关系).
+        if 2 <= len(run) <= 6:
+            add(run)
+        for ng in _chinese_ngrams(run):
+            add(ng)
+
+    return terms
+
+
+def _term_weight(term: str) -> int:
+    if re.search(r"[\u4e00-\u9fff]", term):
+        if len(term) >= 4:
+            return 14
+        if len(term) == 3:
+            return 12
+        return 7  # bigram — useful but noisier
+    if len(term) >= 5:
+        return 10
+    if len(term) >= 4:
+        return 8
+    return 5
 
 
 def score_paragraph(para: dict[str, Any], query_terms: list[str]) -> int:
@@ -108,15 +187,7 @@ def score_paragraph(para: dict[str, Any], query_terms: list[str]) -> int:
     for term in query_terms:
         if len(term) <= 1:
             continue
-        # Prefer distinctive terms (longer / Chinese)
-        if re.search(r"[\u4e00-\u9fff]", term):
-            weight = 12
-        elif len(term) >= 5:
-            weight = 10
-        elif len(term) >= 4:
-            weight = 8
-        else:
-            weight = 5
+        weight = _term_weight(term)
         body_hits = text_l.count(term)
         matched = False
         if body_hits:
@@ -195,6 +266,7 @@ def build_retrieval_pack(
                 "end_line": para["end_line"],
                 "kind": para.get("kind"),
                 "score": score,
+                "text": para.get("text") or "",
                 "source_url": f"/source?id={para['id']}",
             }
         )
@@ -216,7 +288,7 @@ def build_retrieval_pack(
 
 
 def print_retrieval_debug(pack: dict[str, Any]) -> None:
-    print("rdatabase retrieval debug", flush=True)
+    print("trace retrieval debug", flush=True)
     print(f"  language: {pack.get('language')}", flush=True)
     print(f"  terms: {', '.join(pack.get('query_terms') or [])}", flush=True)
     print(
@@ -237,7 +309,7 @@ def main() -> int:
     import argparse
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    parser = argparse.ArgumentParser(description="Debug rdatabase keyword retrieval")
+    parser = argparse.ArgumentParser(description="Debug trace keyword retrieval")
     parser.add_argument("query")
     parser.add_argument("--provider", default=None)
     parser.add_argument("--top-k", type=int, default=None)

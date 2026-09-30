@@ -26,7 +26,7 @@ from cli_cmd_query import (
     cmd_query,
     cmd_twin,
 )
-from cli_cmd_rdatabase import cmd_prepare_rdatabase, cmd_rdatabase, cmd_rdatabase_index
+from cli_cmd_trace import cmd_prepare_trace, cmd_trace, cmd_trace_index
 from cli_shared import configure_logging
 
 
@@ -51,25 +51,25 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_query.set_defaults(func=cmd_query)
 
-    p_rdatabase_idx = sub.add_parser("rdatabase-index", help="Build paragraph index over raw/ (no LLM)")
-    p_rdatabase_idx.add_argument("--force", action="store_true")
-    p_rdatabase_idx.set_defaults(func=cmd_rdatabase_index)
+    p_trace_idx = sub.add_parser("trace-index", help="Build paragraph index over raw/ (no LLM)")
+    p_trace_idx.add_argument("--force", action="store_true")
+    p_trace_idx.set_defaults(func=cmd_trace_index)
 
-    p_prdatabase = sub.add_parser("prepare-rdatabase", help="Build pending JSON for rdatabase (no LLM)")
-    p_prdatabase.add_argument("query", help="Question text")
-    p_prdatabase.add_argument("--provider", default=None)
-    p_prdatabase.set_defaults(func=cmd_prepare_rdatabase)
+    p_ptrace = sub.add_parser("prepare-trace", help="Build pending JSON for trace (no LLM)")
+    p_ptrace.add_argument("query", help="Question text")
+    p_ptrace.add_argument("--provider", default=None)
+    p_ptrace.set_defaults(func=cmd_prepare_trace)
 
-    p_rdatabase = sub.add_parser(
-        "rdatabase",
+    p_trace = sub.add_parser(
+        "trace",
         help="Raw-only Q&A (prepare → run-skill → save); proprietary facts from raw/",
     )
-    p_rdatabase.add_argument("query", help="Question text")
-    p_rdatabase.add_argument("--provider", default=None)
-    p_rdatabase.add_argument("--debug-retrieval", action="store_true")
-    p_rdatabase.add_argument("--no-save", action="store_true")
-    p_rdatabase.add_argument("--force-index", action="store_true")
-    p_rdatabase.set_defaults(func=cmd_rdatabase)
+    p_trace.add_argument("query", help="Question text")
+    p_trace.add_argument("--provider", default=None)
+    p_trace.add_argument("--debug-retrieval", action="store_true")
+    p_trace.add_argument("--no-save", action="store_true")
+    p_trace.add_argument("--force-index", action="store_true")
+    p_trace.set_defaults(func=cmd_trace)
 
     p_plint = sub.add_parser("prepare-lint", help="Build pending JSON for global cognitive lint")
     p_plint.set_defaults(func=cmd_prepare_lint)

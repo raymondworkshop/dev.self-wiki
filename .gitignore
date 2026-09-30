@@ -8,6 +8,6 @@ scripts/memex/__pycache__/
 dist/
 .wrangler/
 launchd/
-log/rdatabase-index.json
+log/trace-index.json
 log/pending/
 

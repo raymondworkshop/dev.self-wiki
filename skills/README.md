@@ -4,7 +4,7 @@
 |-------|---------|--------|
 | [wiki-synthesize.md](wiki-synthesize.md) | `make sync` / `make wiki-synthesize` | JSON actions → `wiki/` |
 | [query.md](query.md) | `make query` | `outputs/` answer |
-| [rdatabase.md](rdatabase.md) | `make rdatabase` / `make rdatabase-serve` | raw-only answer → `outputs/rdatabase/` |
+| [trace.md](trace.md) | `make trace` / `make trace-serve` | raw-only answer → `outputs/trace/` |
 | [lint.md](lint.md) | `make audit LINT=1` | merge into `audit.md` |
 | [discovery.md](discovery.md) | `make discover` | `discovery/` report |
 | [gap.md](gap.md) | `make gap` | `gap/` report |

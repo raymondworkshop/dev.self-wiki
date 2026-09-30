@@ -24,7 +24,7 @@ from provider_circuit import is_circuit_open, record_provider_failure
 
 logger = logging.getLogger(__name__)
 
-TEXT_KINDS = frozenset({"query", "lint", "discovery", "gap", "evolution", "rdatabase"})
+TEXT_KINDS = frozenset({"query", "lint", "discovery", "gap", "evolution", "trace"})
 
 INGEST_COMPACT_RETRY_SUFFIX = """
 
@@ -183,8 +183,8 @@ def run_skill_from_pending(
     skill_role = (
         "query"
         if kind == "query"
-        else "rdatabase"
-        if kind == "rdatabase"
+        else "trace"
+        if kind == "trace"
         else "lint"
         if kind == "lint"
         else "discovery"
