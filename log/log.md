@@ -2,6 +2,13 @@
 
 Operational record of ingest, query, trace, and lint. Newest entries first.
 
+## [2026-09-30] trace | created output | 什麼是自由？ scope=2026-03-01-a-free-man.md | candidates=32 | self-wiki/outputs/trace/什麼是自由-2026-09-30.md
+## [2026-09-30] trace | created output | 什麼是自由？ | candidates=32 | self-wiki/outputs/trace/什麼是自由-2026-09-30.md
+## [2026-09-30] trace | created output | 什麼是自由？ | candidates=16 | self-wiki/outputs/trace/什麼是自由-2026-09-30.md
+## [2026-09-30] trace | created output | 什麼是自由？ | candidates=12 | self-wiki/outputs/trace/什麼是自由-2026-09-30.md
+## [2026-09-30] trace | created output | 什麼是自由？ 愛呢？ | candidates=12 | self-wiki/outputs/trace/什麼是自由-愛呢-2026-09-30.md
+## [2026-09-30] trace | created output | 什麼是自由，什麼是愛？ | candidates=12 | self-wiki/outputs/trace/什麼是自由-什麼是愛-2026-09-30.md
+## [2026-09-30] trace | created output | 什麼是自由？ | candidates=20 | self-wiki/outputs/trace/什麼是自由-2026-09-30.md
 ## [2026-09-30] trace | created output | what are my core values? | candidates=20 | self-wiki/outputs/trace/what-are-my-core-values-2026-09-30.md
 ## [2026-09-30] trace-index | updated log/trace-index.json | files=1053 paragraphs=95687
 ## [2026-09-30] trace | created output | what are my core valeus? | candidates=20 | self-wiki/outputs/trace/what-are-my-core-valeus-2026-09-30.md

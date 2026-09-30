@@ -6,6 +6,7 @@ import hashlib
 import json
 import logging
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -16,13 +17,23 @@ logger = logging.getLogger(__name__)
 
 LONG_PARA_LINE_LIMIT = 40
 
+_INDEX_CACHE: dict[str, Any] | None = None
+_INDEX_CACHE_MTIME_NS: int | None = None
+_INDEX_BY_ID: dict[str, dict[str, Any]] | None = None
+_LAST_ENSURE_MONO: float = 0.0
+
 
 def _kind_for_rel(rel: str) -> str:
+    rel = rel.replace("\\", "/").strip("/")
     if rel.startswith("twitter/") or "/twitter/" in rel:
         return "twitter"
-    if rel.startswith("origin-apple-notes/") or "apple-notes" in rel:
+    if (
+        "apple-notes" in rel
+        or rel.startswith("origin-apple-notes/")
+        or "/origin-apple-notes/" in rel
+    ):
         return "apple-notes"
-    if rel.startswith("_posts/") or rel.startswith("new-apple-notes/"):
+    if rel.startswith("_posts/") or "/_posts/" in rel:
         return "post"
     return "raw"
 
@@ -197,18 +208,110 @@ def build_paragraphs_for_file(path: Path) -> list[dict[str, Any]]:
     return units
 
 
+def count_raw_md_files() -> int:
+    """Fast walk count (no content hashing) for cheap new-file detection."""
+    if not RAW_DIR.exists():
+        return 0
+    n = 0
+    seen_dirs: set[Path] = set()
+    for root, dirnames, filenames in os.walk(RAW_DIR, followlinks=True):
+        root_path = Path(root)
+        try:
+            real = root_path.resolve()
+        except OSError:
+            dirnames[:] = []
+            continue
+        if real in seen_dirs:
+            dirnames[:] = []
+            continue
+        seen_dirs.add(real)
+        for name in filenames:
+            if not name.endswith(".md"):
+                continue
+            path = root_path / name
+            if not path.is_file():
+                continue
+            if _is_generated_raw(_vault_raw_rel(path)):
+                continue
+            n += 1
+    return n
+
+
+def _path_from_index_key(key: str) -> Path:
+    return WORKSPACE_PATH / key
+
+
+def _meta_paths_stale(files_meta: dict[str, Any]) -> bool:
+    """True if any indexed file is missing or mtime/size changed (no content hash)."""
+    for key, fp in files_meta.items():
+        path = _path_from_index_key(key)
+        if not path.is_file():
+            rel = key.removeprefix("self-wiki/raw/")
+            alt = RAW_DIR / rel
+            if not alt.is_file():
+                return True
+            path = alt
+        try:
+            cur = file_fingerprint(path)
+        except OSError:
+            return True
+        if cur.get("mtime") != fp.get("mtime") or cur.get("size") != fp.get("size"):
+            return True
+    return False
+
+
+def _set_index_cache(index: dict[str, Any]) -> dict[str, Any]:
+    global _INDEX_CACHE, _INDEX_CACHE_MTIME_NS, _INDEX_BY_ID
+    _INDEX_CACHE = index
+    try:
+        _INDEX_CACHE_MTIME_NS = (
+            TRACE_INDEX_JSON.stat().st_mtime_ns if TRACE_INDEX_JSON.exists() else None
+        )
+    except OSError:
+        _INDEX_CACHE_MTIME_NS = None
+    by_id: dict[str, dict[str, Any]] = {}
+    for para in index.get("paragraphs") or []:
+        pid = para.get("id")
+        if pid:
+            by_id[str(pid)] = para
+    _INDEX_BY_ID = by_id
+    return index
+
+
 def load_index() -> dict[str, Any]:
     if not TRACE_INDEX_JSON.exists():
-        return {"version": 1, "built_at": None, "files": {}, "paragraphs": []}
-    return json.loads(TRACE_INDEX_JSON.read_text(encoding="utf-8"))
+        return _set_index_cache(
+            {"version": 1, "built_at": None, "files": {}, "paragraphs": []}
+        )
+    try:
+        mtime_ns = TRACE_INDEX_JSON.stat().st_mtime_ns
+    except OSError:
+        mtime_ns = None
+    if (
+        _INDEX_CACHE is not None
+        and mtime_ns is not None
+        and mtime_ns == _INDEX_CACHE_MTIME_NS
+    ):
+        return _INDEX_CACHE
+    data = json.loads(TRACE_INDEX_JSON.read_text(encoding="utf-8"))
+    return _set_index_cache(data)
 
 
 def get_paragraph(para_id: str, index: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    if index is None:
+        load_index()
+        if _INDEX_BY_ID is not None:
+            hit = _INDEX_BY_ID.get(para_id)
+            if hit is not None:
+                return hit
+            for pid, p in _INDEX_BY_ID.items():
+                if pid.endswith(para_id) or para_id.endswith(pid):
+                    return p
+            return None
     idx = index if index is not None else load_index()
     for p in idx.get("paragraphs") or []:
         if p.get("id") == para_id:
             return p
-    # Also accept path#pN without raw/ prefix variants
     for p in idx.get("paragraphs") or []:
         if p.get("id", "").endswith(para_id) or para_id.endswith(p.get("id", "")):
             return p
@@ -217,8 +320,17 @@ def get_paragraph(para_id: str, index: dict[str, Any] | None = None) -> dict[str
 
 def index_is_stale(index: dict[str, Any] | None = None) -> bool:
     idx = index if index is not None else load_index()
-    current = {_index_file_key(p): file_fingerprint(p) for p in iter_raw_md_files()}
-    return _files_meta_stale(idx.get("files") or {}, current)
+    files_meta = idx.get("files") or {}
+    if _meta_paths_stale(files_meta):
+        return True
+    walk_count = count_raw_md_files()
+    stored = idx.get("walk_md_count")
+    if stored is not None and walk_count != stored:
+        return True
+    if stored is None:
+        current = {_index_file_key(p): file_fingerprint(p) for p in iter_raw_md_files()}
+        return _files_meta_stale(files_meta, current)
+    return False
 
 
 def _files_meta_stale(
@@ -246,7 +358,12 @@ def _fingerprint_unchanged(old: dict[str, Any] | None, new: dict[str, Any]) -> b
     return old.get("mtime") == new.get("mtime") and old.get("size") == new.get("size")
 
 
-def _write_index(files_meta: dict[str, Any], paragraphs: list[dict[str, Any]]) -> dict[str, Any]:
+def _write_index(
+    files_meta: dict[str, Any],
+    paragraphs: list[dict[str, Any]],
+    *,
+    walk_md_count: int | None = None,
+) -> dict[str, Any]:
     digest = hashlib.sha256(
         json.dumps(
             [
@@ -263,6 +380,9 @@ def _write_index(files_meta: dict[str, Any], paragraphs: list[dict[str, Any]]) -
     except ValueError:
         raw_dir_rel = "self-wiki/raw"
 
+    if walk_md_count is None:
+        walk_md_count = count_raw_md_files()
+
     index = {
         "version": 1,
         "built_at": datetime.now().isoformat(timespec="seconds"),
@@ -270,6 +390,7 @@ def _write_index(files_meta: dict[str, Any], paragraphs: list[dict[str, Any]]) -
         "raw_dir": raw_dir_rel,
         "file_count": len(files_meta),
         "paragraph_count": len(paragraphs),
+        "walk_md_count": walk_md_count,
         "digest": digest,
         "files": files_meta,
         "paragraphs": paragraphs,
@@ -285,16 +406,20 @@ def _write_index(files_meta: dict[str, Any], paragraphs: list[dict[str, Any]]) -
         index["paragraph_count"],
         TRACE_INDEX_JSON,
     )
-    return index
+    return _set_index_cache(index)
 
 
-def _build_index_full(paths: list[Path]) -> dict[str, Any]:
+def _build_index_full(paths: list[Path], *, walk_md_count: int | None = None) -> dict[str, Any]:
     files_meta: dict[str, Any] = {}
     paragraphs: list[dict[str, Any]] = []
     for path in paths:
         files_meta[_index_file_key(path)] = file_fingerprint(path)
         paragraphs.extend(build_paragraphs_for_file(path))
-    return _write_index(files_meta, paragraphs)
+    return _write_index(
+        files_meta,
+        paragraphs,
+        walk_md_count=walk_md_count if walk_md_count is not None else count_raw_md_files(),
+    )
 
 
 def _build_index_incremental(
@@ -302,6 +427,7 @@ def _build_index_incremental(
     existing: dict[str, Any],
     *,
     current_fps: dict[str, dict[str, Any]] | None = None,
+    walk_md_count: int | None = None,
 ) -> dict[str, Any]:
     """Reuse unchanged file paragraphs; rebuild only added/changed; drop deleted."""
     old_files = existing.get("files") or {}
@@ -342,12 +468,27 @@ def _build_index_incremental(
         reused,
         rebuilt_missing,
     )
-    return _write_index(files_meta, paragraphs)
+    return _write_index(
+        files_meta,
+        paragraphs,
+        walk_md_count=walk_md_count if walk_md_count is not None else count_raw_md_files(),
+    )
 
 
 def build_index(*, force: bool = False) -> dict[str, Any]:
     existing = load_index() if TRACE_INDEX_JSON.exists() else None
+
+    # Cheap path: trust indexed mtime/size + walk count before content-hashing all files.
+    if existing and not force and existing.get("files"):
+        if not _meta_paths_stale(existing.get("files") or {}):
+            walk_count = count_raw_md_files()
+            stored = existing.get("walk_md_count")
+            if stored is not None and walk_count == stored:
+                logger.info("trace index up to date: %s", TRACE_INDEX_JSON)
+                return _set_index_cache(existing)
+
     paths = iter_raw_md_files()
+    walk_md_count = count_raw_md_files()
     current_fps = {_index_file_key(path): file_fingerprint(path) for path in paths}
 
     if (
@@ -355,8 +496,16 @@ def build_index(*, force: bool = False) -> dict[str, Any]:
         and not force
         and not _files_meta_stale(existing.get("files") or {}, current_fps)
     ):
+        # Refresh walk_md_count on legacy indexes without rewriting paragraphs.
+        if existing.get("walk_md_count") != walk_md_count:
+            existing = dict(existing)
+            existing["walk_md_count"] = walk_md_count
+            TRACE_INDEX_JSON.write_text(
+                json.dumps(existing, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
         logger.info("trace index up to date: %s", TRACE_INDEX_JSON)
-        return existing
+        return _set_index_cache(existing)
 
     can_incremental = bool(
         existing
@@ -365,14 +514,33 @@ def build_index(*, force: bool = False) -> dict[str, Any]:
         and not force
     )
     if can_incremental:
-        return _build_index_incremental(paths, existing, current_fps=current_fps)
+        return _build_index_incremental(
+            paths, existing, current_fps=current_fps, walk_md_count=walk_md_count
+        )
     if force:
         logger.info("trace index full rebuild (--force)")
-    return _build_index_full(paths)
+    return _build_index_full(paths, walk_md_count=walk_md_count)
 
 
 def ensure_index(*, force: bool = False) -> dict[str, Any]:
-    return build_index(force=force)
+    """Return index, preferring in-memory cache for hot paths (trace-serve /ask)."""
+    global _LAST_ENSURE_MONO
+    trust = float(os.environ.get("TRACE_INDEX_TRUST_SECONDS", "180"))
+    now = time.monotonic()
+    if (
+        not force
+        and _INDEX_CACHE is not None
+        and (now - _LAST_ENSURE_MONO) < trust
+    ):
+        return _INDEX_CACHE
+    # Cold start: load JSON once without scanning the vault.
+    if not force and _INDEX_CACHE is None and TRACE_INDEX_JSON.exists():
+        idx = load_index()
+        _LAST_ENSURE_MONO = now
+        return idx
+    idx = build_index(force=force)
+    _LAST_ENSURE_MONO = time.monotonic()
+    return idx
 
 
 def main() -> int:

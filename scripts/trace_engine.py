@@ -118,16 +118,41 @@ def enforce_full_provenance(
     index: dict[str, Any] | None,
     candidates: list[dict[str, Any]],
 ) -> str:
-    """Replace ## Provenance with full indexed paragraph text for cited #pN ids."""
+    """Replace ## Provenance with full text for cited ids + every pack candidate."""
     cited = extract_cited_para_ids(answer)
-    if not cited:
-        cited = [c["id"] for c in candidates if c.get("id")]
+    cited_set = set(cited)
+    # Always surface the whole Evidence Pack, not only what the model happened to cite.
+    pack_ids = [c["id"] for c in candidates if c.get("id")]
+    ordered: list[str] = []
+    for pid in cited:
+        if pid not in ordered:
+            ordered.append(pid)
+    for pid in pack_ids:
+        if pid not in cited_set and pid not in ordered:
+            ordered.append(pid)
+    if not ordered:
+        ordered = pack_ids
+
+    blocks: list[str] = []
+    for pid in ordered:
+        para = resolve_paragraph(pid, index=index, candidates=candidates)
+        if not para:
+            blocks.append(f"- `{pid}`\n> (paragraph not found in index)")
+            continue
+        note = None if pid in cited_set else "Evidence Pack hit (not cited in Answer)"
+        blocks.append(format_provenance_entry(para, note=note))
+    provenance = "\n\n".join(blocks) if blocks else "- (none)"
     body = strip_provenance_section(answer)
-    provenance = build_full_provenance_md(cited, index=index, candidates=candidates)
     return f"{body}\n\n## Provenance\n\n{provenance}\n"
 
 
-def save_output(question: str, answer: str, candidates: list[dict[str, Any]]) -> Path:
+def save_output(
+    question: str,
+    answer: str,
+    candidates: list[dict[str, Any]],
+    *,
+    scope: str | None = None,
+) -> Path:
     TRACE_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     now = datetime.now()
     date_str = now.strftime("%Y-%m-%d")
@@ -140,6 +165,7 @@ def save_output(question: str, answer: str, candidates: list[dict[str, Any]]) ->
         f"(score={c.get('score')}, kind={c.get('kind')})"
         for c in candidates
     ) or "- (none)"
+    scope_yaml = yaml_string(scope) if scope else '"self-wiki/raw"'
 
     note = f"""---
 last_updated: {last_updated}
@@ -149,7 +175,7 @@ level: 0
 tags: [type/synthesis, trace]
 date: {date_str}
 question: {yaml_string(question)}
-scope: self-wiki/raw
+scope: {scope_yaml}
 ---
 
 > Raw-only proprietary-facts snapshot. Claims are valid only with verbatim cites from `raw/`. Not a wiki principle page.
@@ -181,15 +207,20 @@ def run_trace(
     debug_retrieval: bool = False,
     save: bool = True,
     force_index: bool = False,
+    scope: str | None = None,
 ) -> dict[str, Any]:
     llm_provider = provider_for_role("trace", provider)
     index = ensure_index(force=force_index)
-    pending, pending_path = prepare_trace(query, index=index, provider=llm_provider)
+    pending, pending_path = prepare_trace(
+        query, index=index, provider=llm_provider, scope=scope
+    )
 
     if debug_retrieval:
         print_retrieval_debug(
             {
                 "language": pending["language"],
+                "scope": pending.get("scope"),
+                "scope_paths": pending.get("scope_paths"),
                 "query_terms": pending["query_terms"],
                 "candidates": pending["candidates"],
                 "evidence_tokens": pending.get("evidence_tokens"),
@@ -199,9 +230,10 @@ def run_trace(
         )
 
     logger.info(
-        "trace LLM: provider=%s model=%s",
+        "trace LLM: provider=%s model=%s scope=%s",
         llm_provider,
         model_name(llm_provider, role="trace"),
+        pending.get("scope") or "(all raw/)",
     )
     result = run_skill_from_pending(pending_path, provider=llm_provider, write_output=True)
     answer = enforce_full_provenance(
@@ -212,7 +244,9 @@ def run_trace(
     cleanup_pending_artifacts(pending_path)
 
     out: dict[str, Any] = {
-        "query": query,
+        "query": pending.get("query") or query,
+        "scope": pending.get("scope"),
+        "scope_paths": pending.get("scope_paths") or [],
         "answer": answer,
         "provider": llm_provider,
         "model": model_name(llm_provider, role="trace"),
@@ -233,23 +267,26 @@ def run_trace(
         ],
     }
     if save:
-        path = save_output(query, answer, pending["candidates"])
+        path = save_output(
+            out["query"], answer, pending["candidates"], scope=out.get("scope")
+        )
         out["output_path"] = workspace_relpath(path)
         logger.info("Saved trace output to %s", path)
 
     n_cand = len(pending.get("candidates") or [])
-    q_short = query.replace("\n", " ").strip()
+    q_short = out["query"].replace("\n", " ").strip()
     if len(q_short) > 72:
         q_short = q_short[:69] + "…"
     out_rel = out.get("output_path")
+    scope_bit = f" scope={out.get('scope')}" if out.get("scope") else ""
     if out_rel:
         append_log(
             "trace",
-            f"created output | {q_short} | candidates={n_cand} | {out_rel}",
+            f"created output | {q_short}{scope_bit} | candidates={n_cand} | {out_rel}",
         )
     else:
         append_log(
             "trace",
-            f"ran (no-save) | {q_short} | candidates={n_cand}",
+            f"ran (no-save) | {q_short}{scope_bit} | candidates={n_cand}",
         )
     return out

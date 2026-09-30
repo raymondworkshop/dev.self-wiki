@@ -39,13 +39,18 @@ help:
 	@echo "  make ingest [FAST=1]   # memex · index · twin (no LLM)"
 	@echo "  make query Q=\"what are my values?\"   # wiki Socratic mirror"
 	@echo "  make trace Q=\"what are my core values?\"  # raw-only facts + verbatim cites"
-	@echo "  make trace-index      # rebuild log/trace-index.json"
-	@echo "  make trace-serve      # HTTP :8791 UI + POST /ask  GET /source"
+	@echo "  make trace Q=\"什麼是自由？\" SCOPE=a-free-man  # answer from one note only"
+	@echo "  make trace-index [FORCE=1]   # rebuild log/trace-index.json"
+	@echo "  make trace-serve [PORT=8791] # HTTP UI + POST /ask (+ optional scope)"
 	@echo "  make audit LINT=1"
 	@echo "  make agents            # discover → gap → evolution"
 	@echo "  make reflect           # agents + ingest + audit LINT=1"
 	@echo "  make site [PORT=8787]     # serve dist/ locally (build first: ingest + publish BUILD_ONLY=1)"
 	@echo "  make publish [BUILD_ONLY=1]"
+	@echo ""
+	@echo "trace knobs: TRACE_TOP_K=$(TRACE_TOP_K)  TRACE_MAX_PER_POST=$(TRACE_MAX_PER_POST)"
+	@echo "             TRACE_MAX_PER_NOTES=$(TRACE_MAX_PER_NOTES)  TRACE_MAX_PER_TWITTER=$(TRACE_MAX_PER_TWITTER)"
+	@echo "             TRACE_SCOPE_TOP_K=$(TRACE_SCOPE_TOP_K)  (single-doc pack size)"
 	@echo ""
 	@echo "Docs: README.md · $(CLI) --help"
 
@@ -115,14 +120,30 @@ trace-index:
 
 trace:
 ifdef Q
-	$(LLM_ENV) $(CLI) trace "$(Q)" $(CLI_PROVIDER_ARG) $(if $(DEBUG),--debug-retrieval) $(if $(FORCE),--force-index)
+	$(LLM_ENV) $(CLI) trace "$(Q)" $(CLI_PROVIDER_ARG) \
+	  $(if $(SCOPE),--scope "$(SCOPE)") \
+	  $(if $(DEBUG),--debug-retrieval) $(if $(FORCE),--force-index)
 else
-	@read -p "trace: " q; $(LLM_ENV) $(CLI) trace "$$q" $(CLI_PROVIDER_ARG)
+	@read -p "trace: " q; $(LLM_ENV) $(CLI) trace "$$q" $(CLI_PROVIDER_ARG) $(if $(SCOPE),--scope "$(SCOPE)")
 endif
 
 TRACE_PORT ?= 8791
+# Skip vault rescan for this many seconds after a warm ensure_index (hot /ask path).
+export TRACE_INDEX_TRUST_SECONDS ?= 180
+# Evidence pack size for corpus-wide asks (concept Qs can raise: TRACE_TOP_K=48).
+export TRACE_TOP_K ?= 32
+# Soft per-file caps by source tier (corpus-wide mode).
+export TRACE_MAX_PER_POST ?= 10
+export TRACE_MAX_PER_NOTES ?= 4
+export TRACE_MAX_PER_TWITTER ?= 2
+# Larger pack when SCOPE=… / UI scope / @file (single-doc mode).
+export TRACE_SCOPE_TOP_K ?= 64
 trace-serve:
-	$(LLM_ENV) $(PY) scripts/trace_server.py --host 127.0.0.1 --port $(TRACE_PORT)
+	$(LLM_ENV) TRACE_INDEX_TRUST_SECONDS=$(TRACE_INDEX_TRUST_SECONDS) \
+	  TRACE_TOP_K=$(TRACE_TOP_K) TRACE_SCOPE_TOP_K=$(TRACE_SCOPE_TOP_K) \
+	  TRACE_MAX_PER_POST=$(TRACE_MAX_PER_POST) TRACE_MAX_PER_NOTES=$(TRACE_MAX_PER_NOTES) \
+	  TRACE_MAX_PER_TWITTER=$(TRACE_MAX_PER_TWITTER) \
+	  $(PY) scripts/trace_server.py --host 127.0.0.1 --port $(TRACE_PORT)
 
 # Back-compat aliases (formerly rdatabase)
 rdatabase: trace

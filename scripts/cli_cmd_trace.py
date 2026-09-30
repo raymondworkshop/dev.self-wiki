@@ -30,11 +30,12 @@ def cmd_trace_index(args: argparse.Namespace) -> int:
 
 
 def cmd_prepare_trace(args: argparse.Namespace) -> int:
-    pending, path = prepare_trace(args.query, provider=args.provider)
+    pending, path = prepare_trace(args.query, provider=args.provider, scope=args.scope)
     logger.info("Prepared trace pending: %s", workspace_relpath(path))
     logger.info(
-        "language=%s candidates=%s terms=%s",
+        "language=%s scope=%s candidates=%s terms=%s",
         pending["language"],
+        pending.get("scope") or "(all)",
         len(pending.get("candidates") or []),
         len(pending.get("query_terms") or []),
     )
@@ -54,6 +55,7 @@ def cmd_trace(args: argparse.Namespace) -> int:
         debug_retrieval=args.debug_retrieval,
         save=not args.no_save,
         force_index=args.force_index,
+        scope=args.scope,
     )
     print(result["answer"])
     if result.get("output_path"):

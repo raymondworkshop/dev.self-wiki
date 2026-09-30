@@ -58,6 +58,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_ptrace = sub.add_parser("prepare-trace", help="Build pending JSON for trace (no LLM)")
     p_ptrace.add_argument("query", help="Question text")
     p_ptrace.add_argument("--provider", default=None)
+    p_ptrace.add_argument(
+        "--scope",
+        default=None,
+        help="Limit to one raw file/folder (stem, filename, or raw/_posts/... path)",
+    )
     p_ptrace.set_defaults(func=cmd_prepare_trace)
 
     p_trace = sub.add_parser(
@@ -69,6 +74,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_trace.add_argument("--debug-retrieval", action="store_true")
     p_trace.add_argument("--no-save", action="store_true")
     p_trace.add_argument("--force-index", action="store_true")
+    p_trace.add_argument(
+        "--scope",
+        default=None,
+        help="Limit to one raw file/folder (stem, filename, or raw/_posts/... path)",
+    )
     p_trace.set_defaults(func=cmd_trace)
 
     p_plint = sub.add_parser("prepare-lint", help="Build pending JSON for global cognitive lint")

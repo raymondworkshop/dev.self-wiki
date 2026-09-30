@@ -60,13 +60,23 @@ class ProvenanceEnforceTests(unittest.TestCase):
                     "                -   build on them, invest in them, "
                     "**nurture them**, **make them more robust**"
                 ),
-            }
+            },
+            {
+                "id": "raw/_posts/other.md#p2",
+                "path": "raw/_posts/other.md",
+                "para": 2,
+                "start_line": 10,
+                "end_line": 11,
+                "text": "uncited pack paragraph about freedom",
+            },
         ]
         out = enforce_full_provenance(answer, index=None, candidates=candidates)
         self.assertIn("## Provenance", out)
         self.assertIn("know and build on your core competencies", out)
         self.assertIn("make them more robust", out)
         self.assertNotIn("truncated only", out)
+        self.assertIn("uncited pack paragraph about freedom", out)
+        self.assertIn("Evidence Pack hit (not cited in Answer)", out)
 
     def test_build_provenance_missing(self) -> None:
         md = build_full_provenance_md(

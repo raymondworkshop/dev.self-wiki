@@ -31,42 +31,233 @@ def _html_page(title: str, body: str, *, extra_head: str = "") -> bytes:
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>{html.escape(title)}</title>
 <style>
-:root {{ color-scheme: light; --ink:#18181b; --muted:#71717a; --line:#e4e4e7; --bg:#fafafa; --card:#fff; --accent:#1d4ed8; --hi:#fef3c7; }}
+:root {{
+  color-scheme: light;
+  --ink: #1c1917;
+  --muted: #78716c;
+  --soft: #a8a29e;
+  --line: #e7e5e4;
+  --bg: #f7f5f2;
+  --card: #fffcf9;
+  --accent: #0f766e;
+  --quote: #f0ebe3;
+  --hi: #fde68a;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  --serif: "New York", "Iowan Old Style", "Songti SC", "STSong", "PingFang SC", ui-serif, Georgia, serif;
+  --mono: "SF Mono", ui-monospace, Menlo, Monaco, monospace;
+}}
 * {{ box-sizing: border-box; }}
-body {{ font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif; max-width: 54rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; line-height: 1.6; color: var(--ink); background: var(--bg); }}
-h1 {{ font-size: 1.65rem; margin: 0 0 0.25rem; letter-spacing: -0.02em; }}
-.meta {{ color: var(--muted); font-size: 0.92rem; margin-bottom: 1.5rem; font-family: ui-sans-serif, system-ui, sans-serif; }}
-label {{ display: block; font-weight: 600; margin-bottom: 0.4rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.92rem; }}
-textarea {{ width: 100%; min-height: 6.5rem; padding: 0.85rem 1rem; border: 1px solid var(--line); border-radius: 10px; font: inherit; background: var(--card); resize: vertical; }}
-.row {{ display: flex; gap: 0.75rem; align-items: center; margin-top: 0.85rem; flex-wrap: wrap; font-family: ui-sans-serif, system-ui, sans-serif; }}
-button {{ background: var(--ink); color: #fff; border: 0; border-radius: 999px; padding: 0.65rem 1.25rem; font: inherit; font-size: 0.95rem; cursor: pointer; }}
-button:disabled {{ opacity: 0.55; cursor: wait; }}
-#status {{ color: var(--muted); font-size: 0.9rem; }}
+body {{
+  font-family: var(--sans);
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.35rem 4rem;
+  line-height: 1.7;
+  font-size: 17px;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 500px at 50% -10%, #fff 0%, transparent 55%),
+    var(--bg);
+  -webkit-font-smoothing: antialiased;
+}}
+h1.brand {{
+  font-family: var(--sans);
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.15rem;
+}}
+.meta {{
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin: 0 0 1.75rem;
+  font-family: var(--sans);
+  font-weight: 400;
+}}
+.meta a {{ color: var(--muted); }}
+label {{
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+  letter-spacing: 0.02em;
+}}
+textarea {{
+  width: 100%;
+  min-height: 5.5rem;
+  padding: 0.95rem 1.05rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 1.12rem;
+  background: var(--card);
+  resize: vertical;
+  box-shadow: 0 1px 0 rgba(28,25,23,.03);
+}}
+textarea:focus {{ outline: 2px solid color-mix(in srgb, var(--accent) 35%, white); outline-offset: 1px; border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }}
+.hint {{ margin: 0.45rem 0 0; font-size: 0.88rem; color: var(--soft); font-family: var(--sans); }}
+.row {{
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  margin-top: 0.95rem;
+  flex-wrap: wrap;
+  font-family: var(--sans);
+}}
+button {{
+  background: var(--ink);
+  color: #fafaf9;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.65rem 1.4rem;
+  font: inherit;
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform .12s ease, opacity .12s ease;
+}}
+button:hover {{ transform: translateY(-1px); }}
+button:disabled {{ opacity: 0.5; cursor: wait; transform: none; }}
+#status {{ color: var(--muted); font-size: 0.92rem; }}
 #status.err {{ color: #b91c1c; }}
-a {{ color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }}
-a:hover {{ text-decoration-thickness: 2px; }}
-.card {{ background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1.15rem 1.25rem; margin-top: 1.35rem; box-shadow: 0 1px 0 rgba(0,0,0,.03); }}
-.card h2 {{ font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 0.85rem; font-weight: 700; }}
-#answer.prose {{ white-space: normal; }}
-#answer.prose h1, #answer.prose h2, #answer.prose h3 {{ font-family: ui-sans-serif, system-ui, sans-serif; margin: 1.1rem 0 0.45rem; line-height: 1.3; }}
-#answer.prose h1 {{ font-size: 1.25rem; }}
-#answer.prose h2 {{ font-size: 1.05rem; text-transform: none; letter-spacing: 0; color: var(--ink); }}
-#answer.prose p {{ margin: 0.55rem 0; }}
-#answer.prose ul {{ margin: 0.4rem 0 0.7rem; padding-left: 1.2rem; }}
-#answer.prose li {{ margin: 0.3rem 0; }}
-#answer.prose blockquote {{ margin: 0.75rem 0; padding: 0.65rem 0.9rem; border-left: 3px solid #a1a1aa; background: #f4f4f5; border-radius: 0 8px 8px 0; color: #3f3f46; white-space: pre-wrap; }}
-#answer.prose .cite, #answer.prose .wikilink {{ font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.88em; background: #eff6ff; padding: 0.1rem 0.35rem; border-radius: 4px; text-decoration: none; }}
-#answer.prose .cite:hover, #answer.prose .wikilink:hover {{ background: #dbeafe; }}
-#answer.prose strong {{ font-weight: 700; }}
-#sources a {{ display: block; margin: 0.35rem 0; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.9rem; }}
-.code-view {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.82rem; line-height: 1.45; border: 1px solid var(--line); border-radius: 10px; overflow: auto; background: #fff; max-height: 75vh; }}
+a {{ color: var(--accent); text-decoration: none; }}
+a:hover {{ text-decoration: underline; text-underline-offset: 3px; }}
+.card {{
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin-top: 2.25rem;
+  box-shadow: none;
+}}
+.card + .card {{ margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }}
+.card > .sec-label {{
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--soft);
+  margin: 0 0 1rem;
+  font-weight: 600;
+}}
+#answer.prose {{ white-space: normal; font-size: 1.12rem; font-family: var(--sans); }}
+#answer.prose > .lead {{
+  font-size: 1.22rem;
+  line-height: 1.55;
+  color: #44403c;
+  margin: 0 0 1.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-style: italic;
+}}
+#answer.prose h1 {{ display: none; }} /* question already in the form */
+#answer.prose h2, #answer.prose h3 {{
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 1.5rem 0 0.55rem;
+  line-height: 1.3;
+  color: var(--ink);
+}}
+#answer.prose h2 {{ font-size: 1.05rem; }}
+#answer.prose h2.answer-h {{ display: none; }} /* section chrome redundant with card label */
+#answer.prose h3 {{ font-size: 1rem; color: #57534e; }}
+#answer.prose p {{ margin: 0.65rem 0; }}
+#answer.prose ul {{ margin: 0.35rem 0 0.9rem; padding-left: 1.15rem; }}
+#answer.prose li {{ margin: 0.45rem 0; padding-left: 0.15rem; }}
+#answer.prose li::marker {{ color: var(--soft); }}
+#answer.prose blockquote {{
+  margin: 0.55rem 0 0.85rem;
+  padding: 0.75rem 1rem;
+  border-left: 2px solid #d6d3d1;
+  background: var(--quote);
+  border-radius: 0 10px 10px 0;
+  color: #44403c;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}}
+#answer.prose .cite, #answer.prose .wikilink {{
+  font-family: var(--sans);
+  font-size: 0.82em;
+  font-weight: 500;
+  color: var(--accent);
+  background: transparent;
+  padding: 0;
+  border-bottom: 1px dotted color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 0;
+  white-space: nowrap;
+}}
+#answer.prose .cite:hover, #answer.prose .wikilink:hover {{
+  background: transparent;
+  border-bottom-style: solid;
+}}
+#answer.prose strong {{ font-weight: 600; }}
+#answer.prose details.prov {{
+  margin-top: 1.75rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+  font-size: 1.02rem;
+}}
+#answer.prose details.prov > summary {{
+  font-family: var(--sans);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--soft);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}}
+#answer.prose details.prov > summary::-webkit-details-marker {{ display: none; }}
+#answer.prose details.prov > summary::after {{ content: " · collapse"; font-weight: 400; letter-spacing: 0; text-transform: none; }}
+#answer.prose details.prov:not([open]) > summary::after {{ content: " · expand"; }}
+#answer.prose details.prov .prov-body {{ margin-top: 0.85rem; color: #57534e; }}
+#sources {{
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}}
+#sources a {{
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  color: #57534e;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--line);
+}}
+#sources a:last-child {{ border-bottom: 0; }}
+#sources a:hover {{ color: var(--accent); }}
+details.sources-wrap > summary {{
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--soft);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 0.75rem;
+}}
+details.sources-wrap > summary::-webkit-details-marker {{ display: none; }}
+details.sources-wrap > summary::after {{ content: " · collapse"; font-weight: 400; letter-spacing: 0; text-transform: none; }}
+details.sources-wrap:not([open]) > summary::after {{ content: " · expand"; }}
+.code-view {{ font-family: var(--mono); font-size: 0.9rem; line-height: 1.45; border: 1px solid var(--line); border-radius: 10px; overflow: auto; background: #fff; max-height: 75vh; }}
 .code-view .line {{ display: grid; grid-template-columns: 3.5rem 1fr; gap: 0.75rem; padding: 0 0.75rem; }}
-.code-view .line:hover {{ background: #f4f4f5; }}
+.code-view .line:hover {{ background: #f5f5f4; }}
 .code-view .ln {{ color: var(--muted); text-align: right; user-select: none; padding: 0.15rem 0; }}
 .code-view .tx {{ white-space: pre-wrap; word-break: break-word; padding: 0.15rem 0; }}
 .code-view .line.hi {{ background: var(--hi); }}
 .code-view .line.hi .ln {{ color: #92400e; font-weight: 700; }}
-.nav {{ font-family: ui-sans-serif, system-ui, sans-serif; margin-top: 1.25rem; }}
+.nav {{ font-family: var(--sans); margin-top: 1.25rem; font-size: 1rem; }}
+@media (max-width: 560px) {{
+  body {{ padding: 1.5rem 1rem 3rem; font-size: 16px; }}
+  #answer.prose {{ font-size: 1.06rem; }}
+}}
 </style>
 {extra_head}
 </head>
@@ -83,24 +274,30 @@ def _home_page(*, paragraph_count: int | None, built_at: str | None) -> bytes:
     if built_at:
         meta += f" · index {html.escape(str(built_at))}"
     body = f"""
-<h1>trace</h1>
-<p class="meta">Raw-only Q&amp;A with verbatim cites · {meta} · <a href="/health">health</a></p>
+<h1 class="brand">trace</h1>
+<p class="meta">verbatim raw Q&amp;A · {meta}</p>
 <label for="q">Question</label>
-<textarea id="q" placeholder="what are my core values?"></textarea>
+<textarea id="q" placeholder="什麼是自由？愛呢？"></textarea>
+<label for="scope" style="margin-top:1rem">Scope (optional)</label>
+<input id="scope" type="text" placeholder="a-free-man  or  raw/_posts/2026-03-01-a-free-man.md" style="width:100%;padding:0.75rem 1rem;border:1px solid var(--line);border-radius:12px;font:inherit;font-size:1rem;background:var(--card)"/>
+<p class="hint">Leave scope empty for all raw/ · or @a-free-man at end of question · Enter to ask</p>
 <div class="row">
   <button id="ask" type="button">Ask</button>
   <span id="status"></span>
 </div>
 <div id="answerCard" class="card" hidden>
-  <h2>Answer</h2>
+  <div class="sec-label">Answer</div>
   <div id="answer" class="prose"></div>
 </div>
 <div id="sourcesCard" class="card" hidden>
-  <h2>Retrieval candidates</h2>
-  <div id="sources"></div>
+  <details class="sources-wrap" open>
+    <summary>Retrieval candidates</summary>
+    <div id="sources"></div>
+  </details>
 </div>
 <script>
 const qEl = document.getElementById('q');
+const scopeEl = document.getElementById('scope');
 const askBtn = document.getElementById('ask');
 const statusEl = document.getElementById('status');
 const answerEl = document.getElementById('answer');
@@ -116,6 +313,8 @@ function escapeHtml(s) {{
     .replace(/"/g, '&quot;');
 }}
 
+const SESSION_KEY = 'trace.lastResult';
+
 function sourceHref(path, pTag, start, end) {{
   const id = pTag ? (path + pTag) : path;
   let href = '/source?id=' + encodeURIComponent(id);
@@ -125,39 +324,113 @@ function sourceHref(path, pTag, start, end) {{
   return href;
 }}
 
+function sourceLink(href, label, className, title) {{
+  const cls = className ? (' class="' + className + '"') : '';
+  const tit = title ? (' title="' + escapeHtml(title) + '"') : '';
+  return '<a' + cls + ' href="' + href + '" target="_blank" rel="noopener"' + tit + '>' + label + '</a>';
+}}
+
 function linkifyCites(escaped) {{
-  // [[raw/...]] · #p12 · L84–L91  (en/em dash or hyphen)
+  // Compact cite: show #pN · Lx–Ly; full path in title tooltip.
   let s = escaped.replace(
-    /\\[\\[(raw\\/[^\\]]+)\\]\\]\\s*·\\s*(#p\\d+)\\s*·\\s*L(\\d+)\\s*[–—-]\\s*L?(\\d+)/g,
+    /(?:\\(?\\s*(?:Source:\\s*)?)?\\[\\[(raw\\/[^\\]]+)\\]\\]\\s*·\\s*(#p\\d+)\\s*·\\s*L(\\d+)\\s*[–—-]\\s*L?(\\d+)\\)?/g,
     (_, path, pTag, a, b) => {{
       const href = sourceHref(path, pTag, a, b);
-      const label = '[[' + path + ']] · ' + pTag + ' · L' + a + '–L' + b;
-      return '<a class="cite" href="' + href + '">' + label + '</a>';
+      const short = pTag + ' · L' + a + '–' + b;
+      return sourceLink(href, short, 'cite', '[[' + path + ']]');
     }}
   );
-  // bare [[raw/...]]
   s = s.replace(/\\[\\[(raw\\/[^\\]]+)\\]\\]/g, (_, path) => {{
-    return '<a class="wikilink" href="' + sourceHref(path) + '">[[' + path + ']]</a>';
+    const leaf = path.split('/').pop() || path;
+    return sourceLink(sourceHref(path), leaf, 'wikilink', '[[' + path + ']]');
   }});
   return s;
 }}
 
-function renderAnswer(md) {{
-  const lines = String(md || '').replace(/\\r\\n/g, '\\n').split('\\n');
+function renderSources(sources) {{
+  return (sources || []).map(s => {{
+    const id = s.id || (s.path + '#p' + s.para);
+    const start = (s.lines && s.lines[0]) || s.start_line;
+    const end = (s.lines && s.lines[1]) || s.end_line;
+    let href = '/source?id=' + encodeURIComponent(id);
+    if (start) href += '&start=' + start + '&end=' + (end || start) + '#L' + start;
+    const leaf = (s.path || id).split('/').pop() || id;
+    const label = leaf + (s.para != null ? (' #' + 'p' + s.para) : '') + (start ? (' · L' + start) : '');
+    return sourceLink(href, escapeHtml(label), '', id);
+  }}).join('');
+}}
+
+function showResult(data, {{ persist }} = {{ persist: true }}) {{
+  const answer = data.answer || '(empty)';
+  answerEl.innerHTML = renderAnswer(answer);
+  answerCard.hidden = false;
+  const sources = data.sources || [];
+  if (sources.length) {{
+    sourcesEl.innerHTML = renderSources(sources);
+    sourcesCard.hidden = false;
+  }} else {{
+    sourcesEl.innerHTML = '';
+    sourcesCard.hidden = true;
+  }}
+  let ok = data.status || 'Done';
+  if (!data.status) {{
+    if (data.scope) ok += ' · scope ' + data.scope;
+    if (data.model) ok += ' · ' + data.model;
+    if (data.output_path) ok += ' · saved';
+  }}
+  statusEl.className = '';
+  statusEl.textContent = ok;
+  if (persist) {{
+    try {{
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({{
+        q: data.q || qEl.value || '',
+        scope: data.scope || (scopeEl && scopeEl.value) || '',
+        answer,
+        sources,
+        model: data.model || '',
+        output_path: data.output_path || '',
+        status: ok,
+      }}));
+    }} catch (_) {{}}
+  }}
+}}
+
+function restoreResult() {{
+  try {{
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.q) qEl.value = data.q;
+    if (scopeEl && data.scope != null) scopeEl.value = data.scope;
+    showResult(data, {{ persist: false }});
+  }} catch (_) {{}}
+}}
+
+function formatInline(escaped) {{
+  let s = escaped.replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
+  return linkifyCites(s);
+}}
+
+function renderBodyLines(lines) {{
   const out = [];
   let inQuote = false;
   let inList = false;
+  let leadDone = false;
   const closeList = () => {{ if (inList) {{ out.push('</ul>'); inList = false; }} }};
   const closeQuote = () => {{ if (inQuote) {{ out.push('</blockquote>'); inQuote = false; }} }};
 
   for (const raw of lines) {{
-    const line = raw;
-    const trimmed = line.trimEnd();
+    const trimmed = raw.trimEnd();
     if (/^>\\s?/.test(trimmed)) {{
       closeList();
       const body = trimmed.replace(/^>\\s?/, '');
-      if (!inQuote) {{ out.push('<blockquote>'); inQuote = true; }}
-      out.push(linkifyCites(escapeHtml(body)) + '\\n');
+      if (!inQuote) {{
+        const cls = !leadDone ? ' class="lead"' : '';
+        out.push('<blockquote' + cls + '>');
+        inQuote = true;
+        if (!leadDone) leadDone = true;
+      }}
+      out.push(formatInline(escapeHtml(body)) + '\\n');
       continue;
     }}
     closeQuote();
@@ -165,15 +438,15 @@ function renderAnswer(md) {{
     if (hm) {{
       closeList();
       const level = hm[1].length;
-      out.push('<h' + level + '>' + linkifyCites(escapeHtml(hm[2])) + '</h' + level + '>');
+      const title = hm[2].trim();
+      const cls = (level === 2 && /^answer$/i.test(title)) ? ' class="answer-h"' : '';
+      out.push('<h' + level + cls + '>' + formatInline(escapeHtml(title)) + '</h' + level + '>');
       continue;
     }}
     if (/^[-*]\\s+/.test(trimmed)) {{
       if (!inList) {{ out.push('<ul>'); inList = true; }}
       const item = trimmed.replace(/^[-*]\\s+/, '');
-      let htmlItem = escapeHtml(item).replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
-      htmlItem = linkifyCites(htmlItem);
-      out.push('<li>' + htmlItem + '</li>');
+      out.push('<li>' + formatInline(escapeHtml(item)) + '</li>');
       continue;
     }}
     if (!trimmed) {{
@@ -182,17 +455,35 @@ function renderAnswer(md) {{
       continue;
     }}
     closeList();
-    let para = escapeHtml(trimmed).replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
-    para = linkifyCites(para);
-    out.push('<p>' + para + '</p>');
+    out.push('<p>' + formatInline(escapeHtml(trimmed)) + '</p>');
   }}
   closeQuote();
   closeList();
   return out.join('\\n');
 }}
 
+function renderAnswer(md) {{
+  const text = String(md || '').replace(/\\r\\n/g, '\\n');
+  const provRe = /^##\\s+Provenance\\s*$/im;
+  const m = text.match(provRe);
+  let main = text;
+  let prov = '';
+  if (m && m.index != null) {{
+    main = text.slice(0, m.index).trimEnd();
+    prov = text.slice(m.index).replace(/^##\\s+Provenance\\s*/i, '').trim();
+  }}
+  let htmlOut = renderBodyLines(main.split('\\n'));
+  if (prov) {{
+    htmlOut += '<details class="prov" open><summary>Provenance</summary><div class="prov-body">'
+      + renderBodyLines(prov.split('\\n'))
+      + '</div></details>';
+  }}
+  return htmlOut;
+}}
+
 async function ask() {{
   const q = (qEl.value || '').trim();
+  const scope = (scopeEl && scopeEl.value || '').trim();
   if (!q) {{
     statusEl.textContent = 'Enter a question.';
     statusEl.className = 'err';
@@ -200,36 +491,20 @@ async function ask() {{
   }}
   askBtn.disabled = true;
   statusEl.className = '';
-  statusEl.textContent = 'Running… (LLM may take a while)';
+  statusEl.textContent = scope ? ('Thinking in ' + scope + '…') : 'Thinking…';
   answerCard.hidden = true;
   sourcesCard.hidden = true;
   try {{
     const res = await fetch('/ask', {{
       method: 'POST',
       headers: {{ 'Content-Type': 'application/json' }},
-      body: JSON.stringify({{ q }}),
+      body: JSON.stringify({{ q, scope: scope || null }}),
     }});
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || res.statusText);
-    answerEl.innerHTML = renderAnswer(data.answer || '(empty)');
-    answerCard.hidden = false;
-    const sources = data.sources || [];
-    if (sources.length) {{
-      sourcesEl.innerHTML = sources.map(s => {{
-        const id = s.id || (s.path + '#p' + s.para);
-        const start = (s.lines && s.lines[0]) || s.start_line;
-        const end = (s.lines && s.lines[1]) || s.end_line;
-        let href = '/source?id=' + encodeURIComponent(id);
-        if (start) href += '&start=' + start + '&end=' + (end || start) + '#L' + start;
-        const label = id + (start ? (' · L' + start + '–L' + (end || start)) : '');
-        return '<a href="' + href + '">' + escapeHtml(label) + '</a>';
-      }}).join('');
-      sourcesCard.hidden = false;
-    }}
-    let ok = 'Done';
-    if (data.model) ok += ' · ' + data.model;
-    if (data.output_path) ok += ' · saved ' + data.output_path;
-    statusEl.textContent = ok;
+    data.q = q;
+    data.scope = data.scope || scope;
+    showResult(data);
   }} catch (err) {{
     statusEl.textContent = String(err.message || err);
     statusEl.className = 'err';
@@ -240,8 +515,12 @@ async function ask() {{
 
 askBtn.addEventListener('click', ask);
 qEl.addEventListener('keydown', (e) => {{
-  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') ask();
+  if (e.key === 'Enter' && !e.shiftKey) {{
+    e.preventDefault();
+    ask();
+  }}
 }});
+restoreResult();
 </script>
 """
     return _html_page("trace", body)
@@ -481,9 +760,10 @@ class TraceHandler(BaseHTTPRequestHandler):
         if not q:
             self._send_json(400, {"error": "missing q"})
             return
+        scope = (payload.get("scope") or payload.get("path") or "").strip() or None
         debug = bool(payload.get("debug_retrieval"))
         try:
-            result = run_trace(q, debug_retrieval=debug, save=True)
+            result = run_trace(q, debug_retrieval=debug, save=True, scope=scope)
         except Exception as exc:  # noqa: BLE001
             logger.exception("trace /ask failed")
             self._send_json(500, {"error": str(exc)})
@@ -496,6 +776,8 @@ class TraceHandler(BaseHTTPRequestHandler):
                 "output_path": result.get("output_path"),
                 "language": result.get("language"),
                 "query_terms": result.get("query_terms"),
+                "scope": result.get("scope"),
+                "scope_paths": result.get("scope_paths") or [],
                 "provider": result.get("provider"),
                 "model": result.get("model"),
             },
