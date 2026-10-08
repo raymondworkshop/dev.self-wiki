@@ -76,4 +76,4 @@ Standards: [AGENTS.md](AGENTS.md) · design: [design.md](design.md)
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+© 2026 Bean Workshop Ltd.
