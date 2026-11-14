@@ -2,6 +2,12 @@
 
 Operational record of ingest, query, trace, and lint. Newest entries first.
 
+## [2026-11-11] lint | updated audit.md | global cognitive lint merged
+## [2026-11-11] ingest | updated indexes/twin/backlinks | ingest complete
+## [2026-11-11] evolution | created evolution report via evolution-20261111-150630.json
+## [2026-11-11] gap | created gap report via gap-20261111-150532.json
+## [2026-11-11] discover | created discover report via discover-20261111-150419.json
+## [2026-10-01] trace | created output | 什么是我很看重的价值？ | candidates=32 | self-wiki/outputs/trace/什么是我很看重的价值-2026-10-01.md
 ## [2026-09-30] trace | created output | 如何獲得愛？ | candidates=15 | self-wiki/outputs/trace/如何獲得愛-2026-09-30.md
 ## [2026-09-30] trace-index | rebuilt log/trace-index.json | files=1054 paragraphs=95420
 ## [2026-09-30] trace | created output | 什麼是愛？ | candidates=32 | self-wiki/outputs/trace/什麼是愛-2026-09-30.md
@@ -147,26 +153,3 @@ Operational record of ingest, query, trace, and lint. Newest entries first.
 ## [2026-06-16] ingest | post-ingest complete
 ## [2026-06-16] ingest | post-ingest complete
 ## [2026-06-16] ingest | post-ingest complete
-## [2026-06-16] ingest | wiki-synthesize 1 file, 0 page(s)
-## [2026-06-16] ingest | wiki-synthesize 1 file, 0 page(s)
-## [2026-06-16] ingest | wiki-synthesize 5 compression file(s)
-## [2026-06-16] ingest | post-ingest complete
-## [2026-06-15] evolution | Composer evolution bootstrap snapshot → self-wiki/evolution/2026-06-15.md
-## [2026-06-15] gap | Composer gap report → self-wiki/gap/2026-06-15.md
-## [2026-06-15] ingest | post-ingest complete
-## [2026-06-15] ingest | post-ingest complete
-## [2026-06-15] ingest | post-ingest complete
-## [2026-06-15] discover | Composer discovery run 3 per skills/discovery.md → 2026-06-15.md
-## [2026-06-15] discover | Composer discovery run 2 (stratified sampling) → 2026-06-15.md
-## [2026-06-15] discover | Composer discovery report → self-wiki/discovery/2026-06-15.md
-## [2026-06-15] lint | Global cognitive lint merged into audit.md
-## [2026-06-15] ingest | post-ingest complete
-## [2026-06-12] lint | Global cognitive lint merged into audit.md
-## [2026-06-11] lint | Global cognitive lint merged into audit.md
-## [2026-06-11] lint | Global cognitive lint merged into audit.md
-## [2026-06-11] ingest | 57 raw file(s), 664 page update(s)
-## [2026-06-03] ingest | 609 raw file(s), 659 page update(s)
-## [2026-06-02] ingest | 1 raw file(s), 5 page update(s)
-## [2026-06-02] ingest | 1 raw file(s), 2 page update(s)
-## [2026-06-02] ingest | 1 raw file(s), 1 page update(s)
-## [2026-06-02] ingest | MVP smoke test

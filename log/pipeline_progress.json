@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "updated_at": "2026-09-14T13:25:55.829164+00:00",
+  "updated_at": "2026-11-11T07:13:42.670216+00:00",
   "cycle": {
     "status": "in_progress",
     "resume_stage": "wiki_synthesize",
-    "resume_command": "make wiki-synthesize LIMIT=20  # 231 pending/failed",
+    "resume_command": "make wiki-synthesize LIMIT=20  # 292 pending/failed",
     "completed_stages": [
       "register_reference",
       "discovery",
@@ -15,7 +15,7 @@
     ],
     "last_stop": {
       "status": "done",
-      "at": "2026-09-14T13:25:55.829084+00:00",
+      "at": "2026-11-11T07:13:42.670132+00:00",
       "output": null,
       "stage": "ingest"
     }
@@ -32,14 +32,14 @@
       "status": "in_progress",
       "summary": {
         "done": 0,
-        "pending": 226,
-        "no_actions": 196,
-        "skipped": 678,
-        "failed": 5
+        "pending": 288,
+        "no_actions": 188,
+        "skipped": 627,
+        "failed": 4
       },
-      "done": 196,
-      "remaining": 231,
-      "total": 1105,
+      "done": 188,
+      "remaining": 292,
+      "total": 1107,
       "manifest": "log/wiki_synth_manifest.json",
       "last_stop": {
         "rel": "self-wiki/raw/_posts/learning/2026-05-05-on-how-to-influence-people.md",
@@ -47,7 +47,7 @@
         "at": "2026-08-04T04:15:38.233221+00:00",
         "pages": 0
       },
-      "resume_command": "make wiki-synthesize LIMIT=20  # 231 pending/failed"
+      "resume_command": "make wiki-synthesize LIMIT=20  # 292 pending/failed"
     },
     "ingest": {
       "status": "done",
@@ -55,10 +55,10 @@
       "memex_stamp": "log/memex/.stamp",
       "twin_profile": "twin/PROFILE.md",
       "resume_command": "make ingest",
-      "completed_at": "2026-09-14T13:25:55.828949+00:00",
+      "completed_at": "2026-11-11T07:13:42.669845+00:00",
       "last_stop": {
         "status": "done",
-        "at": "2026-09-14T13:25:55.829084+00:00",
+        "at": "2026-11-11T07:13:42.670132+00:00",
         "output": null
       }
     },
@@ -66,6 +66,24 @@
       "status": "done",
       "reason": null,
       "runs": [
+        {
+          "output": "self-wiki/discovery/2026-11-11.md",
+          "date": "2026-11-11",
+          "completed_at": "2026-11-11T07:05:31.902303+00:00",
+          "status": "done"
+        },
+        {
+          "output": "self-wiki/discovery/2026-09-21.md",
+          "date": "2026-09-21",
+          "completed_at": "2026-09-21T08:07:36.597626+00:00",
+          "status": "done"
+        },
+        {
+          "output": "self-wiki/discovery/2026-09-17.md",
+          "date": "2026-09-17",
+          "completed_at": "2026-09-17T12:34:43.501040+00:00",
+          "status": "done"
+        },
         {
           "output": "self-wiki/discovery/2026-09-14.md",
           "date": "2026-09-14",
@@ -107,30 +125,12 @@
           "date": "2026-07-27",
           "completed_at": "2026-08-04T07:37:04.741337+00:00",
           "status": "done"
-        },
-        {
-          "output": "self-wiki/discovery/2026-08-04.md",
-          "date": "2026-08-04",
-          "completed_at": "2026-08-04T07:32:44.803312+00:00",
-          "status": "done"
-        },
-        {
-          "output": "self-wiki/discovery/2026-07-26.md",
-          "date": "2026-07-26",
-          "completed_at": "2026-07-26T11:58:59.865982+00:00",
-          "status": "done"
-        },
-        {
-          "output": "self-wiki/discovery/2026-07-21.md",
-          "date": "2026-07-21",
-          "completed_at": "2026-07-21T04:19:55+00:00",
-          "status": "done"
         }
       ],
       "latest": {
-        "output": "self-wiki/discovery/2026-09-14.md",
-        "date": "2026-09-14",
-        "completed_at": "2026-09-14T13:18:08.118790+00:00",
+        "output": "self-wiki/discovery/2026-11-11.md",
+        "date": "2026-11-11",
+        "completed_at": "2026-11-11T07:05:31.902303+00:00",
         "status": "done"
       },
       "resume_command": "make discover"
@@ -139,6 +139,24 @@
       "status": "done",
       "reason": null,
       "runs": [
+        {
+          "output": "self-wiki/gap/2026-11-11.md",
+          "date": "2026-11-11",
+          "completed_at": "2026-11-11T07:06:30.237563+00:00",
+          "status": "done"
+        },
+        {
+          "output": "self-wiki/gap/2026-09-21.md",
+          "date": "2026-09-21",
+          "completed_at": "2026-09-21T08:08:26.025004+00:00",
+          "status": "done"
+        },
+        {
+          "output": "self-wiki/gap/2026-09-17.md",
+          "date": "2026-09-17",
+          "completed_at": "2026-09-17T12:35:43.171139+00:00",
+          "status": "done"
+        },
         {
           "output": "self-wiki/gap/2026-09-14.md",
           "date": "2026-09-14",
@@ -180,30 +198,12 @@
           "date": "2026-08-04",
           "completed_at": "2026-08-04T07:34:28.483172+00:00",
           "status": "done"
-        },
-        {
-          "output": "self-wiki/gap/2026-08-02.md",
-          "date": "2026-08-02",
-          "completed_at": "2026-08-01T20:04:53.301144+00:00",
-          "status": "done"
-        },
-        {
-          "output": "self-wiki/gap/2026-07-26.md",
-          "date": "2026-07-26",
-          "completed_at": "2026-07-26T11:59:20.733950+00:00",
-          "status": "done"
-        },
-        {
-          "output": "self-wiki/gap/2026-07-21.md",
-          "date": "2026-07-21",
-          "completed_at": "2026-07-21T04:21:13+00:00",
-          "status": "done"
         }
       ],
       "latest": {
-        "output": "self-wiki/gap/2026-09-14.md",
-        "date": "2026-09-14",
-        "completed_at": "2026-09-14T13:18:47.213258+00:00",
+        "output": "self-wiki/gap/2026-11-11.md",
+        "date": "2026-11-11",
+        "completed_at": "2026-11-11T07:06:30.237563+00:00",
         "status": "done"
       },
       "resume_command": "make gap"
@@ -212,6 +212,24 @@
       "status": "done",
       "reason": null,
       "runs": [
+        {
+          "output": "self-wiki/evolution/2026-11-11.md",
+          "date": "2026-11-11",
+          "completed_at": "2026-11-11T07:07:53.735828+00:00",
+          "status": "done"
+        },
+        {
+          "output": "self-wiki/evolution/2026-09-21.md",
+          "date": "2026-09-21",
+          "completed_at": "2026-09-21T08:09:22.777773+00:00",
+          "status": "done"
+        },
+        {
+          "output": "self-wiki/evolution/2026-09-17.md",
+          "date": "2026-09-17",
+          "completed_at": "2026-09-17T12:36:15.782512+00:00",
+          "status": "done"
+        },
         {
           "output": "self-wiki/evolution/2026-09-14.md",
           "date": "2026-09-14",
@@ -253,30 +271,12 @@
           "date": "2026-07-27",
           "completed_at": "2026-08-04T07:34:28.484093+00:00",
           "status": "done"
-        },
-        {
-          "output": "self-wiki/evolution/2026-08-04.md",
-          "date": "2026-08-04",
-          "completed_at": "2026-08-04T06:45:02.695279+00:00",
-          "status": "done"
-        },
-        {
-          "output": "self-wiki/evolution/2026-07-26.md",
-          "date": "2026-07-26",
-          "completed_at": "2026-07-26T11:59:36.909386+00:00",
-          "status": "done"
-        },
-        {
-          "output": "self-wiki/evolution/2026-07-21.md",
-          "date": "2026-07-21",
-          "completed_at": "2026-07-21T04:21:15+00:00",
-          "status": "done"
         }
       ],
       "latest": {
-        "output": "self-wiki/evolution/2026-09-14.md",
-        "date": "2026-09-14",
-        "completed_at": "2026-09-14T13:19:35.909263+00:00",
+        "output": "self-wiki/evolution/2026-11-11.md",
+        "date": "2026-11-11",
+        "completed_at": "2026-11-11T07:07:53.735828+00:00",
         "status": "done"
       },
       "resume_command": "make evolution"
@@ -284,7 +284,7 @@
     "audit": {
       "status": "done",
       "output": "self-wiki/audit.md",
-      "completed_at": "2026-09-06T02:21:08.900966+00:00",
+      "completed_at": "2026-09-21T08:16:16.909858+00:00",
       "resume_command": "make audit LINT=1"
     }
   }
