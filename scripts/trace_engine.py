@@ -225,10 +225,66 @@ scope: {scope_yaml}
 
 ## Evolution
 
-- {date_str}: Created by `trace` from keyword-ranked `raw/` paragraphs.
+- {date_str}: Created by `trace` from keyword and vector retrieval over `raw/` paragraphs.
 """
     out.write_text(note, encoding="utf-8")
     return out
+
+
+def trace_llm_enabled() -> bool:
+    return os.environ.get("TRACE_LLM", "").strip().lower() in ("1", "true", "yes")
+
+
+def note_title(path: str) -> str:
+    """Human title from a raw filename: drop the date prefix and hyphens."""
+    stem = Path(path).stem
+    stem = re.sub(r"^\d{4}-\d{2}-\d{2}-", "", stem)
+    title = stem.replace("_", " ").replace("-", " ").strip()
+    return title or stem or path
+
+
+def render_trace_answer(
+    question: str,
+    candidates: list[dict[str, Any]],
+    *,
+    language: str,
+) -> str:
+    """One title per note. Each hit is [[path]] · #pN · lines, then the quote.
+
+    Neighbor paragraphs stay out; the source page shows the surrounding lines.
+    """
+    zh = language == "Chinese"
+    hits = [c for c in candidates if c.get("role") != "context"] or list(candidates)
+    rows: list[tuple[dict[str, Any], str]] = []
+    for cand in hits:
+        text = (cand.get("text") or "").strip("\n")
+        if text.strip():
+            rows.append((cand, text))
+    if not rows:
+        note = "没有命中的原文。" if zh else "No matching passages."
+        return f"# {question}\n\n{note}\n"
+
+    groups: list[str] = []
+    by_path: dict[str, list[tuple[dict[str, Any], str]]] = {}
+    for cand, text in rows:
+        path = cand.get("path") or ""
+        if path not in by_path:
+            by_path[path] = []
+            groups.append(path)
+        by_path[path].append((cand, text))
+
+    parts: list[str] = []
+    for path in groups:
+        parts.append(f"### {note_title(path)}")
+        parts.append("")
+        for cand, text in by_path[path]:
+            parts.append(
+                f"[[{path}]] · #p{cand.get('para')} · "
+                f"L{cand.get('start_line')}–L{cand.get('end_line')}"
+            )
+            parts.append(_blockquote(text))
+            parts.append("")
+    return "\n".join(parts).rstrip() + "\n"
 
 
 def run_trace(
@@ -268,7 +324,6 @@ def _run_trace_body(
     upload_text: str | None = None,
     upload_filename: str | None = None,
 ) -> dict[str, Any]:
-    llm_provider = provider_for_role("trace", provider)
     if upload_text is not None and str(upload_text).strip():
         index = ephemeral_index_from_upload(
             str(upload_text), filename=upload_filename
@@ -276,8 +331,10 @@ def _run_trace_body(
         scope = index.get("upload_path") or scope
     else:
         index = ensure_index(force=force_index)
+    use_llm = trace_llm_enabled()
+    llm_provider = provider_for_role("trace", provider) if use_llm else "retrieval"
     pending, pending_path = prepare_trace(
-        query, index=index, provider=llm_provider, scope=scope
+        query, index=index, provider=llm_provider if use_llm else provider, scope=scope
     )
 
     if debug_retrieval:
@@ -294,18 +351,37 @@ def _run_trace_body(
             }
         )
 
-    logger.info(
-        "trace LLM: provider=%s model=%s scope=%s",
-        llm_provider,
-        model_name(llm_provider, role="trace"),
-        pending.get("scope") or "(all raw/)",
-    )
-    result = run_skill_from_pending(pending_path, provider=llm_provider, write_output=True)
-    answer = enforce_full_provenance(
-        result["text"],
-        index=index,
-        candidates=pending.get("candidates") or [],
-    )
+    candidates = pending.get("candidates") or []
+    if use_llm:
+        logger.info(
+            "trace LLM: provider=%s model=%s scope=%s",
+            llm_provider,
+            model_name(llm_provider, role="trace"),
+            pending.get("scope") or "(all raw/)",
+        )
+        result = run_skill_from_pending(
+            pending_path, provider=llm_provider, write_output=True
+        )
+        answer = enforce_full_provenance(
+            result["text"],
+            index=index,
+            candidates=candidates,
+        )
+        model_label = model_name(llm_provider, role="trace")
+    else:
+        logger.info(
+            "trace retrieval: scope=%s candidates=%s vector_hits=%s",
+            pending.get("scope") or "(all raw/)",
+            len(candidates),
+            pending.get("vector_hits"),
+        )
+        answer = render_trace_answer(
+            pending.get("query") or query,
+            candidates,
+            language=pending.get("language") or "Chinese",
+        )
+        used_vector = any(c.get("via") in ("vector", "both") for c in candidates)
+        model_label = "multilingual-e5-small" if used_vector else "keyword"
     cleanup_pending_artifacts(pending_path)
 
     out: dict[str, Any] = {
@@ -314,10 +390,10 @@ def _run_trace_body(
         "scope_paths": pending.get("scope_paths") or [],
         "answer": answer,
         "provider": llm_provider,
-        "model": model_name(llm_provider, role="trace"),
+        "model": model_label,
         "language": pending["language"],
         "query_terms": pending["query_terms"],
-        "candidates": pending["candidates"],
+        "candidates": candidates,
         "sources": [
             {
                 "id": c["id"],
@@ -326,9 +402,12 @@ def _run_trace_body(
                 "lines": [c["start_line"], c["end_line"]],
                 "kind": c.get("kind"),
                 "score": c.get("score"),
+                "via": c.get("via"),
+                "role": c.get("role"),
+                "vector_score": c.get("vector_score"),
                 "source_url": c.get("source_url"),
             }
-            for c in pending["candidates"]
+            for c in candidates
         ],
     }
     if save:

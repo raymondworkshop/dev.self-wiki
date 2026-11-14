@@ -40,7 +40,7 @@ help:
 	@echo "  make ingest [FAST=1]   # memex · index · twin (no LLM)"
 	@echo "  make query Q=\"what are my values?\"   # wiki Socratic mirror"
 	@echo "  make trace Q=\"what are my core values?\"  # raw-only + cites (default gpt)"
-	@echo "  make trace Q=\"什麼是自由？\" SCOPE=a-free-man  # answer from one note only"
+	@echo "  make trace Q=\"什麼是自由？\" raw/_posts/2026-03-01-a-free-man.md  # one note"
 	@echo "  make trace-index [FORCE=1]   # rebuild log/trace-index.json"
 	@echo "  make trace-serve [PORT=8791] # foreground HTTP (dev)"
 	@echo "  make trace-start | stop | restart | logs  # launchd daemon :8791"
@@ -124,13 +124,22 @@ trace-index:
 # gpt by default (faster on long packs); privacy: TRACE_LLM_MODEL=mlx make trace …
 TRACE_LLM_MODEL ?= gpt
 
+# `make trace Q="..." raw/_posts/note.md` — the path is the note scope, not a target.
+ifeq ($(firstword $(MAKECMDGOALS)),trace)
+  TRACE_PATH := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  ifneq ($(strip $(TRACE_PATH)),)
+    $(eval $(TRACE_PATH):;@:)
+  endif
+endif
+TRACE_SCOPE := $(if $(SCOPE),$(SCOPE),$(TRACE_PATH))
+
 trace:
 ifdef Q
 	$(LLM_ENV) TRACE_LLM_MODEL=$(TRACE_LLM_MODEL) $(CLI) trace "$(Q)" $(CLI_PROVIDER_ARG) \
-	  $(if $(SCOPE),--scope "$(SCOPE)") \
+	  $(if $(TRACE_SCOPE),--scope "$(TRACE_SCOPE)") \
 	  $(if $(DEBUG),--debug-retrieval) $(if $(FORCE),--force-index)
 else
-	@read -p "trace: " q; $(LLM_ENV) TRACE_LLM_MODEL=$(TRACE_LLM_MODEL) $(CLI) trace "$$q" $(CLI_PROVIDER_ARG) $(if $(SCOPE),--scope "$(SCOPE)")
+	@read -p "trace: " q; $(LLM_ENV) TRACE_LLM_MODEL=$(TRACE_LLM_MODEL) $(CLI) trace "$$q" $(CLI_PROVIDER_ARG) $(if $(TRACE_SCOPE),--scope "$(TRACE_SCOPE)")
 endif
 
 TRACE_HOST ?= 0.0.0.0

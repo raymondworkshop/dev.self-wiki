@@ -59,7 +59,9 @@ def build_pending(
     scope: str | None = None,
 ) -> dict:
     idx = index if index is not None else ensure_index()
-    pack = build_retrieval_pack(query, index=idx, provider=provider, scope=scope)
+    pack = build_retrieval_pack(
+        query, index=idx, provider=provider, scope=scope, use_vectors=True
+    )
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     slug = _slug(pack["query"])
     digest = hashlib.md5(
@@ -78,6 +80,7 @@ def build_pending(
         "query_terms": pack["query_terms"],
         "candidates": pack["candidates"],
         "evidence_tokens": pack.get("evidence_tokens"),
+        "vector_hits": pack.get("vector_hits") or 0,
         "user_message": build_user_message(pack),
         "answer_output": str((PENDING_DIR / answer_name).relative_to(WORKSPACE_PATH)),
     }

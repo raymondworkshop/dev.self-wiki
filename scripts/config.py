@@ -41,6 +41,7 @@ TRACE_SKILL = SKILLS_DIR / "trace.md"
 LINT_SKILL = SKILLS_DIR / "lint.md"
 QUERY_PROFILES = SKILLS_DIR / "query-profiles.yaml"
 TRACE_INDEX_JSON = LOG_DIR / "trace-index.json"
+TRACE_VECTORS_NPZ = LOG_DIR / "trace-vectors.npz"
 TRACE_OUTPUTS_DIR = OUTPUTS_DIR / "trace"
 
 

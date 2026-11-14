@@ -278,11 +278,26 @@ a:hover {{ text-decoration: underline; text-underline-offset: 3px; }}
 #answer.prose h2.answer-h {{ display: none; }} /* section chrome redundant with card label */
 #answer.prose h3 {{ font-size: 1rem; color: #57534e; }}
 #answer.prose p {{ margin: 0.65rem 0; }}
+#answer.prose p.passage {{
+  white-space: pre-wrap;
+  margin: 0.15rem 0;
+  line-height: 1.55;
+}}
+#answer.prose p.note-path {{
+  margin: -0.35rem 0 0.9rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}}
+#answer.prose p.cite-line {{
+  margin: 1.15rem 0 0.2rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}}
 #answer.prose ul {{ margin: 0.35rem 0 0.9rem; padding-left: 1.15rem; }}
 #answer.prose li {{ margin: 0.45rem 0; padding-left: 0.15rem; }}
 #answer.prose li::marker {{ color: var(--soft); }}
 #answer.prose blockquote {{
-  margin: 0.55rem 0 0.85rem;
+  margin: 0 0 0.35rem;
   padding: 0.75rem 1rem;
   border-left: 2px solid #d6d3d1;
   background: var(--quote);
@@ -294,7 +309,7 @@ a:hover {{ text-decoration: underline; text-underline-offset: 3px; }}
 }}
 #answer.prose .cite, #answer.prose .wikilink {{
   font-family: var(--sans);
-  font-size: 0.82em;
+  font-size: 0.92rem;
   font-weight: 500;
   color: var(--accent);
   background: transparent;
@@ -389,7 +404,7 @@ def _home_page(*, paragraph_count: int | None, built_at: str | None) -> bytes:
   <a href="http://100.90.225.26:5050/">Echo</a>
   <span class="brand is-active">Trace</span>
 </nav>
-<p class="meta">verbatim raw Q&amp;A · {meta} · default gpt</p>
+<p class="meta">passages from your notes · {meta}</p>
 <div class="a2hs" id="a2hs" role="status">
   <p>Add to Home Screen: Share <span aria-hidden="true">□↑</span> → <strong>Add to Home Screen</strong></p>
   <button type="button" id="a2hs-dismiss" aria-label="Dismiss">×</button>
@@ -563,7 +578,7 @@ function linkifyCites(escaped) {{
     (_, path, pTag, a, b) => {{
       const href = sourceHref(path, pTag, a, b);
       const short = pTag + ' · L' + a + '–' + b;
-      return sourceLink(href, short, 'cite', '[[' + path + ']]');
+      return sourceLink(href, short, 'cite', path);
     }}
   );
   s = s.replace(/\\[\\[((?:raw|upload)\\/[^\\]]+)\\]\\]/g, (_, path) => {{
@@ -590,8 +605,11 @@ function showResult(data, {{ persist }} = {{ persist: true }}) {{
   const answer = data.answer || '(empty)';
   answerEl.innerHTML = renderAnswer(answer);
   answerCard.hidden = false;
+  const passageList = /(^|\\n)### /.test(answer);
+  const label = answerCard.querySelector('.sec-label');
+  if (label) label.hidden = passageList;
   const sources = data.sources || [];
-  if (sources.length) {{
+  if (sources.length && !passageList) {{
     sourcesEl.innerHTML = renderSources(sources);
     sourcesCard.hidden = false;
   }} else {{
@@ -642,6 +660,8 @@ function renderBodyLines(lines) {{
   let inQuote = false;
   let inList = false;
   let leadDone = false;
+  let seenHeading = false;
+  let currentPath = '';
   const closeList = () => {{ if (inList) {{ out.push('</ul>'); inList = false; }} }};
   const closeQuote = () => {{ if (inQuote) {{ out.push('</blockquote>'); inQuote = false; }} }};
 
@@ -651,7 +671,7 @@ function renderBodyLines(lines) {{
       closeList();
       const body = trimmed.replace(/^>\\s?/, '');
       if (!inQuote) {{
-        const cls = !leadDone ? ' class="lead"' : '';
+        const cls = (!leadDone && !seenHeading) ? ' class="lead"' : '';
         out.push('<blockquote' + cls + '>');
         inQuote = true;
         if (!leadDone) leadDone = true;
@@ -665,8 +685,27 @@ function renderBodyLines(lines) {{
       closeList();
       const level = hm[1].length;
       const title = hm[2].trim();
+      seenHeading = true;
       const cls = (level === 2 && /^answer$/i.test(title)) ? ' class="answer-h"' : '';
       out.push('<h' + level + cls + '>' + formatInline(escapeHtml(title)) + '</h' + level + '>');
+      continue;
+    }}
+    if (/^(?:raw|upload)\\//.test(trimmed)) {{
+      closeList();
+      currentPath = trimmed;
+      out.push('<p class="note-path">' + escapeHtml(trimmed) + '</p>');
+      continue;
+    }}
+    const shortCite = trimmed.match(/^#p(\\d+) · L(\\d+)–L(\\d+)$/);
+    if (shortCite && currentPath) {{
+      closeList();
+      const href = sourceHref(currentPath, '#p' + shortCite[1], shortCite[2], shortCite[3]);
+      out.push('<p class="cite-line">' + sourceLink(href, escapeHtml(trimmed), 'cite', currentPath) + '</p>');
+      continue;
+    }}
+    if (/^\\[\\[(?:raw|upload)\\//.test(trimmed)) {{
+      closeList();
+      out.push('<p class="cite-line">' + formatInline(escapeHtml(trimmed)) + '</p>');
       continue;
     }}
     if (/^[-*]\\s+/.test(trimmed)) {{
@@ -681,7 +720,7 @@ function renderBodyLines(lines) {{
       continue;
     }}
     closeList();
-    out.push('<p>' + formatInline(escapeHtml(trimmed)) + '</p>');
+    out.push('<p class="passage">' + formatInline(escapeHtml(trimmed)) + '</p>');
   }}
   closeQuote();
   closeList();
@@ -1007,7 +1046,12 @@ class TraceHandler(BaseHTTPRequestHandler):
             self._send_json(400, {"error": "missing q"})
             return
         scope = (payload.get("scope") or payload.get("path") or "").strip() or None
-        debug = bool(payload.get("debug_retrieval"))
+        debug = bool(payload.get("debug_retrieval") or payload.get("debug"))
+        save_raw = payload.get("save", True)
+        if isinstance(save_raw, str):
+            save = save_raw.strip().lower() not in ("0", "false", "no")
+        else:
+            save = bool(save_raw)
         model = (payload.get("model") or "").strip() or "gpt"
         upload_text = payload.get("upload") or payload.get("document") or payload.get("text")
         if upload_text is not None:
@@ -1022,7 +1066,7 @@ class TraceHandler(BaseHTTPRequestHandler):
             result = run_trace(
                 q,
                 debug_retrieval=debug,
-                save=True,
+                save=save,
                 scope=scope,
                 model=model,
                 upload_text=upload_text,
@@ -1057,7 +1101,14 @@ def main() -> int:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8791)
     args = parser.parse_args()
-    ensure_index()
+    idx = ensure_index()
+    try:
+        from trace_vectors import ensure_vectors, preload
+
+        ensure_vectors(idx.get("paragraphs") or [])
+        preload()
+    except Exception:
+        logger.exception("trace vectors unavailable; keyword only")
     httpd = ThreadingHTTPServer((args.host, args.port), TraceHandler)
     logger.info("trace listening on http://%s:%s", args.host, args.port)
     try:

@@ -9,13 +9,13 @@ Drop notes into `self-wiki/raw/`, then:
 ```bash
 make sync
 make query Q="what are my values?"          # wiki Socratic mirror
-make trace Q="what are my core values?"    # raw-only facts + cites (default gpt)
+make trace Q="what are my core values?"    # raw paragraphs + cites, no answer LLM
 make audit LINT=1
 ```
 
 `make query` suggests `make promote …` when the answer flags `[Cognitive Shift]` or `[Socratic Observation]` (`PROMOTE_SUGGEST=0` to disable).
 
-`make trace` answers from `self-wiki/raw/` only (keyword paragraph retrieval → `skills/trace.md`). Follows symlink dirs (e.g. `raw/_posts`), skips generated `raw/qa/`, and drops identical content copies (e.g. `raw/twitter` vs `_posts/twitter`). Index rebuild is incremental (only changed files; `FORCE=1` for full). Chinese queries fold simplified/traditional and use 2–3-gram terms; corpus hits keep a neighboring paragraph, and fragment-only n-gram hits are ranked down. Cites need path + `#pN` + lines + verbatim quote. Twitter hits → `[Twitter Reference]`. Default LLM: **gpt**. Scoped (`SCOPE=` / `@file`): top‑16 keyword hits + ±2 neighbors (no whole-file pad). **Trace** is a standalone product (peer to Echo `:5050`): `make trace-start` → Tailscale `http://100.90.225.26:8791/` (PWA; `POST /ask`, `GET /source?id=raw/…#pN`, `GET /health`; bind `0.0.0.0`, no auth).
+`make trace` lists matching paragraphs from `self-wiki/raw/` with path, `#pN`, line range, and the verbatim paragraph. It does not call a model to write the answer (`TRACE_LLM=1` restores that). Keyword rank and `intfloat/multilingual-e5-small` vectors are merged by reciprocal rank (`TRACE_VECTORS=0` skips vectors). Follows symlink dirs (e.g. `raw/_posts`), skips generated `raw/qa/`, and drops identical content copies. Index rebuild is incremental (`FORCE=1` for full). `make trace-index` also builds `log/trace-vectors.npz` (first run encodes the vault, a few minutes). Chinese queries fold simplified/traditional. Keyword hits keep a neighboring paragraph; vector-only hits are marked `· 向量` and are not expanded. Twitter stays down-ranked. Scoped (`SCOPE=` / `@file`): smaller pack, ±2 neighbors. **Trace** is a standalone product (peer to Echo `:5050`): `make trace-start` → Tailscale `http://100.90.225.26:8791/` (PWA; `POST /ask`, `GET /source?id=raw/…#pN`, `GET /health`; bind `0.0.0.0`, no auth).
 
 Weekly: `make reflect` · also `make site` · `make publish` · `make help`
 

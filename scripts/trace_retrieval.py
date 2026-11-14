@@ -1,7 +1,8 @@
-"""Deterministic trace retrieval: keyword rank over raw paragraphs (no LLM, no vectors).
+"""Trace retrieval: keyword rank fused with optional vector rank (no answer LLM).
 
-Chinese terms are folded across simplified and traditional. Corpus-wide hits keep
-a neighboring paragraph. Paragraphs that only match a fragment n-gram are demoted.
+Chinese terms are folded across simplified and traditional. Keyword and vector
+lists are merged by reciprocal rank, then kind weights and per-file caps apply.
+Neighbor paragraphs are context for keyword hits only.
 """
 
 from __future__ import annotations
@@ -26,9 +27,19 @@ KIND_BOOST = {
     "raw": 16,
     "twitter": -55,
 }
+# Applied after reciprocal-rank fusion. Keyword points and cosine are not comparable.
+KIND_RRF = {
+    "post": 1.0,
+    "upload": 0.98,
+    "raw": 0.95,
+    "apple-notes": 0.9,
+    "twitter": 0.45,
+}
+RRF_K = 60
 
 _PATH_DATE_RE = re.compile(r"(20\d{2})-(\d{2})-(\d{2})")
 _INLINE_SCOPE_RE = re.compile(r"(?:^|\s)@(?P<scope>\S+)\s*$")
+_TRAILING_RAW_RE = re.compile(r"(?:^|\s)(?P<scope>(?:self-wiki/)?raw/\S+)\s*$")
 
 
 def normalize_scope_token(scope: str | None) -> str | None:
@@ -43,15 +54,16 @@ def normalize_scope_token(scope: str | None) -> str | None:
 
 
 def parse_query_and_scope(query: str, scope: str | None = None) -> tuple[str, str | None]:
-    """Split trailing @path from the question; explicit scope wins."""
+    """Split a trailing @path or raw/ path from the question; explicit scope wins."""
     q = (query or "").strip()
     explicit = normalize_scope_token(scope)
     if explicit:
         return q, explicit
-    m = _INLINE_SCOPE_RE.search(q)
-    if not m:
-        return q, None
-    return q[: m.start()].strip(), normalize_scope_token(m.group("scope"))
+    for pattern in (_INLINE_SCOPE_RE, _TRAILING_RAW_RE):
+        m = pattern.search(q)
+        if m:
+            return q[: m.start()].strip(), normalize_scope_token(m.group("scope"))
+    return q, None
 
 
 def resolve_scope_paths(paragraphs: list[dict[str, Any]], scope: str) -> list[str]:
@@ -787,6 +799,165 @@ def merge_neighbor_context(
     return merged, neighbor_ids
 
 
+def filter_vector_hits(
+    hits: list[tuple[float, dict[str, Any]]],
+    min_score: float,
+) -> list[tuple[float, dict[str, Any]]]:
+    """Drop weak cosine hits. Higher cosine is a closer meaning."""
+    kept = [(float(score), para) for score, para in hits if float(score) >= min_score]
+    kept.sort(key=lambda x: (-x[0], x[1].get("path", ""), x[1].get("para", 0)))
+    return kept
+
+
+def reciprocal_rank_fusion(
+    keyword_ranked: list[tuple[float, dict[str, Any]]],
+    vector_ranked: list[tuple[float, dict[str, Any]]],
+    *,
+    k: int = RRF_K,
+) -> list[dict[str, Any]]:
+    """Merge two best-first lists. A hit near the top of either list stays near the top."""
+    info: dict[str, dict[str, Any]] = {}
+
+    def touch(para: dict[str, Any]) -> dict[str, Any]:
+        pid = para.get("id") or ""
+        row = info.get(pid)
+        if row is None:
+            row = {
+                "para": para,
+                "rrf": 0.0,
+                "keyword_score": None,
+                "vector_score": None,
+                "via": "keyword",
+                "role": "hit",
+            }
+            info[pid] = row
+        return row
+
+    for rank, (score, para) in enumerate(keyword_ranked, start=1):
+        row = touch(para)
+        row["rrf"] += 1.0 / (k + rank)
+        row["keyword_score"] = score
+    for rank, (score, para) in enumerate(vector_ranked, start=1):
+        row = touch(para)
+        row["rrf"] += 1.0 / (k + rank)
+        row["vector_score"] = score
+
+    rows = list(info.values())
+    for row in rows:
+        kind = effective_kind(row["para"])
+        row["rrf"] *= KIND_RRF.get(kind, 1.0)
+        has_kw = row["keyword_score"] is not None
+        has_vec = row["vector_score"] is not None
+        if has_kw and has_vec:
+            row["via"] = "both"
+        elif has_vec:
+            row["via"] = "vector"
+        else:
+            row["via"] = "keyword"
+    rows.sort(
+        key=lambda r: (
+            -float(r["rrf"]),
+            r["para"].get("path", ""),
+            r["para"].get("para", 0),
+        )
+    )
+    return rows
+
+
+def attach_keyword_neighbors(
+    rows: list[dict[str, Any]],
+    paragraphs: list[dict[str, Any]],
+    *,
+    radius: int,
+) -> list[dict[str, Any]]:
+    """Place ±radius siblings after a keyword hit. Vector-only hits are not expanded."""
+    if radius < 1 or not rows:
+        return rows
+    by_key: dict[tuple[str, int], dict[str, Any]] = {}
+    for para in paragraphs:
+        path = (para.get("path") or "").replace("\\", "/")
+        try:
+            n = int(para.get("para") or 0)
+        except (TypeError, ValueError):
+            continue
+        if path and n > 0:
+            by_key[(path, n)] = para
+
+    hit_ids = {row["para"].get("id") for row in rows if row.get("para")}
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def add_context(nb: dict[str, Any], parent: dict[str, Any]) -> None:
+        nid = nb.get("id") or ""
+        if not nid or nid in seen or nid in hit_ids:
+            return
+        if _looks_like_frontmatter(nb.get("text") or ""):
+            return
+        seen.add(nid)
+        out.append(
+            {
+                "para": nb,
+                "rrf": parent.get("rrf") or 0,
+                "via": "keyword",
+                "role": "context",
+                "keyword_score": None,
+                "vector_score": None,
+            }
+        )
+
+    for row in rows:
+        para = row["para"]
+        pid = para.get("id") or ""
+        path = (para.get("path") or "").replace("\\", "/")
+        try:
+            n = int(para.get("para") or 0)
+        except (TypeError, ValueError):
+            n = 0
+        preds: list[dict[str, Any]] = []
+        succs: list[dict[str, Any]] = []
+        expand = row.get("via") != "vector" and row.get("role") != "context" and n > 0
+        if expand:
+            for delta in range(1, radius + 1):
+                pre = by_key.get((path, n - delta))
+                post = by_key.get((path, n + delta))
+                if pre:
+                    preds.append(pre)
+                if post:
+                    succs.append(post)
+            preds.reverse()
+        for nb in preds:
+            add_context(nb, row)
+        if pid:
+            seen.add(pid)
+        out.append(row)
+        for nb in succs:
+            add_context(nb, row)
+    return out
+
+
+def _row_candidate(row: dict[str, Any]) -> dict[str, Any]:
+    para = row["para"]
+    cand = _candidate_dict(para, row.get("rrf") or 0, kind=effective_kind(para))
+    cand["via"] = row.get("via") or "keyword"
+    cand["role"] = row.get("role") or "hit"
+    cand["keyword_score"] = row.get("keyword_score")
+    cand["vector_score"] = row.get("vector_score")
+    return cand
+
+
+def _vector_min_score() -> float:
+    raw = os.environ.get("TRACE_VECTOR_MIN", "").strip()
+    try:
+        return float(raw) if raw else 0.78
+    except ValueError:
+        return 0.78
+
+
+def _vector_top() -> int:
+    raw = os.environ.get("TRACE_VECTOR_TOP", "").strip()
+    return int(raw) if raw.isdigit() else 32
+
+
 def build_retrieval_pack(
     query: str,
     *,
@@ -794,9 +965,12 @@ def build_retrieval_pack(
     provider: str | None = None,
     top_k: int | None = None,
     scope: str | None = None,
+    use_vectors: bool = False,
+    vector_hits: list[tuple[float, dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     idx = index if index is not None else ensure_index()
-    paragraphs = idx.get("paragraphs") or []
+    catalog = list(idx.get("paragraphs") or [])
+    paragraphs = catalog
     query, scope_token = parse_query_and_scope(query, scope)
     scope_paths = resolve_scope_paths(paragraphs, scope_token) if scope_token else []
     scoped = bool(scope_token)
@@ -820,21 +994,26 @@ def build_retrieval_pack(
             scored.append((1, para))
     scored.sort(key=lambda x: (-x[0], x[1].get("path", ""), x[1].get("para", 0)))
 
-    neighbor_ids: set[str] = set()
     if terms and not scoped:
         scored = demote_fragment_only(scored, query, primary)
-        radius_raw = os.environ.get("TRACE_NEIGHBOR_RADIUS", "").strip()
-        radius = int(radius_raw) if radius_raw.isdigit() else 1
-        seed_raw = os.environ.get("TRACE_NEIGHBOR_SEEDS", "").strip()
-        seed_limit = int(seed_raw) if seed_raw.isdigit() else 16
-        scored, neighbor_ids = merge_neighbor_context(
-            scored, paragraphs, radius=radius, seed_limit=seed_limit
-        )
-    elif scoped and terms:
-        # Single-doc: admit ±2 neighbors of hits instead of padding the whole file.
-        radius_raw = os.environ.get("TRACE_SCOPE_NEIGHBOR_RADIUS", "").strip()
-        radius = int(radius_raw) if radius_raw.isdigit() else 2
-        scored = apply_neighbor_boost(scored, paragraphs, radius=radius)
+
+    if vector_hits is None and use_vectors and query:
+        try:
+            from trace_vectors import search_paragraphs
+
+            vector_hits = search_paragraphs(query, paragraphs, catalog=catalog)
+        except Exception:
+            logger.exception("trace vectors unavailable; keyword only")
+            vector_hits = []
+    vector_ranked = filter_vector_hits(vector_hits or [], _vector_min_score())[
+        : _vector_top()
+    ]
+    keyword_ranked = [
+        (score, para)
+        for score, para in scored
+        if not _looks_like_frontmatter(para.get("text") or "")
+    ]
+    fused = reciprocal_rank_fusion(keyword_ranked, vector_ranked)
 
     env_k = os.environ.get("TRACE_TOP_K", "").strip()
     scope_k = os.environ.get("TRACE_SCOPE_TOP_K", "").strip()
@@ -864,20 +1043,21 @@ def build_retrieval_pack(
     if raw_global.isdigit() and int(raw_global) > 0:
         global_cap = int(raw_global)
 
+    llm_pack = os.environ.get("TRACE_LLM", "").strip().lower() in ("1", "true", "yes")
     _, _, max_prompt = context_limits(provider)
-    budget = max(800, int(max_prompt * 0.55))
+    budget = max(800, int(max_prompt * 0.55)) if llm_pack else 10**9
 
-    selected: list[dict[str, Any]] = []
+    chosen: list[dict[str, Any]] = []
     used = 0
-    evidence_parts: list[str] = []
     per_file: dict[str, int] = {}
     thin_notes = 0
     twitter_n = 0
     primary_l = [t.lower() for t in primary if t]
     selected_ids: set[str] = set()
 
-    def try_add(score: int, para: dict[str, Any], *, honor_caps: bool) -> bool:
+    def try_add(row: dict[str, Any], *, honor_caps: bool) -> bool:
         nonlocal used, thin_notes, twitter_n
+        para = row["para"]
         path = para.get("path") or ""
         text = para.get("text") or ""
         text_l = text.lower()
@@ -901,11 +1081,9 @@ def build_retrieval_pack(
                 file_cap = cap_twitter
             else:
                 file_cap = min(cap_post, 6)
-            # Neighbors are context for a hit; they often omit the keyword.
-            if (
-                primary_l
-                and pid not in neighbor_ids
-                and not any(t in text_l for t in primary_l)
+            # Paraphrase hits often lack the keyword; keep a few per file.
+            if primary_l and row.get("via") == "vector" and not any(
+                t in text_l for t in primary_l
             ):
                 file_cap = min(file_cap, 2)
             file_cap = min(file_cap, limit)
@@ -919,12 +1097,11 @@ def build_retrieval_pack(
                 return False
         block = format_evidence_block({**para, "kind": kind})
         cost = estimate_tokens(block)
-        if selected and used + cost > budget:
+        if chosen and used + cost > budget:
             return False
-        if len(selected) >= limit:
+        if len(chosen) >= limit:
             return False
-        selected.append(_candidate_dict(para, score, kind=kind))
-        evidence_parts.append(block)
+        chosen.append(row)
         used += cost
         selected_ids.add(pid)
         per_file[path] = per_file.get(path, 0) + 1
@@ -934,25 +1111,31 @@ def build_retrieval_pack(
             thin_notes += 1
         return True
 
-    pool_n = max(limit * 20, 200)
-    pool = list(scored) if scoped else list(scored[:pool_n])
-    if neighbor_ids and not scoped:
-        have = {p.get("id") for _, p in pool}
-        for item in scored[pool_n:]:
-            pid = item[1].get("id")
-            if pid in neighbor_ids and pid not in have:
-                pool.append(item)
-                have.add(pid)
-        pool.sort(key=lambda x: (-x[0], x[1].get("path", ""), x[1].get("para", 0)))
-    for score, para in pool:
-        try_add(score, para, honor_caps=not scoped)
+    for row in fused:
+        try_add(row, honor_caps=not scoped)
+
+    if terms:
+        if scoped:
+            radius_raw = os.environ.get("TRACE_SCOPE_NEIGHBOR_RADIUS", "").strip()
+            radius = int(radius_raw) if radius_raw.isdigit() else 2
+        else:
+            radius_raw = os.environ.get("TRACE_NEIGHBOR_RADIUS", "").strip()
+            radius = int(radius_raw) if radius_raw.isdigit() else 1
+        chosen = attach_keyword_neighbors(chosen, paragraphs, radius=radius)
+
+    selected = [_row_candidate(row) for row in chosen]
+    evidence_parts = [
+        format_evidence_block({**row["para"], "kind": cand["kind"]})
+        for row, cand in zip(chosen, selected)
+    ]
+    used = sum(estimate_tokens(part) for part in evidence_parts)
 
     if scoped and scope_token and not scope_paths:
         evidence_block = (
             f"(empty — scope {scope_token!r} matched no indexed raw/ paths)"
         )
     elif not selected:
-        evidence_block = "(empty — no keyword matches in raw/)"
+        evidence_block = "(empty — no matching paragraphs in raw/)"
     else:
         evidence_block = "\n".join(evidence_parts)
 
@@ -965,7 +1148,8 @@ def build_retrieval_pack(
         "candidates": selected,
         "evidence_block": evidence_block,
         "evidence_tokens": used,
-        "index_paragraph_count": len(paragraphs) if scoped else len(idx.get("paragraphs") or []),
+        "vector_hits": len(vector_ranked),
+        "index_paragraph_count": len(paragraphs) if scoped else len(catalog),
         "index_built_at": idx.get("built_at"),
     }
 
@@ -1002,7 +1186,11 @@ def main() -> int:
     parser.add_argument("--scope", default=None, help="Limit to raw path / file stem / folder")
     args = parser.parse_args()
     pack = build_retrieval_pack(
-        args.query, provider=args.provider, top_k=args.top_k, scope=args.scope
+        args.query,
+        provider=args.provider,
+        top_k=args.top_k,
+        scope=args.scope,
+        use_vectors=True,
     )
     print_retrieval_debug(pack)
     return 0

@@ -15,9 +15,11 @@ from trace_retrieval import (
     demote_fragment_only,
     effective_kind,
     expand_script_forms,
+    filter_vector_hits,
     parse_query_and_scope,
     query_literal_terms,
     query_primary_terms,
+    reciprocal_rank_fusion,
     recency_boost,
     resolve_scope_paths,
     score_paragraph,
@@ -192,6 +194,11 @@ class QueryLiteralTermsTests(unittest.TestCase):
         q2, scope2 = parse_query_and_scope("什麼是自由？", scope="raw/_posts/x.md")
         self.assertEqual(scope2, "raw/_posts/x.md")
         self.assertIsNone(parse_query_and_scope("無範圍")[1])
+        q3, scope3 = parse_query_and_scope(
+            "what are my core values? raw/_posts/2026-03-01-a-free-man.md"
+        )
+        self.assertEqual(q3, "what are my core values?")
+        self.assertEqual(scope3, "raw/_posts/2026-03-01-a-free-man.md")
 
     def test_neighbor_boost_admits_adjacent(self) -> None:
         path = "raw/_posts/2026-03-01-a-free-man.md"
@@ -344,6 +351,132 @@ class QueryLiteralTermsTests(unittest.TestCase):
         noise_at = [ids.index(i) for i in ids if "/noise-" in i]
         if noise_at:
             self.assertLess(ids.index(hit), min(noise_at))
+
+    def test_rrf_vector_outranks_weak_keyword(self) -> None:
+        post = {
+            "id": "raw/_posts/a.md#p1",
+            "path": "raw/_posts/a.md",
+            "file": "a.md",
+            "para": 1,
+            "kind": "post",
+            "text": "keyword",
+        }
+        weak = {
+            "id": "raw/_posts/b.md#p1",
+            "path": "raw/_posts/b.md",
+            "file": "b.md",
+            "para": 1,
+            "kind": "post",
+            "text": "weak",
+        }
+        vec = {
+            "id": "raw/_posts/c.md#p1",
+            "path": "raw/_posts/c.md",
+            "file": "c.md",
+            "para": 1,
+            "kind": "post",
+            "text": "luck and risk",
+        }
+        rows = reciprocal_rank_fusion([(100, post), (1, weak)], [(0.9, vec)])
+        ids = [r["para"]["id"] for r in rows]
+        self.assertLess(ids.index(vec["id"]), ids.index(weak["id"]))
+        self.assertEqual(rows[ids.index(vec["id"])]["via"], "vector")
+
+    def test_rrf_twitter_sinks_below_post(self) -> None:
+        tweet = {
+            "id": "raw/twitter/t.md#p1",
+            "path": "raw/twitter/t.md",
+            "file": "t.md",
+            "para": 1,
+            "kind": "twitter",
+            "text": "自由",
+        }
+        post = {
+            "id": "raw/_posts/p.md#p1",
+            "path": "raw/_posts/p.md",
+            "file": "p.md",
+            "para": 1,
+            "kind": "post",
+            "text": "自由",
+        }
+        rows = reciprocal_rank_fusion([(100, tweet), (10, post)], [])
+        self.assertEqual(rows[0]["para"]["id"], post["id"])
+
+    def test_vector_hit_is_listed_without_its_neighbors(self) -> None:
+        values = "raw/_posts/values.md"
+        risk = "raw/_posts/risk.md"
+        paragraphs = []
+        for i, text in enumerate(
+            [
+                "铺垫一句，还没进入主题。",
+                "我在意的是自己的价值观，它决定怎么花钱和怎么拒绝别人。",
+                "所以要落到每天的选择上。",
+            ],
+            start=1,
+        ):
+            paragraphs.append(
+                {
+                    "id": f"{values}#p{i}",
+                    "path": values,
+                    "file": "values.md",
+                    "para": i,
+                    "start_line": i,
+                    "end_line": i,
+                    "kind": "post",
+                    "text": text,
+                }
+            )
+        vec = {
+            "id": f"{risk}#p2",
+            "path": risk,
+            "file": "risk.md",
+            "para": 2,
+            "start_line": 2,
+            "end_line": 2,
+            "kind": "post",
+            "text": "Luck and risk are two sides of the same coin, and you do not get to keep only one.",
+        }
+        paragraphs.append(
+            {
+                "id": f"{risk}#p1",
+                "path": risk,
+                "file": "risk.md",
+                "para": 1,
+                "start_line": 1,
+                "end_line": 1,
+                "kind": "post",
+                "text": "开头与问题无关。",
+            }
+        )
+        paragraphs.append(vec)
+        paragraphs.append(
+            {
+                "id": f"{risk}#p3",
+                "path": risk,
+                "file": "risk.md",
+                "para": 3,
+                "start_line": 3,
+                "end_line": 3,
+                "kind": "post",
+                "text": "结尾与问题无关。",
+            }
+        )
+        kept = filter_vector_hits([(0.5, vec), (0.91, vec)], 0.78)
+        self.assertEqual(len(kept), 1)
+        pack = build_retrieval_pack(
+            "我的核心价值观是什么",
+            index={"paragraphs": paragraphs, "built_at": "test"},
+            provider="local-gateway",
+            top_k=6,
+            vector_hits=[(0.91, vec)],
+        )
+        ids = [c["id"] for c in pack["candidates"]]
+        self.assertIn(f"{risk}#p2", ids)
+        self.assertNotIn(f"{risk}#p1", ids)
+        self.assertNotIn(f"{risk}#p3", ids)
+        via = {c["id"]: c.get("via") for c in pack["candidates"]}
+        self.assertEqual(via[f"{risk}#p2"], "vector")
+        self.assertTrue(f"{values}#p1" in ids or f"{values}#p3" in ids)
 
 
 class UploadEphemeralTests(unittest.TestCase):

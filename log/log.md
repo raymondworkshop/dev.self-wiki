@@ -2,6 +2,19 @@
 
 Operational record of ingest, query, trace, and lint. Newest entries first.
 
+## [2026-11-14] trace | created output | 什么是自由？ scope=upload/2026-04-07-notes-on-stoicism.md | candidates=18 | self-wiki/outputs/trace/什么是自由-2026-11-14.md
+## [2026-11-14] trace | created output | 什麼是自由？ scope=upload/2026-04-07-notes-on-stoicism.md | candidates=18 | self-wiki/outputs/trace/什麼是自由-2026-11-14.md
+## [2026-11-14] trace | created output | 什麼是自由？ scope=raw/_posts/2026-03-01-a-free-man.md | candidates=37 | self-wiki/outputs/trace/什麼是自由-2026-11-14.md
+## [2026-11-14] trace | ran (no-save) | 什麼是自由？ scope=raw/_posts/2026-03-01-a-free-man.md | candidates=37
+## [2026-11-14] trace | created output | 什麼是自由？ scope=raw/_posts/2026-03-01-a-free-man.md | candidates=37 | self-wiki/outputs/trace/什麼是自由-2026-11-14.md
+## [2026-11-14] trace | ran (no-save) | 什麼是自由？ scope=raw/_posts/2026-03-01-a-free-man.md | candidates=37
+## [2026-11-14] trace | created output | 什麼是自由？ scope=raw/_posts/2026-03-01-a-free-man.md | candidates=37 | self-wiki/outputs/trace/什麼是自由-2026-11-14.md
+## [2026-11-14] trace | ran (no-save) | what are my core values? scope=raw/_posts/2026-03-01-a-free-man.md | candidates=16
+## [2026-11-14] trace | created output | what are my core values? | candidates=79 | self-wiki/outputs/trace/what-are-my-core-values-2026-11-14.md
+## [2026-11-14] trace | ran (no-save) | what are my core values? | candidates=79
+## [2026-11-14] trace | created output | what are my core values? | candidates=79 | self-wiki/outputs/trace/what-are-my-core-values-2026-11-14.md
+## [2026-11-14] trace | ran (no-save) | 我怎么看待不确定性 | candidates=84
+## [2026-11-14] trace-index | updated log/trace-index.json | files=1090 paragraphs=96248
 ## [2026-11-14] trace | created output | what are my core values? | candidates=32 | self-wiki/outputs/trace/what-are-my-core-values-2026-11-14.md
 ## [2026-11-11] lint | updated audit.md | global cognitive lint merged
 ## [2026-11-11] ingest | updated indexes/twin/backlinks | ingest complete

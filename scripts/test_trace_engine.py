@@ -12,6 +12,7 @@ from trace_engine import (
     build_full_provenance_md,
     enforce_full_provenance,
     extract_cited_para_ids,
+    render_trace_answer,
     strip_provenance_section,
 )
 
@@ -77,6 +78,62 @@ class ProvenanceEnforceTests(unittest.TestCase):
         self.assertNotIn("truncated only", out)
         self.assertIn("uncited pack paragraph about freedom", out)
         self.assertIn("Evidence Pack hit (not cited in Answer)", out)
+
+    def test_render_puts_cites_in_sources(self) -> None:
+        md = render_trace_answer(
+            "什么是自由",
+            [
+                {
+                    "path": "raw/_posts/a.md",
+                    "para": 4,
+                    "start_line": 40,
+                    "end_line": 48,
+                    "text": "真正的自由是有信心做自己。",
+                    "via": "both",
+                    "role": "hit",
+                },
+                {
+                    "path": "raw/_posts/b.md",
+                    "para": 2,
+                    "start_line": 10,
+                    "end_line": 12,
+                    "text": "Luck and risk are the same coin.",
+                    "via": "vector",
+                    "role": "hit",
+                },
+            ],
+            language="Chinese",
+        )
+        self.assertIn("### a", md)
+        cite_a = "[[raw/_posts/a.md]] · #p4 · L40–L48"
+        self.assertLess(md.index(cite_a), md.index("> 真正的自由是有信心做自己。"))
+        self.assertIn("> 真正的自由是有信心做自己。", md)
+        self.assertIn("### b", md)
+        cite_b = "[[raw/_posts/b.md]] · #p2 · L10–L12"
+        self.assertLess(md.index(cite_b), md.index("> Luck and risk are the same coin."))
+        self.assertNotIn("· 向量", md)
+        self.assertNotIn("- [[", md)
+
+    def test_passage_stays_verbatim(self) -> None:
+        text = "#### 人生的自由\n* **做你能做的**\n    - 剩下的不妨順其自然。"
+        md = render_trace_answer(
+            "自由",
+            [
+                {
+                    "path": "raw/_posts/note.md",
+                    "para": 8,
+                    "start_line": 20,
+                    "end_line": 24,
+                    "text": text,
+                    "role": "hit",
+                }
+            ],
+            language="Chinese",
+        )
+        cite = "[[raw/_posts/note.md]] · #p8 · L20–L24"
+        self.assertLess(md.index(cite), md.index("> #### 人生的自由"))
+        self.assertIn("> * **做你能做的**", md)
+        self.assertIn(">     - 剩下的不妨順其自然。", md)
 
     def test_build_provenance_missing(self) -> None:
         md = build_full_provenance_md(
