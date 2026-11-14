@@ -1,4 +1,4 @@
-"""One HTTP service: site at /, Trace at /trace (ask, source, health)."""
+"""One HTTP service: site at /, Trace at /trace/index.html (ask, source)."""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 _CTX_LINES = 12
 TRACE_PREFIX = "/trace"
+TRACE_PAGE = "/trace/index.html"
 STATIC_DIR = Path(__file__).resolve().parent / "trace_static"
 SITE_DIR = WORKSPACE_PATH / "dist"
 _STATIC_FILES = {
@@ -52,16 +53,31 @@ _SITE_MIME = {
 
 
 def _trace_path(path: str) -> str | None:
-    """Map /trace and /trace/... onto the Trace app's own paths."""
-    if path == TRACE_PREFIX:
+    """Map /trace/... onto the Trace app's own paths. The page is /trace/index.html."""
+    if path == TRACE_PAGE:
         return "/"
     prefix = TRACE_PREFIX + "/"
     if path.startswith(prefix):
-        return path[len(TRACE_PREFIX) :]
+        rest = path[len(TRACE_PREFIX) :]
+        if rest == "/index.html":
+            return "/"
+        return rest
     return None
 
 
+def _site_header() -> str:
+    from site_theme import render_nav
+
+    return (
+        '<header class="site-header">'
+        '<a class="site-brand" href="/index.html">Socratic Mirror</a>'
+        f'<nav class="site-nav" aria-label="Site">{render_nav("trace")}</nav>'
+        "</header>"
+    )
+
+
 def _html_page(title: str, body: str, *, extra_head: str = "") -> bytes:
+    header = _site_header()
     doc = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -71,7 +87,7 @@ def _html_page(title: str, body: str, *, extra_head: str = "") -> bytes:
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Trace"/>
-<meta name="description" content="Ask your raw notes — verbatim cites only. Peer product to Echo."/>
+<meta name="description" content="Ask your raw notes — verbatim cites only."/>
 <link rel="manifest" href="/trace/manifest.webmanifest"/>
 <link rel="icon" href="/trace/favicon.svg" type="image/svg+xml"/>
 <link rel="apple-touch-icon" href="/trace/apple-touch-icon.png"/>
@@ -95,10 +111,10 @@ def _html_page(title: str, body: str, *, extra_head: str = "") -> bytes:
 * {{ box-sizing: border-box; }}
 body {{
   font-family: var(--sans);
-  max-width: 44rem;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 2.5rem 1.35rem 4rem;
-  padding-top: calc(2.5rem + env(safe-area-inset-top, 0px));
+  padding: 1.25rem 1.1rem 4rem;
+  padding-top: calc(1.25rem + env(safe-area-inset-top, 0px));
   padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
   line-height: 1.7;
   font-size: 17px;
@@ -116,35 +132,48 @@ h1.brand {{
   letter-spacing: -0.03em;
   margin: 0;
 }}
-.products {{
+.site-header {{
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.15rem;
-  margin: 0 0 0.5rem;
-}}
-.products a, .products .brand {{
-  padding: 0.35rem 0.65rem;
-  min-height: 36px;
-  display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  border-radius: 8px;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin: 0 0 1.5rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--line);
+}}
+.site-brand {{
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   text-decoration: none;
-  font-weight: 650;
-  letter-spacing: 0.03em;
 }}
-.products a {{
+.site-nav {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: flex-end;
+}}
+.site-nav a {{
   color: var(--muted);
-  font-size: 1.05rem;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.88rem;
+  font-weight: 500;
 }}
-.products a:hover {{
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 8%, white);
-}}
-.products .brand.is-active {{
+.site-nav a:hover {{ color: var(--accent); }}
+.site-nav a.active {{
   color: var(--ink);
   background: color-mix(in srgb, var(--accent) 10%, white);
-  font-size: 1.15rem;
+  font-weight: 650;
+}}
+.sheet {{
+  max-width: 44rem;
+  margin: 0 auto;
 }}
 .meta {{
   color: var(--muted);
@@ -154,9 +183,6 @@ h1.brand {{
   font-weight: 400;
 }}
 .meta a {{ color: var(--muted); }}
-.peer {{
-  display: none;
-}}
 .a2hs {{
   display: none;
   align-items: flex-start;
@@ -204,41 +230,6 @@ textarea {{
 }}
 textarea:focus {{ outline: 2px solid color-mix(in srgb, var(--accent) 35%, white); outline-offset: 1px; border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }}
 .hint {{ margin: 0.45rem 0 0; font-size: 0.88rem; color: var(--soft); font-family: var(--sans); }}
-.model-row {{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem 1.1rem;
-  align-items: center;
-  margin: 0.85rem 0 0.25rem;
-  font-size: 0.95rem;
-  color: var(--muted);
-}}
-.model-row legend {{
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--muted);
-  padding: 0;
-  margin: 0 0.35rem 0 0;
-}}
-.model-row label.pick {{
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 0;
-  color: var(--ink);
-  font-weight: 500;
-  cursor: pointer;
-  letter-spacing: 0;
-}}
-.model-row input {{
-  accent-color: var(--accent);
-}}
-.model-hint {{
-  width: 100%;
-  margin: 0;
-  font-size: 0.82rem;
-  color: var(--soft);
-}}
 .row {{
   display: flex;
   gap: 0.85rem;
@@ -418,7 +409,10 @@ details.sources-wrap:not([open]) > summary::after {{ content: " · expand"; }}
 {extra_head}
 </head>
 <body>
+{header}
+<div class="sheet">
 {body}
+</div>
 </body>
 </html>
 """
@@ -430,11 +424,7 @@ def _home_page(*, paragraph_count: int | None, built_at: str | None) -> bytes:
     if built_at:
         meta += f" · index {html.escape(str(built_at))}"
     body = f"""
-<nav class="products" aria-label="Products">
-  <a href="/">Site</a>
-  <a href="http://100.90.225.26:5050/">Echo</a>
-  <span class="brand is-active">Trace</span>
-</nav>
+<h1 class="brand">Trace</h1>
 <p class="meta">passages from your notes · {meta}</p>
 <div class="a2hs" id="a2hs" role="status">
   <p>Add to Home Screen: Share <span aria-hidden="true">□↑</span> → <strong>Add to Home Screen</strong></p>
@@ -450,12 +440,6 @@ def _home_page(*, paragraph_count: int | None, built_at: str | None) -> bytes:
   <button id="uploadClear" type="button" style="display:none">Clear file</button>
 </div>
 <p id="uploadMeta" class="hint" style="margin-top:0.35rem"></p>
-<fieldset class="model-row" id="modelRow">
-  <legend>Model</legend>
-  <label class="pick"><input type="radio" name="model" value="gpt" checked/> gpt <span style="color:var(--soft);font-weight:400">(cloud · faster on long packs)</span></label>
-  <label class="pick"><input type="radio" name="model" value="mlx"/> mlx <span style="color:var(--soft);font-weight:400">(local · private)</span></label>
-  <p class="model-hint">Choice is remembered on this device.</p>
-</fieldset>
 <p class="hint">Leave scope empty for all raw/ · or @a-free-man · or upload .md/.txt (temp, not saved to vault) · Enter to ask</p>
 <div class="row">
   <button id="ask" type="button">Ask</button>
@@ -559,33 +543,6 @@ function escapeHtml(s) {{
 }}
 
 const SESSION_KEY = 'trace.lastResult';
-const MODEL_KEY = 'trace.model';
-
-function selectedModel() {{
-  const el = document.querySelector('input[name="model"]:checked');
-  return (el && el.value) || 'gpt';
-}}
-
-function setModel(value) {{
-  const v = (value === 'mlx') ? 'mlx' : 'gpt';
-  const el = document.querySelector('input[name="model"][value="' + v + '"]');
-  if (el) el.checked = true;
-}}
-
-(function restoreModel() {{
-  try {{
-    const saved = localStorage.getItem(MODEL_KEY);
-    if (saved) setModel(saved);
-    else setModel('gpt');
-  }} catch (_) {{
-    setModel('gpt');
-  }}
-  document.querySelectorAll('input[name="model"]').forEach((el) => {{
-    el.addEventListener('change', () => {{
-      try {{ localStorage.setItem(MODEL_KEY, selectedModel()); }} catch (_) {{}}
-    }});
-  }});
-}})();
 
 function sourceHref(path, pTag, start, end) {{
   const id = pTag ? (path + pTag) : path;
@@ -650,7 +607,6 @@ function showResult(data, {{ persist }} = {{ persist: true }}) {{
   let ok = data.status || 'Done';
   if (!data.status) {{
     if (data.scope) ok += ' · scope ' + data.scope;
-    if (data.model) ok += ' · ' + data.model;
     if (data.output_path) ok += ' · saved';
   }}
   statusEl.className = '';
@@ -662,7 +618,6 @@ function showResult(data, {{ persist }} = {{ persist: true }}) {{
         scope: data.scope || (scopeEl && scopeEl.value) || '',
         answer,
         sources,
-        model: data.model || '',
         output_path: data.output_path || '',
         status: ok,
       }}));
@@ -780,7 +735,6 @@ function renderAnswer(md) {{
 async function ask() {{
   const q = (qEl.value || '').trim();
   const scope = (scopeEl && scopeEl.value || '').trim();
-  const model = selectedModel();
   if (!q) {{
     statusEl.textContent = 'Enter a question.';
     statusEl.className = 'err';
@@ -791,12 +745,11 @@ async function ask() {{
   let thinking = uploadName
     ? ('Thinking in upload/' + uploadName + '…')
     : (scope ? ('Thinking in ' + scope + '…') : 'Thinking…');
-  thinking += ' · ' + model;
   statusEl.textContent = thinking;
   answerCard.hidden = true;
   sourcesCard.hidden = true;
   try {{
-    const body = {{ q, scope: uploadText ? null : (scope || null), model }};
+    const body = {{ q, scope: uploadText ? null : (scope || null) }};
     if (uploadText) {{
       body.upload = uploadText;
       body.upload_filename = uploadName || 'upload.md';
@@ -913,7 +866,7 @@ def _source_page(
 <h1>trace source</h1>
 <p class="meta">{" · ".join(meta_bits)} · file missing on disk</p>
 {excerpt}
-<p class="nav"><a href="/trace">trace</a> · <a href="/trace/health">health</a></p>
+<p class="nav"><a href="/trace/index.html">trace</a></p>
 """
         return _html_page(title, body)
 
@@ -936,7 +889,7 @@ def _source_page(
 <h1>trace source</h1>
 <p class="meta">{" · ".join(meta_bits)} · on disk</p>
 {code}
-<p class="nav"><a href="/trace">trace</a> · <a href="/trace/health">health</a>
+<p class="nav"><a href="/trace/index.html">trace</a>
 {" · <a href='" + jump + "'>jump to highlight</a>" if focus_start else ""}</p>
 <script>
 const el = document.getElementById({json.dumps(f"L{focus_start}" if focus_start else "")});
@@ -959,6 +912,12 @@ class TraceHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _redirect(self, location: str) -> None:
+        self.send_response(302)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def _send_json(self, code: int, payload: dict) -> None:
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         self._send(code, body, "application/json; charset=utf-8")
@@ -968,7 +927,7 @@ class TraceHandler(BaseHTTPRequestHandler):
             body = _html_page(
                 "Site",
                 "<h1>Site</h1><p class='meta'>No dist/ yet. Run make publish BUILD_ONLY=1.</p>"
-                "<p class='nav'><a href='/trace'>Trace</a></p>",
+                "<p class='nav'><a href='/trace/index.html'>Trace</a></p>",
             )
             self._send(404, body, "text/html; charset=utf-8")
             return
@@ -994,19 +953,8 @@ class TraceHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
-        if parsed.path == "/health":
-            idx = ensure_index()
-            self._send_json(
-                200,
-                {
-                    "ok": True,
-                    "service": "self-wiki",
-                    "site": "/",
-                    "trace": TRACE_PREFIX,
-                    "paragraph_count": idx.get("paragraph_count"),
-                    "built_at": idx.get("built_at"),
-                },
-            )
+        if parsed.path in (TRACE_PREFIX, TRACE_PREFIX + "/"):
+            self._redirect(TRACE_PAGE)
             return
         trace_path = _trace_path(parsed.path)
         if trace_path is None:
@@ -1022,19 +970,6 @@ class TraceHandler(BaseHTTPRequestHandler):
             data = path.read_bytes()
             self._send(200, data, ctype)
             return
-        if trace_path == "/health":
-            idx = ensure_index()
-            self._send_json(
-                200,
-                {
-                    "ok": True,
-                    "service": "trace",
-                    "paragraph_count": idx.get("paragraph_count"),
-                    "built_at": idx.get("built_at"),
-                },
-            )
-            return
-
         if trace_path == "/":
             accept = self.headers.get("Accept", "")
             idx = ensure_index()
@@ -1083,7 +1018,7 @@ class TraceHandler(BaseHTTPRequestHandler):
                     body = _html_page(
                         "Not found",
                         f"<h1>Source not found</h1><p class='meta'>{html.escape(para_id)}</p>"
-                        f"<p class='nav'><a href='/trace'>trace</a></p>",
+                        f"<p class='nav'><a href='/trace/index.html'>trace</a></p>",
                     )
                     self._send(404, body, "text/html; charset=utf-8")
                 else:
@@ -1189,7 +1124,7 @@ def main() -> int:
         logger.exception("trace vectors unavailable; keyword only")
     httpd = ThreadingHTTPServer((args.host, args.port), TraceHandler)
     logger.info(
-        "listening on http://%s:%s/  trace http://%s:%s/trace",
+        "listening on http://%s:%s/  trace http://%s:%s/trace/index.html",
         args.host,
         args.port,
         args.host,

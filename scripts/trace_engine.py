@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import json
 import logging
 import os
@@ -11,7 +12,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterator
 
-from config import TRACE_OUTPUTS_DIR, WORKSPACE_PATH, workspace_relpath
+from config import (
+    LOCAL_TRACE_OUTPUTS_DIR,
+    TRACE_OUTPUTS_DIR,
+    WORKSPACE_PATH,
+    workspace_relpath,
+)
 from llm_provider import model_name, provider_for_role
 from log_utils import append_log
 from pending_cleanup import cleanup_pending_artifacts
@@ -177,6 +183,44 @@ def enforce_full_provenance(
     return f"{body}\n\n## Provenance\n\n{provenance}\n"
 
 
+def _write_note(path: Path, note: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(note, encoding="utf-8")
+
+
+def _mirror_vault(vault: Path, note: str) -> bool:
+    """Copy into the iCloud vault. Launchd cannot rewrite an existing file there."""
+    try:
+        _write_note(vault, note)
+        return True
+    except OSError as exc:
+        if exc.errno not in (errno.EPERM, errno.EACCES):
+            raise
+    try:
+        vault.unlink()
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        if exc.errno not in (errno.EPERM, errno.EACCES):
+            raise
+        logger.warning(
+            "vault trace output blocked (%s); kept repo-local copy",
+            exc.strerror,
+        )
+        return False
+    try:
+        _write_note(vault, note)
+        return True
+    except OSError as exc:
+        if exc.errno not in (errno.EPERM, errno.EACCES):
+            raise
+        logger.warning(
+            "vault trace output blocked (%s); kept repo-local copy",
+            exc.strerror,
+        )
+        return False
+
+
 def save_output(
     question: str,
     answer: str,
@@ -184,12 +228,13 @@ def save_output(
     *,
     scope: str | None = None,
 ) -> Path:
-    TRACE_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     now = datetime.now()
     date_str = now.strftime("%Y-%m-%d")
     last_updated = now.isoformat(timespec="seconds")
     safe_q = sanitize_filename(question)
-    out = TRACE_OUTPUTS_DIR / f"{safe_q}-{date_str}.md"
+    name = f"{safe_q}-{date_str}.md"
+    local = LOCAL_TRACE_OUTPUTS_DIR / name
+    vault = TRACE_OUTPUTS_DIR / name
 
     sources_md = "\n".join(
         f"- [[{c['path']}]] · #p{c['para']} · L{c['start_line']}–L{c['end_line']} "
@@ -227,8 +272,10 @@ scope: {scope_yaml}
 
 - {date_str}: Created by `trace` from keyword and vector retrieval over `raw/` paragraphs.
 """
-    out.write_text(note, encoding="utf-8")
-    return out
+    _write_note(local, note)
+    if _mirror_vault(vault, note):
+        return vault
+    return local
 
 
 def trace_llm_enabled() -> bool:

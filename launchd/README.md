@@ -28,9 +28,9 @@ tail -f launchd/launchd-weekly.err.log
 
 ## Trace HTTP (`com.zhaowenlong.self-wiki-trace`)
 
-Always-on `trace_server.py` on `0.0.0.0:8791`. The published site is `/` (`dist/`). Trace is `/trace`.
+Always-on `trace_server.py` on `0.0.0.0:8791`. The published site is `/` (`dist/`). Trace is `/trace/index.html`, with Memex and Raw. `/trace` redirects there.
 
-Tailscale: `http://100.90.225.26:8791/` site, `http://100.90.225.26:8791/trace` (no auth — Tailscale-only).
+Tailscale: `http://100.90.225.26:8791/` site, `http://100.90.225.26:8791/trace/index.html` (no auth — Tailscale-only).
 
 ```bash
 make trace-start      # install + kickstart

@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import errno
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
@@ -13,6 +16,7 @@ from trace_engine import (
     enforce_full_provenance,
     extract_cited_para_ids,
     render_trace_answer,
+    save_output,
     strip_provenance_section,
 )
 
@@ -140,6 +144,34 @@ class ProvenanceEnforceTests(unittest.TestCase):
             ["raw/missing.md#p1"], index=None, candidates=[]
         )
         self.assertIn("not found", md)
+
+
+class SaveOutputPermissionTests(unittest.TestCase):
+    def test_vault_eperm_keeps_local_copy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            local = root / "local"
+            vault = root / "vault"
+            vault.mkdir()
+            blocked = vault / "自由-2026-11-14.md"
+            blocked.write_text("old\n", encoding="utf-8")
+
+            real_write = Path.write_text
+
+            def write_text(self, data, *args, **kwargs):
+                if self == blocked:
+                    raise PermissionError(errno.EPERM, "Operation not permitted", str(self))
+                return real_write(self, data, *args, **kwargs)
+
+            with mock.patch.object(Path, "write_text", write_text):
+                with mock.patch("trace_engine.LOCAL_TRACE_OUTPUTS_DIR", local):
+                    with mock.patch("trace_engine.TRACE_OUTPUTS_DIR", vault):
+                        with mock.patch("trace_engine.Path.unlink", side_effect=PermissionError(errno.EPERM, "Operation not permitted")):
+                            saved = save_output("自由", "answer", [], scope=None)
+            self.assertEqual(saved.parent, local)
+            self.assertTrue(saved.is_file())
+            self.assertIn("answer", saved.read_text(encoding="utf-8"))
+            self.assertEqual(blocked.read_text(encoding="utf-8"), "old\n")
 
 
 if __name__ == "__main__":

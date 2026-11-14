@@ -2,7 +2,7 @@
   "name": "Trace",
   "short_name": "Trace",
   "description": "Ask your raw notes — verbatim cites only",
-  "start_url": "/trace/",
+  "start_url": "/trace/index.html",
   "scope": "/trace/",
   "display": "standalone",
   "background_color": "#f7f5f2",

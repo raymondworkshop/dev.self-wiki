@@ -43,6 +43,8 @@ QUERY_PROFILES = SKILLS_DIR / "query-profiles.yaml"
 TRACE_INDEX_JSON = LOG_DIR / "trace-index.json"
 TRACE_VECTORS_NPZ = LOG_DIR / "trace-vectors.npz"
 TRACE_OUTPUTS_DIR = OUTPUTS_DIR / "trace"
+# LaunchAgents cannot rewrite iCloud files (EPERM). This copy is outside the vault.
+LOCAL_TRACE_OUTPUTS_DIR = LOG_DIR / "outputs" / "trace"
 
 
 def _resolve_operating_manual() -> Path:

@@ -633,6 +633,7 @@ SITE_CSS = """
 
 NAV_ITEMS = (
     ("home", "Home", "/index.html"),
+    ("trace", "Trace", "/trace/index.html"),
     ("memex", "Memex", "/memex/index.html"),
     ("raw", "Raw", "/raw/index.html"),
     ("wiki", "Wiki", "/wiki/index.html"),

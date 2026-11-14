@@ -11,13 +11,13 @@
         - ≠ trace（事实库问答）；≠ Socratic query（向内照镜子）
 
 
--  trace — standalone product (peer to Echo)
+-  trace — site section, with Memex and Raw
   > make trace-start | stop | restart | logs
   > plist: ~/Library/LaunchAgents/com.zhaowenlong.self-wiki-trace.plist
-  > site http://127.0.0.1:8791/ · Trace http://127.0.0.1:8791/trace
-  > Tailscale http://100.90.225.26:8791/ · http://100.90.225.26:8791/trace
+  > site http://127.0.0.1:8791/ · Trace http://127.0.0.1:8791/trace/index.html
+  > Tailscale http://100.90.225.26:8791/ · http://100.90.225.26:8791/trace/index.html
   > iPhone: Safari → Add to Home Screen (PWA)
-  > ≠ Echo (`:5050` English lab) · ≠ query (Socratic wiki mirror)
+  > ≠ query (Socratic wiki mirror)
     - Q&A from raw/ 
     - 专有数据当唯一事实库 → 可审计问答 → 支撑法律 / 金融 / 医疗的合规与风控  
 
@@ -32,7 +32,7 @@
 
 - daily → [README.md](README.md#daily-workflow)
 - weekly → `make reflect` (or `make agents` for reports only)
-- site → `make site` · `http://100.90.225.26:8791/` · Trace `http://100.90.225.26:8791/trace`
+- site → `make site` · `http://100.90.225.26:8791/` · Trace `http://100.90.225.26:8791/trace/index.html`
 - docs → [README.md](README.md) · [design.md](design.md) · [AGENTS.md](AGENTS.md) · [skills/README.md](skills/README.md)
 
 Runs `make sync` → `make reflect` every **Sunday 04:00**. Logs: `launchd/launchd-weekly.log` (stdout/err); runtime state in repo-root `log/` + `twin/`. Requires `.env` with `ALLOW_PYTHON_LLM=1`. Publish manually when ready: `make publish`.

@@ -1,11 +1,10 @@
 #!/bin/zsh
-# Unload + delete MacBook copies of Echo / LLM gateway / Trace LaunchAgents.
+# Unload + delete MacBook copies of LLM gateway / Trace LaunchAgents.
 # Run in Terminal.app (not Cursor agent):  zsh scripts/unload-local-services.sh
 set -euo pipefail
 
 UID_N=$(id -u)
 labels=(
-  com.beanworkshop.echo
   com.user.llmgateway
   com.zhaowenlong.self-wiki-trace
 )
@@ -36,7 +35,7 @@ done
 
 echo
 echo "--- ports ---"
-for port in 5050 8791 8080; do
+for port in 8791 8080; do
   if curl -sf --max-time 1 "http://127.0.0.1:${port}/" >/dev/null 2>&1 \
     || curl -sf --max-time 1 "http://127.0.0.1:${port}/health" >/dev/null 2>&1 \
     || curl -sf --max-time 1 "http://127.0.0.1:${port}/v1/models" >/dev/null 2>&1; then

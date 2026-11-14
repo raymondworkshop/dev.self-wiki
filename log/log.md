@@ -2,6 +2,10 @@
 
 Operational record of ingest, query, trace, and lint. Newest entries first.
 
+## [2026-11-14] trace | created output | 什麼是自由? scope=upload/2026-03-01-a-free-man.md | candidates=34 | log/outputs/trace/什麼是自由-2026-11-14.md
+## [2026-11-14] trace | created output | 什么是自由?  如何获得自由? scope=upload/2026-03-01-a-free-man.md | candidates=52 | self-wiki/outputs/trace/什么是自由-如何获得自由-2026-11-14.md
+## [2026-11-14] trace | created output | 什麼是自由？ scope=raw/_posts/2026-03-01-a-free-man.md | candidates=34 | self-wiki/outputs/trace/什麼是自由-2026-11-14.md
+## [2026-11-14] trace-index | updated log/trace-index.json | files=1095 paragraphs=96461
 ## [2026-11-14] trace | created output | 什麼是自由？ | candidates=83 | self-wiki/outputs/trace/什麼是自由-2026-11-14.md
 ## [2026-11-14] trace | created output | 什么是自由？ scope=upload/2026-04-07-notes-on-stoicism.md | candidates=18 | self-wiki/outputs/trace/什么是自由-2026-11-14.md
 ## [2026-11-14] trace | created output | 什麼是自由？ scope=upload/2026-04-07-notes-on-stoicism.md | candidates=18 | self-wiki/outputs/trace/什麼是自由-2026-11-14.md

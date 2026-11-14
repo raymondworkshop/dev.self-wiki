@@ -13,4 +13,5 @@ log/trace-index.json
 log/trace-vectors.npz
 log/trace-vectors-partial.npz
 log/pending/
+log/outputs/
 

@@ -47,7 +47,7 @@ help:
 	@echo "  make audit LINT=1"
 	@echo "  make agents            # discover → gap → evolution"
 	@echo "  make reflect           # agents + ingest + audit LINT=1"
-	@echo "  make site                  # dist/ is http://127.0.0.1:$(TRACE_PORT)/  Trace is /trace"
+	@echo "  make site                  # dist/ is http://127.0.0.1:$(TRACE_PORT)/  Trace is /trace/index.html"
 	@echo "  make publish [BUILD_ONLY=1]"
 	@echo ""
 	@echo "trace knobs: TRACE_TOP_K=$(TRACE_TOP_K)  TRACE_MAX_PER_POST=$(TRACE_MAX_PER_POST)"
@@ -176,7 +176,7 @@ trace-start trace-restart:
 	launchctl unload "$(TRACE_PLIST)" 2>/dev/null || true
 	launchctl load "$(TRACE_PLIST)"
 	launchctl kickstart -k "gui/$$(id -u)/$(TRACE_LABEL)"
-	@echo "site http://0.0.0.0:$(TRACE_PORT)/  trace http://0.0.0.0:$(TRACE_PORT)/trace"
+	@echo "site http://0.0.0.0:$(TRACE_PORT)/  trace http://0.0.0.0:$(TRACE_PORT)/trace/index.html"
 	@echo "logs: launchd/launchd-trace*.log"
 
 trace-stop:
@@ -205,7 +205,7 @@ site:
 	@test -d $(SITE_DIR) || (echo "No $(SITE_DIR)/ — run: make ingest && make publish BUILD_ONLY=1" && exit 1)
 	@echo "Site:  http://127.0.0.1:$(TRACE_PORT)/"
 	@echo "Memex: http://127.0.0.1:$(TRACE_PORT)/memex/index.html"
-	@echo "Trace: http://127.0.0.1:$(TRACE_PORT)/trace"
+	@echo "Trace: http://127.0.0.1:$(TRACE_PORT)/trace/index.html"
 	@echo "Served by the trace daemon (make trace-start)."
 
 memex:
