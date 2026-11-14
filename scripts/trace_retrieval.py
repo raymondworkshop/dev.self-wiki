@@ -1,4 +1,8 @@
-"""Deterministic trace retrieval: keyword rank over raw paragraphs (no LLM, no vectors)."""
+"""Deterministic trace retrieval: keyword rank over raw paragraphs (no LLM, no vectors).
+
+Chinese terms are folded across simplified and traditional. Corpus-wide hits keep
+a neighboring paragraph. Paragraphs that only match a fragment n-gram are demoted.
+"""
 
 from __future__ import annotations
 
@@ -287,8 +291,66 @@ def _looks_like_frontmatter(text: str) -> bool:
     return any(k in head for k in ("title:", "layout:", "related:", "date:", "categories:"))
 
 
+_opencc_s2t = None
+_opencc_t2s = None
+_opencc_failed = False
+
+
+def _opencc_pair():
+    """Lazy s2t/t2s converters. None when OpenCC is not installed."""
+    global _opencc_s2t, _opencc_t2s, _opencc_failed
+    if _opencc_failed:
+        return None
+    if _opencc_s2t is None:
+        try:
+            from opencc import OpenCC
+
+            _opencc_s2t = OpenCC("s2t")
+            _opencc_t2s = OpenCC("t2s")
+        except Exception:
+            logger.warning("OpenCC unavailable; trace skips simplified/traditional folding")
+            _opencc_failed = True
+            return None
+    return _opencc_s2t, _opencc_t2s
+
+
+def cjk_script_forms(text: str) -> list[str]:
+    """Other-script forms of a Chinese term (simplified ↔ traditional)."""
+    if not text or not re.search(r"[\u4e00-\u9fff]", text):
+        return []
+    pair = _opencc_pair()
+    if not pair:
+        return []
+    s2t, t2s = pair
+    forms: list[str] = []
+    seen = {text}
+    for converted in (s2t.convert(text), t2s.convert(text)):
+        if converted and converted not in seen:
+            seen.add(converted)
+            forms.append(converted)
+    return forms
+
+
+def expand_script_forms(terms: list[str]) -> list[str]:
+    """Append simplified/traditional variants. Original order is kept."""
+    out: list[str] = []
+    seen: set[str] = set()
+    for t in terms:
+        tl = t.lower().strip()
+        if not tl or tl in seen:
+            continue
+        seen.add(tl)
+        out.append(t)
+        for form in cjk_script_forms(t):
+            fl = form.lower()
+            if fl not in seen:
+                seen.add(fl)
+                out.append(form)
+    return out
+
+
 def expand_query_terms(terms: list[str]) -> list[str]:
-    """Add bilingual synonyms for known concept bridges (自由↔free/freedom)."""
+    """Add bilingual synonyms and simplified/traditional variants."""
     out: list[str] = []
     seen: set[str] = set()
     for t in terms:
@@ -307,7 +369,92 @@ def expand_query_terms(terms: list[str]) -> list[str]:
                         seen.add(s)
                         out.append(syn)
                 break
-    return out
+    return expand_script_forms(out)
+
+
+def _contains_zh_stopword(term: str) -> bool:
+    return any(len(sw) >= 2 and sw in term for sw in ZH_STOPWORDS)
+
+
+def _peel_zh_function(core: str) -> str:
+    """Drop leading/trailing question words so 我为什么焦虑 → 焦虑."""
+    s = core
+    changed = True
+    while changed and s:
+        changed = False
+        for sw in sorted(ZH_STOPWORDS, key=len, reverse=True):
+            if len(sw) < 2:
+                continue
+            if s.startswith(sw) and len(s) > len(sw):
+                s = s[len(sw) :]
+                changed = True
+                break
+            if s.endswith(sw) and len(s) > len(sw):
+                s = s[: -len(sw)]
+                changed = True
+                break
+        if changed:
+            continue
+        if s[0] in _ZH_FUNC_UNIGRAMS and len(s) > 1:
+            s = s[1:]
+            changed = True
+        elif s[-1] in _ZH_FUNC_UNIGRAMS and len(s) > 1:
+            s = s[:-1]
+            changed = True
+    return s
+
+
+def query_head_terms(query: str) -> list[str]:
+    """Content words before n-gram explosion (焦虑, 核心价值观, freedom)."""
+    terms: list[str] = []
+    seen: set[str] = set()
+
+    def add(token: str) -> None:
+        t = token.lower().strip()
+        if not t or t in seen:
+            return
+        if len(t) == 1:
+            if t in _ZH_PARTICLES or t in _ZH_FUNC_UNIGRAMS:
+                return
+            if not ("\u4e00" <= t <= "\u9fff"):
+                return
+        if t in EN_STOPWORDS or t in ZH_STOPWORDS or _contains_zh_stopword(t):
+            return
+        seen.add(t)
+        terms.append(t)
+
+    for word in re.findall(r"[a-zA-Z]+", query):
+        add(word)
+    for run in re.findall(r"[\u4e00-\u9fff]+", query):
+        core = _peel_zh_function(_strip_zh_question_frame(run))
+        if core:
+            add(core)
+    return terms
+
+
+def focus_needles(query: str, primary: list[str]) -> list[str]:
+    """Terms a paragraph must contain to keep its full keyword score.
+
+    Empty when the question is English-only: fragment demotion is for CJK n-grams.
+    """
+    if not query or not re.search(r"[\u4e00-\u9fff]", query):
+        return []
+    heads = expand_script_forms(query_head_terms(query))
+    if not heads:
+        return []
+    needles = {h.lower() for h in heads if h}
+    for t in primary:
+        tl = t.lower().strip()
+        if len(tl) >= 3 and any(tl in h for h in needles):
+            needles.add(tl)
+    extra: set[str] = set()
+    for n in list(needles):
+        for group in TERM_SYNONYM_GROUPS:
+            gl = {g.lower() for g in group}
+            if n in gl:
+                extra.update(gl)
+    needles.update(x for x in extra if x)
+    return [n for n in needles if n]
 
 
 def query_primary_terms(query: str) -> list[str]:
@@ -591,6 +738,55 @@ def apply_neighbor_boost(
     return out
 
 
+def demote_fragment_only(
+    scored: list[tuple[int, dict[str, Any]]],
+    query: str,
+    primary: list[str],
+) -> list[tuple[int, dict[str, Any]]]:
+    """Push n-gram-only hits below paragraphs that contain the content word."""
+    needles = focus_needles(query, primary)
+    if not needles or not scored:
+        return scored
+    out: list[tuple[int, dict[str, Any]]] = []
+    for score, para in scored:
+        text_l = (para.get("text") or "").lower()
+        if any(n in text_l for n in needles):
+            out.append((score, para))
+        else:
+            out.append((max(1, score // 4), para))
+    out.sort(key=lambda x: (-x[0], x[1].get("path", ""), x[1].get("para", 0)))
+    return out
+
+
+def merge_neighbor_context(
+    scored: list[tuple[int, dict[str, Any]]],
+    paragraphs: list[dict[str, Any]],
+    *,
+    radius: int,
+    seed_limit: int,
+) -> tuple[list[tuple[int, dict[str, Any]]], set[str]]:
+    """Add ±radius siblings for the top seeds. Returns (merged, neighbor ids)."""
+    if not scored or radius < 1 or seed_limit < 1:
+        return scored, set()
+    seeds = scored[:seed_limit]
+    seed_ids = {p.get("id") for _, p in seeds if p.get("id")}
+    seed_paths = {
+        (p.get("path") or "").replace("\\", "/") for _, p in seeds if p.get("path")
+    }
+    local = [
+        p
+        for p in paragraphs
+        if (p.get("path") or "").replace("\\", "/") in seed_paths
+    ]
+    boosted = apply_neighbor_boost(seeds, local, radius=radius)
+    boosted_ids = {p.get("id") for _, p in boosted if p.get("id")}
+    neighbor_ids = {pid for pid in boosted_ids if pid not in seed_ids}
+    rest = [(s, p) for s, p in scored if p.get("id") not in boosted_ids]
+    merged = boosted + rest
+    merged.sort(key=lambda x: (-x[0], x[1].get("path", ""), x[1].get("para", 0)))
+    return merged, neighbor_ids
+
+
 def build_retrieval_pack(
     query: str,
     *,
@@ -608,7 +804,8 @@ def build_retrieval_pack(
         allow = set(scope_paths)
         paragraphs = [p for p in paragraphs if (p.get("path") or "").replace("\\", "/") in allow]
 
-    primary = query_primary_terms(query) if query else []
+    # Both scripts count as the user's word, so a traditional note is not half-weight.
+    primary = expand_script_forms(query_primary_terms(query)) if query else []
     terms = expand_query_terms(primary) if primary else []
     language = detect_language(query) if query else "Chinese"
 
@@ -623,8 +820,18 @@ def build_retrieval_pack(
             scored.append((1, para))
     scored.sort(key=lambda x: (-x[0], x[1].get("path", ""), x[1].get("para", 0)))
 
-    # Single-doc: admit ±2 neighbors of hits instead of padding the whole file.
-    if scoped and terms:
+    neighbor_ids: set[str] = set()
+    if terms and not scoped:
+        scored = demote_fragment_only(scored, query, primary)
+        radius_raw = os.environ.get("TRACE_NEIGHBOR_RADIUS", "").strip()
+        radius = int(radius_raw) if radius_raw.isdigit() else 1
+        seed_raw = os.environ.get("TRACE_NEIGHBOR_SEEDS", "").strip()
+        seed_limit = int(seed_raw) if seed_raw.isdigit() else 16
+        scored, neighbor_ids = merge_neighbor_context(
+            scored, paragraphs, radius=radius, seed_limit=seed_limit
+        )
+    elif scoped and terms:
+        # Single-doc: admit ±2 neighbors of hits instead of padding the whole file.
         radius_raw = os.environ.get("TRACE_SCOPE_NEIGHBOR_RADIUS", "").strip()
         radius = int(radius_raw) if radius_raw.isdigit() else 2
         scored = apply_neighbor_boost(scored, paragraphs, radius=radius)
@@ -694,7 +901,12 @@ def build_retrieval_pack(
                 file_cap = cap_twitter
             else:
                 file_cap = min(cap_post, 6)
-            if primary_l and not any(t in text_l for t in primary_l):
+            # Neighbors are context for a hit; they often omit the keyword.
+            if (
+                primary_l
+                and pid not in neighbor_ids
+                and not any(t in text_l for t in primary_l)
+            ):
                 file_cap = min(file_cap, 2)
             file_cap = min(file_cap, limit)
             if per_file.get(path, 0) >= file_cap:
@@ -722,7 +934,16 @@ def build_retrieval_pack(
             thin_notes += 1
         return True
 
-    pool = scored if scoped else scored[: max(limit * 20, 200)]
+    pool_n = max(limit * 20, 200)
+    pool = list(scored) if scoped else list(scored[:pool_n])
+    if neighbor_ids and not scoped:
+        have = {p.get("id") for _, p in pool}
+        for item in scored[pool_n:]:
+            pid = item[1].get("id")
+            if pid in neighbor_ids and pid not in have:
+                pool.append(item)
+                have.add(pid)
+        pool.sort(key=lambda x: (-x[0], x[1].get("path", ""), x[1].get("para", 0)))
     for score, para in pool:
         try_add(score, para, honor_caps=not scoped)
 

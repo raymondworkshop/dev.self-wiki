@@ -139,6 +139,9 @@ TRACE_PORT ?= 8791
 export TRACE_INDEX_TRUST_SECONDS ?= 180
 # Evidence pack size for corpus-wide asks (concept Qs can raise: TRACE_TOP_K=48).
 export TRACE_TOP_K ?= 32
+# Corpus-wide: ±N paragraphs around each of the top keyword seeds.
+export TRACE_NEIGHBOR_RADIUS ?= 1
+export TRACE_NEIGHBOR_SEEDS ?= 16
 # Soft per-file caps by source tier (corpus-wide mode).
 export TRACE_MAX_PER_POST ?= 10
 export TRACE_MAX_PER_NOTES ?= 4
@@ -154,6 +157,7 @@ trace-serve:
 	$(LLM_ENV) TRACE_LLM_MODEL=$(TRACE_LLM_MODEL) \
 	  TRACE_INDEX_TRUST_SECONDS=$(TRACE_INDEX_TRUST_SECONDS) \
 	  TRACE_TOP_K=$(TRACE_TOP_K) TRACE_SCOPE_TOP_K=$(TRACE_SCOPE_TOP_K) \
+	  TRACE_NEIGHBOR_RADIUS=$(TRACE_NEIGHBOR_RADIUS) TRACE_NEIGHBOR_SEEDS=$(TRACE_NEIGHBOR_SEEDS) \
 	  TRACE_MAX_PER_POST=$(TRACE_MAX_PER_POST) TRACE_MAX_PER_NOTES=$(TRACE_MAX_PER_NOTES) \
 	  TRACE_MAX_PER_TWITTER=$(TRACE_MAX_PER_TWITTER) \
 	  $(PY) scripts/trace_server.py --host $(TRACE_HOST) --port $(TRACE_PORT)

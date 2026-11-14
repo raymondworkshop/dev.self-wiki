@@ -12,9 +12,12 @@ sys.path.insert(0, str(Path(__file__).parent.resolve()))
 from trace_retrieval import (
     apply_neighbor_boost,
     build_retrieval_pack,
+    demote_fragment_only,
     effective_kind,
+    expand_script_forms,
     parse_query_and_scope,
     query_literal_terms,
+    query_primary_terms,
     recency_boost,
     resolve_scope_paths,
     score_paragraph,
@@ -249,6 +252,98 @@ class QueryLiteralTermsTests(unittest.TestCase):
         # No whole-file pad: far-away unrelated paragraphs stay out.
         self.assertNotIn(f"{path}#p20", ids)
         self.assertLessEqual(len(ids), 8)
+
+    def test_script_fold_matches_traditional(self) -> None:
+        terms = query_literal_terms("我为什么焦虑")
+        self.assertIn("焦虑", terms)
+        self.assertIn("焦慮", terms)
+        traditional = {
+            "text": "最近的焦慮讓我晚上一直睡不着，白天也提不起精神。",
+            "path": "raw/_posts/2024-01-01-note.md",
+            "file": "2024-01-01-note.md",
+            "kind": "post",
+        }
+        primary = expand_script_forms(query_primary_terms("我为什么焦虑"))
+        self.assertGreater(
+            score_paragraph(traditional, terms, primary_terms=primary),
+            0,
+        )
+
+    def test_fragment_demotion_keeps_whole_word(self) -> None:
+        query = "我的核心价值观是什么"
+        primary = expand_script_forms(query_primary_terms(query))
+        whole = {
+            "id": "raw/_posts/values.md#p1",
+            "text": "我真正在意的是价值观，它决定日常选择。",
+            "path": "raw/_posts/values.md",
+            "para": 1,
+        }
+        frag = {
+            "id": "raw/_posts/noise.md#p1",
+            "text": "今天的核心任务是把报告写完。",
+            "path": "raw/_posts/noise.md",
+            "para": 1,
+        }
+        ranked = demote_fragment_only(
+            [(100, frag), (100, whole)],
+            query,
+            primary,
+        )
+        self.assertEqual(ranked[0][1]["id"], whole["id"])
+        self.assertLess(ranked[1][0], ranked[0][0])
+
+    def test_corpus_pack_keeps_neighbor_and_ranks_whole_word(self) -> None:
+        path = "raw/_posts/values.md"
+        texts = [
+            "这段只是铺垫，还没进入主题，先把当天发生的事记下来。",
+            "我在意的是自己的价值观，而不是别人的评价。这件事反复出现在选择工作、花钱和拒绝别人的时候，所以它不是一句口号。",
+            "所以每天的选择要能对得上那句话，不然就只是嘴上说说。",
+        ]
+        paragraphs = []
+        for i, text in enumerate(texts, start=1):
+            paragraphs.append(
+                {
+                    "id": f"{path}#p{i}",
+                    "path": path,
+                    "file": "values.md",
+                    "para": i,
+                    "start_line": i,
+                    "end_line": i,
+                    "kind": "post",
+                    "text": text,
+                }
+            )
+        for i in range(1, 8):
+            npath = f"raw/_posts/noise-{i}.md"
+            paragraphs.append(
+                {
+                    "id": f"{npath}#p1",
+                    "path": npath,
+                    "file": f"noise-{i}.md",
+                    "para": 1,
+                    "start_line": 1,
+                    "end_line": 1,
+                    "kind": "post",
+                    "text": "今天的核心任务是把报告写完，然后处理邮件和会议，没有别的安排。",
+                }
+            )
+        pack = build_retrieval_pack(
+            "我的核心价值观是什么",
+            index={"paragraphs": paragraphs, "built_at": "test"},
+            provider="local-gateway",
+            top_k=6,
+        )
+        ids = [c["id"] for c in pack["candidates"]]
+        hit = f"{path}#p2"
+        self.assertIn(hit, ids)
+        self.assertTrue(
+            f"{path}#p1" in ids or f"{path}#p3" in ids,
+            ids,
+        )
+        self.assertLess(ids.index(hit), 3)
+        noise_at = [ids.index(i) for i in ids if "/noise-" in i]
+        if noise_at:
+            self.assertLess(ids.index(hit), min(noise_at))
 
 
 class UploadEphemeralTests(unittest.TestCase):

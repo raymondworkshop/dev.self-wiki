@@ -2,6 +2,7 @@
 
 Operational record of ingest, query, trace, and lint. Newest entries first.
 
+## [2026-11-14] trace | created output | what are my core values? | candidates=32 | self-wiki/outputs/trace/what-are-my-core-values-2026-11-14.md
 ## [2026-11-11] lint | updated audit.md | global cognitive lint merged
 ## [2026-11-11] ingest | updated indexes/twin/backlinks | ingest complete
 ## [2026-11-11] evolution | created evolution report via evolution-20261111-150630.json
