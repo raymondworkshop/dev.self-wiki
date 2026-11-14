@@ -17,7 +17,6 @@ WIKI_SYNTH_OPTS := $(if $(LIMIT),--limit $(LIMIT)) $(if $(FORCE),--force) \
 	$(if $(INGEST),--ingest)
 DOCTOR_ARGS := $(if $(RAW),--raw $(RAW),) $(CLI_PROVIDER_ARG)
 
-SITE_PORT ?= 8787
 SITE_DIR  ?= dist
 
 .PHONY: help ingest memex audit progress register-reference sync \
@@ -48,7 +47,7 @@ help:
 	@echo "  make audit LINT=1"
 	@echo "  make agents            # discover → gap → evolution"
 	@echo "  make reflect           # agents + ingest + audit LINT=1"
-	@echo "  make site [PORT=8787]     # serve dist/ locally (build first: ingest + publish BUILD_ONLY=1)"
+	@echo "  make site                  # dist/ is http://127.0.0.1:$(TRACE_PORT)/  Trace is /trace"
 	@echo "  make publish [BUILD_ONLY=1]"
 	@echo ""
 	@echo "trace knobs: TRACE_TOP_K=$(TRACE_TOP_K)  TRACE_MAX_PER_POST=$(TRACE_MAX_PER_POST)"
@@ -177,7 +176,7 @@ trace-start trace-restart:
 	launchctl unload "$(TRACE_PLIST)" 2>/dev/null || true
 	launchctl load "$(TRACE_PLIST)"
 	launchctl kickstart -k "gui/$$(id -u)/$(TRACE_LABEL)"
-	@echo "trace daemon on http://0.0.0.0:$(TRACE_PORT)/ (Tailscale: http://100.90.225.26:$(TRACE_PORT)/)"
+	@echo "site http://0.0.0.0:$(TRACE_PORT)/  trace http://0.0.0.0:$(TRACE_PORT)/trace"
 	@echo "logs: launchd/launchd-trace*.log"
 
 trace-stop:
@@ -204,11 +203,10 @@ publish:
 
 site:
 	@test -d $(SITE_DIR) || (echo "No $(SITE_DIR)/ — run: make ingest && make publish BUILD_ONLY=1" && exit 1)
-	@echo ""
-	@echo "Site:   http://127.0.0.1:$(SITE_PORT)/index.html"
-	@echo "Memex:  http://127.0.0.1:$(SITE_PORT)/memex/index.html"
-	@echo "Press Ctrl+C to stop."
-	$(PY) -m http.server $(SITE_PORT) --bind 127.0.0.1 --directory $(SITE_DIR)
+	@echo "Site:  http://127.0.0.1:$(TRACE_PORT)/"
+	@echo "Memex: http://127.0.0.1:$(TRACE_PORT)/memex/index.html"
+	@echo "Trace: http://127.0.0.1:$(TRACE_PORT)/trace"
+	@echo "Served by the trace daemon (make trace-start)."
 
 memex:
 	$(PY) scripts/memex_cli.py $(CMD)

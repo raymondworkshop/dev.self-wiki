@@ -41,6 +41,7 @@ class FetchTraceTests(unittest.TestCase):
                 got = fetch_trace("values", scope="a-free-man", debug=False, save=False)
         self.assertEqual(got["answer"], payload["answer"])
         sent = json.loads(opened.call_args.args[0].data.decode())
+        self.assertTrue(opened.call_args.args[0].full_url.endswith("/trace/ask"))
         self.assertEqual(sent["q"], "values")
         self.assertEqual(sent["scope"], "a-free-man")
         self.assertFalse(sent["save"])

@@ -28,10 +28,9 @@ tail -f launchd/launchd-weekly.err.log
 
 ## Trace HTTP (`com.zhaowenlong.self-wiki-trace`)
 
-**Standalone product** (peer to Echo `:5050`): always-on `trace_server.py` on `0.0.0.0:8791`.
-Default LLM: **gpt** (override `TRACE_LLM_MODEL=mlx`). Scoped asks: top‑16 hits + ±2 neighbors (no whole-file pad).
+Always-on `trace_server.py` on `0.0.0.0:8791`. The published site is `/` (`dist/`). Trace is `/trace`.
 
-Tailscale: `http://100.90.225.26:8791/` (no auth — Tailscale-only).
+Tailscale: `http://100.90.225.26:8791/` site, `http://100.90.225.26:8791/trace` (no auth — Tailscale-only).
 
 ```bash
 make trace-start      # install + kickstart

@@ -14,7 +14,8 @@
 -  trace — standalone product (peer to Echo)
   > make trace-start | stop | restart | logs
   > plist: ~/Library/LaunchAgents/com.zhaowenlong.self-wiki-trace.plist
-  > UI http://127.0.0.1:8791/ · Tailscale http://100.90.225.26:8791/
+  > site http://127.0.0.1:8791/ · Trace http://127.0.0.1:8791/trace
+  > Tailscale http://100.90.225.26:8791/ · http://100.90.225.26:8791/trace
   > iPhone: Safari → Add to Home Screen (PWA)
   > ≠ Echo (`:5050` English lab) · ≠ query (Socratic wiki mirror)
     - Q&A from raw/ 
@@ -31,7 +32,7 @@
 
 - daily → [README.md](README.md#daily-workflow)
 - weekly → `make reflect` (or `make agents` for reports only)
-- site → `make site` · `http://100.90.225.26:8787/`
+- site → `make site` · `http://100.90.225.26:8791/` · Trace `http://100.90.225.26:8791/trace`
 - docs → [README.md](README.md) · [design.md](design.md) · [AGENTS.md](AGENTS.md) · [skills/README.md](skills/README.md)
 
 Runs `make sync` → `make reflect` every **Sunday 04:00**. Logs: `launchd/launchd-weekly.log` (stdout/err); runtime state in repo-root `log/` + `twin/`. Requires `.env` with `ALLOW_PYTHON_LLM=1`. Publish manually when ready: `make publish`.

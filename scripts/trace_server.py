@@ -1,4 +1,4 @@
-"""Thin trace HTTP service: GET / UI, POST /ask, GET /source, GET /health (stdlib only)."""
+"""One HTTP service: site at /, Trace at /trace (ask, source, health)."""
 
 from __future__ import annotations
 
@@ -21,7 +21,9 @@ from trace_index import ensure_index, get_paragraph
 logger = logging.getLogger(__name__)
 
 _CTX_LINES = 12
+TRACE_PREFIX = "/trace"
 STATIC_DIR = Path(__file__).resolve().parent / "trace_static"
+SITE_DIR = WORKSPACE_PATH / "dist"
 _STATIC_FILES = {
     "/manifest.webmanifest": ("manifest.webmanifest", "application/manifest+json"),
     "/favicon.svg": ("favicon.svg", "image/svg+xml"),
@@ -29,6 +31,34 @@ _STATIC_FILES = {
     "/icon-512.png": ("icon-512.png", "image/png"),
     "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png"),
 }
+_SITE_MIME = {
+    ".html": "text/html; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".gif": "image/gif",
+    ".ico": "image/x-icon",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+    ".txt": "text/plain; charset=utf-8",
+    ".xml": "application/xml",
+    ".map": "application/json",
+}
+
+
+def _trace_path(path: str) -> str | None:
+    """Map /trace and /trace/... onto the Trace app's own paths."""
+    if path == TRACE_PREFIX:
+        return "/"
+    prefix = TRACE_PREFIX + "/"
+    if path.startswith(prefix):
+        return path[len(TRACE_PREFIX) :]
+    return None
 
 
 def _html_page(title: str, body: str, *, extra_head: str = "") -> bytes:
@@ -42,9 +72,9 @@ def _html_page(title: str, body: str, *, extra_head: str = "") -> bytes:
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Trace"/>
 <meta name="description" content="Ask your raw notes — verbatim cites only. Peer product to Echo."/>
-<link rel="manifest" href="/manifest.webmanifest"/>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
-<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<link rel="manifest" href="/trace/manifest.webmanifest"/>
+<link rel="icon" href="/trace/favicon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="/trace/apple-touch-icon.png"/>
 <title>{html.escape(title)}</title>
 <style>
 :root {{
@@ -401,6 +431,7 @@ def _home_page(*, paragraph_count: int | None, built_at: str | None) -> bytes:
         meta += f" · index {html.escape(str(built_at))}"
     body = f"""
 <nav class="products" aria-label="Products">
+  <a href="/">Site</a>
   <a href="http://100.90.225.26:5050/">Echo</a>
   <span class="brand is-active">Trace</span>
 </nav>
@@ -558,7 +589,7 @@ function setModel(value) {{
 
 function sourceHref(path, pTag, start, end) {{
   const id = pTag ? (path + pTag) : path;
-  let href = '/source?id=' + encodeURIComponent(id);
+  let href = '/trace/source?id=' + encodeURIComponent(id);
   if (start) href += '&start=' + start;
   if (end) href += '&end=' + end;
   if (start) href += '#L' + start;
@@ -593,7 +624,7 @@ function renderSources(sources) {{
     const id = s.id || (s.path + '#p' + s.para);
     const start = (s.lines && s.lines[0]) || s.start_line;
     const end = (s.lines && s.lines[1]) || s.end_line;
-    let href = '/source?id=' + encodeURIComponent(id);
+    let href = '/trace/source?id=' + encodeURIComponent(id);
     if (start) href += '&start=' + start + '&end=' + (end || start) + '#L' + start;
     const leaf = (s.path || id).split('/').pop() || id;
     const label = leaf + (s.para != null ? (' #' + 'p' + s.para) : '') + (start ? (' · L' + start) : '');
@@ -770,7 +801,7 @@ async function ask() {{
       body.upload = uploadText;
       body.upload_filename = uploadName || 'upload.md';
     }}
-    const res = await fetch('/ask', {{
+    const res = await fetch('/trace/ask', {{
       method: 'POST',
       headers: {{ 'Content-Type': 'application/json' }},
       body: JSON.stringify(body),
@@ -882,7 +913,7 @@ def _source_page(
 <h1>trace source</h1>
 <p class="meta">{" · ".join(meta_bits)} · file missing on disk</p>
 {excerpt}
-<p class="nav"><a href="/">home</a> · <a href="/health">health</a></p>
+<p class="nav"><a href="/trace">trace</a> · <a href="/trace/health">health</a></p>
 """
         return _html_page(title, body)
 
@@ -905,7 +936,7 @@ def _source_page(
 <h1>trace source</h1>
 <p class="meta">{" · ".join(meta_bits)} · on disk</p>
 {code}
-<p class="nav"><a href="/">home</a> · <a href="/health">health</a>
+<p class="nav"><a href="/trace">trace</a> · <a href="/trace/health">health</a>
 {" · <a href='" + jump + "'>jump to highlight</a>" if focus_start else ""}</p>
 <script>
 const el = document.getElementById({json.dumps(f"L{focus_start}" if focus_start else "")});
@@ -932,9 +963,56 @@ class TraceHandler(BaseHTTPRequestHandler):
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         self._send(code, body, "application/json; charset=utf-8")
 
+    def _serve_site(self, url_path: str) -> None:
+        if not SITE_DIR.is_dir():
+            body = _html_page(
+                "Site",
+                "<h1>Site</h1><p class='meta'>No dist/ yet. Run make publish BUILD_ONLY=1.</p>"
+                "<p class='nav'><a href='/trace'>Trace</a></p>",
+            )
+            self._send(404, body, "text/html; charset=utf-8")
+            return
+        rel = unquote(url_path).lstrip("/")
+        root = SITE_DIR.resolve()
+        candidate = (root / rel).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            self._send(404, b"not found", "text/plain; charset=utf-8")
+            return
+        if candidate.is_dir():
+            candidate = candidate / "index.html"
+        elif not candidate.is_file() and candidate.suffix == "":
+            html_try = candidate.with_suffix(".html")
+            if html_try.is_file():
+                candidate = html_try
+        if not candidate.is_file():
+            self._send(404, b"not found", "text/plain; charset=utf-8")
+            return
+        ctype = _SITE_MIME.get(candidate.suffix.lower(), "application/octet-stream")
+        self._send(200, candidate.read_bytes(), ctype)
+
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
-        static = _STATIC_FILES.get(parsed.path)
+        if parsed.path == "/health":
+            idx = ensure_index()
+            self._send_json(
+                200,
+                {
+                    "ok": True,
+                    "service": "self-wiki",
+                    "site": "/",
+                    "trace": TRACE_PREFIX,
+                    "paragraph_count": idx.get("paragraph_count"),
+                    "built_at": idx.get("built_at"),
+                },
+            )
+            return
+        trace_path = _trace_path(parsed.path)
+        if trace_path is None:
+            self._serve_site(parsed.path)
+            return
+        static = _STATIC_FILES.get(trace_path)
         if static:
             name, ctype = static
             path = STATIC_DIR / name
@@ -944,7 +1022,7 @@ class TraceHandler(BaseHTTPRequestHandler):
             data = path.read_bytes()
             self._send(200, data, ctype)
             return
-        if parsed.path == "/health":
+        if trace_path == "/health":
             idx = ensure_index()
             self._send_json(
                 200,
@@ -957,7 +1035,7 @@ class TraceHandler(BaseHTTPRequestHandler):
             )
             return
 
-        if parsed.path == "/":
+        if trace_path == "/":
             accept = self.headers.get("Accept", "")
             idx = ensure_index()
             if "application/json" in accept and "text/html" not in accept:
@@ -968,7 +1046,7 @@ class TraceHandler(BaseHTTPRequestHandler):
                         "service": "trace",
                         "paragraph_count": idx.get("paragraph_count"),
                         "built_at": idx.get("built_at"),
-                        "ask": 'POST /ask {"q": "...", "model": "mlx|gpt", "scope"?: "...", "upload"?: "…", "upload_filename"?: "note.md"}',
+                        "ask": 'POST /trace/ask {"q": "...", "model": "mlx|gpt", "scope"?: "...", "upload"?: "…", "upload_filename"?: "note.md"}',
                     },
                 )
                 return
@@ -982,7 +1060,7 @@ class TraceHandler(BaseHTTPRequestHandler):
             )
             return
 
-        if parsed.path == "/source":
+        if trace_path == "/source":
             qs = parse_qs(parsed.query)
             para_id = _resolve_para_id((qs.get("id") or [""])[0])
             start = _parse_int(qs.get("start"))
@@ -1005,7 +1083,7 @@ class TraceHandler(BaseHTTPRequestHandler):
                     body = _html_page(
                         "Not found",
                         f"<h1>Source not found</h1><p class='meta'>{html.escape(para_id)}</p>"
-                        f"<p class='nav'><a href='/'>home</a></p>",
+                        f"<p class='nav'><a href='/trace'>trace</a></p>",
                     )
                     self._send(404, body, "text/html; charset=utf-8")
                 else:
@@ -1031,7 +1109,7 @@ class TraceHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
-        if parsed.path != "/ask":
+        if _trace_path(parsed.path) != "/ask":
             self._send_json(404, {"error": "not found"})
             return
         length = int(self.headers.get("Content-Length") or 0)
@@ -1110,7 +1188,13 @@ def main() -> int:
     except Exception:
         logger.exception("trace vectors unavailable; keyword only")
     httpd = ThreadingHTTPServer((args.host, args.port), TraceHandler)
-    logger.info("trace listening on http://%s:%s", args.host, args.port)
+    logger.info(
+        "listening on http://%s:%s/  trace http://%s:%s/trace",
+        args.host,
+        args.port,
+        args.host,
+        args.port,
+    )
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

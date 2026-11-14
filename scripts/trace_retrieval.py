@@ -120,7 +120,7 @@ def _candidate_dict(para: dict[str, Any], score: int, *, kind: str | None = None
         "kind": k,
         "score": score,
         "text": para.get("text") or "",
-        "source_url": f"/source?id={para['id']}",
+        "source_url": f"/trace/source?id={para['id']}",
     }
 
 # Light bilingual bridges for the concepts you actually query across ZH/EN notes.

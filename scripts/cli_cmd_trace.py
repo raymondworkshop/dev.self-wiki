@@ -26,7 +26,7 @@ class TraceRemoteError(RuntimeError):
 
 
 def trace_server_url() -> str:
-    return os.environ.get("TRACE_URL", "http://127.0.0.1:8791").rstrip("/")
+    return os.environ.get("TRACE_URL", "http://127.0.0.1:8791/trace").rstrip("/")
 
 
 def _use_local_trace(args: argparse.Namespace) -> bool:

@@ -101,7 +101,7 @@ reflect:     discover → gap → evolution → ingest → audit LINT=1
 | New/changed raw (batch) | `make sync` |
 | Wiki-synthesize only | `make wiki-synthesize LIMIT=20` |
 | Trust layer | `make ingest` |
-| Browse locally | `make ingest && make publish BUILD_ONLY=1 && make site` |
+| Browse locally | `make ingest && make publish BUILD_ONLY=1 && make site` → `http://127.0.0.1:8791/` (Trace is `/trace`) |
 | Memex stats | `make memex CMD="stats"` |
 
 See `make help` and [AGENTS.md](AGENTS.md).
