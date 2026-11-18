@@ -2,52 +2,29 @@
 
 Personal wiki, and Socratic Mirror.
 
-## Workflow
+## Daily
 
-Drop notes into `self-wiki/raw/`, then:
+Drop notes into `raw/`, then:
 
 ```bash
-make sync
-make query Q="what are my values?"          # wiki Socratic mirror
-make trace Q="what are my core values?"    # raw paragraphs + cites, no answer LLM
+make sync                                          # changed raw → wiki, then ingest
+make query Q="what are my values?"                 # wiki Socratic mirror
+make trace Q="what are my core values?"            # matching raw paragraphs + cites
 make audit LINT=1
 ```
 
-`make query` suggests `make promote …` when the answer flags `[Cognitive Shift]` or `[Socratic Observation]` (`PROMOTE_SUGGEST=0` to disable).
+Weekly: `make reflect`. Site: `make site` · `make publish`. Everything else: `make help`.
 
-`make trace` lists matching paragraphs from `self-wiki/raw/` with path, `#pN`, line range, and the verbatim paragraph. It does not call a model to write the answer (`TRACE_LLM=1` restores that). Keyword rank and `intfloat/multilingual-e5-small` vectors are merged by reciprocal rank (`TRACE_VECTORS=0` skips vectors). Follows symlink dirs (e.g. `raw/_posts`), skips generated `raw/qa/`, and drops identical content copies. Index rebuild is incremental (`FORCE=1` for full). `make trace-index` also builds `log/trace-vectors.npz` (first run encodes the vault, a few minutes). Chinese queries fold simplified/traditional. Keyword hits keep a neighboring paragraph; vector-only hits are marked `· 向量` and are not expanded. Twitter stays down-ranked. Scoped (`SCOPE=` / `@file`): smaller pack, ±2 neighbors. **Trace** is a site section next to Memex and Raw: `make trace-start` → Tailscale `http://100.90.225.26:8791/trace/index.html` (`/trace` redirects there; PWA; `POST /trace/ask`, `GET /trace/source?id=raw/…#pN`; bind `0.0.0.0`, no auth).
+`make query` suggests `make promote …` when the answer flags a cognitive shift. `make trace` does not write an answer; `make trace-start` serves it at `:8791`.
 
-Weekly: `make reflect` · also `make site` · `make publish` · `make help`
-
-## Setup (once)
+## Setup
 
 ```bash
 python3 -m venv .selfwikienv && .selfwikienv/bin/pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Minimal `.env` (local LLM via [dev.local-ai](../dev.local-ai) gateway `:8080`):
-
-```bash
-LLM_PROVIDER=local-gateway
-LLM_URL=http://127.0.0.1:8080/v1/chat/completions
-LLM_MODEL=gpt
-LLM_CLOUD_MODEL=gpt
-LLM_MODEL_FALLBACK=mlx
-ALLOW_PYTHON_LLM=1
-ALLOW_LOCAL_LLM=1
-```
-
-| Alias | Upstream | Notes |
-|-------|----------|--------|
-| `gpt` | `openai/gpt-oss-120b` | **default** — Western + ZDR |
-| `mlx` | local Qwen3.5 | fallback when gpt fails |
-| `cloud` | expands to `LLM_CLOUD_MODEL` | same as `gpt` unless you change it |
-| `ultra` | Nemotron 3 Ultra `:free` | opt-in only (weaker privacy) |
-
-`LLM_PROVIDER=mlx` is a legacy alias for `local-gateway`. Default is `gpt` → `mlx` (myblog raw via symlink stays off ultra). Use `LLM_MODEL=ultra make query` only when you accept free-provider privacy. Gateway cloud paths use `reasoning=medium`, ~8192 tokens, and keep skill system prompts. Legacy `nemotron` → ultra.
-
-Gemini works in code but is not recommended in HK (geo-block).
+Local LLM via [dev.local-ai](../dev.local-ai) on `:8080`. Default model is `gpt`, falling back to `mlx`.
 
 ## Model
 
@@ -56,14 +33,6 @@ Gemini works in code but is not recommended in HK (geo-block).
 - `raw/` — source truth (append only)
 - `wiki/` — themes and principles
 - ingest — memex graph, backlinks, index, twin
-
-Ingest can be Composer-first (Cursor skills) or batch (`make sync`).
-
-## Advanced
-
-`make wiki-synthesize` · `make wiki-synthesize-apple-notes` · `make fix-provenance` · `make ingest` · `make progress` · `make wiki-synth-status` · `make agents` · `make promote FILE=… TARGET=… CONFIRM=1` · `make doctor-config` · `make test`
-
-Overrides: `LLM_PROVIDER=openrouter make sync` · `LLM_MODEL=cloud make query` · `QUERY_LLM_MODEL=ultra` · `TRACE_LLM_MODEL=mlx make trace`
 
 ## Safety
 
