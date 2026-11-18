@@ -15,7 +15,8 @@ make audit LINT=1
 
 Weekly: `make reflect`. Site: `make site` · `make publish`. Everything else: `make help`.
 
-`make query` suggests `make promote …` when the answer flags a cognitive shift. `make trace` does not write an answer; `make trace-start` serves it at `:8791`.
+`make query` suggests `make promote …` when the answer flags a cognitive shift.   
+`make trace` does not write an answer; `make trace-start` serves it at `:8791`.
 
 ## Setup
 
@@ -24,11 +25,9 @@ python3 -m venv .selfwikienv && .selfwikienv/bin/pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Local LLM via [dev.local-ai](../dev.local-ai) on `:8080`. Default model is `gpt`, falling back to `mlx`.
-
 ## Model
 
-`raw/` → `wiki/` → `make ingest` → `twin/PROFILE.md`
+`raw/` → `wiki/` → `make ingest` 
 
 - `raw/` — source truth (append only)
 - `wiki/` — themes and principles
